@@ -10,8 +10,8 @@ This document tracks phase-by-phase completion across the 22 designated phases o
 |:---:|---|---|:---:|:---:|
 | **0** | **Manual Setup** | Repo, Google Sheet + Apps Script project created, clasp linked, project details saved | **Completed** | 21-09-2026 |
 | **1** | **Rules & Architecture Freeze** | `AI_RULES.md` + 8 foundational design documents in `docs/` | **Completed** | 21-09-2026 |
-| **2** | **Project Scaffolding** | Next.js 14 app + Apps Script Web App skeleton + health check | Not Started | — |
-| **3** | **Database & Data-Access** | 20 Sheets tabs, `SheetRepo.gs`, financial year helper, seed dev data | Not Started | — |
+| **2** | **Project Scaffolding** | Next.js 14 app + Apps Script Web App skeleton + health check | **Completed** | 21-09-2026 |
+| **3** | **Database & Data-Access** | 20 Sheets tabs, `SheetRepo.gs`, financial year helper, seed dev data | **Completed** | 21-09-2026 |
 | **4** | **Auth & App Shell** | Single-user login, session proxy cookie, Ant Design App Shell | Not Started | — |
 | **5** | **Master Data** | Companies, clients, vendors, vehicles, drivers management | Not Started | — |
 | **6** | **Enquiry Logic (Backend)** | Auto numbering (`LockService`), 7-stage state machine, movement | Not Started | — |
@@ -54,3 +54,24 @@ This document tracks phase-by-phase completion across the 22 designated phases o
   6. `docs/REQUIREMENTS_CHECKLIST.md`: Itemized traceability checklist mapped to development phases.
   7. `docs/ASSUMPTIONS.md`: Technical assumptions, trade-offs (LockService, quotas, scale, Render).
   8. `docs/PROGRESS.md`: 22-phase status tracking.
+
+### Phase 2: Project Scaffolding
+- Next.js 14 App Router + TypeScript (strict) set up in `/web`.
+- Installed Ant Design 5, TanStack Query, Axios, React Hook Form, Zod, dayjs, Recharts.
+- Set up SSR style registry (`AntdRegistry.tsx`), theme provider, QueryClient provider, and placeholder layout.
+- Created shared formatting utilities (`formatCurrencyINR`, `formatDate`, `formatDateTime`) with unit tests (all passing).
+- Configured ESLint, Prettier, Vitest, and Testing Library.
+- Created Next.js Route Handler `/api/health` calling Apps Script.
+- Created Apps Script `Code.js` with `doPost` dispatcher, shared secret verification, and `health` check action.
+- Configured `appsscript.json` (V8, webapp execution).
+- Created root `package.json` convenience scripts, `.gitignore`, `.editorconfig`, and root `README.md`.
+- Wrote `docs/SETUP.md` with complete guide for Sheet ID, Script Properties, clasp push/deploy, and `.env.local`.
+
+### Phase 3: Database (Google Sheets) & Data-Access Layer
+- Authored `appsscript/Setup.js` with idempotent `createAllSheets()` creating all 20 business sheets with frozen, styled header rows matching `DATABASE_DESIGN.md`.
+- Authored `appsscript/SheetRepo.js` generic data-access layer implementing batched `getValues()` and `setValues()`, with `LockService.getScriptLock()` on `number_sequences`.
+- Authored `appsscript/FinancialYear.js` calculating Indian FY (`YYYY-YY`) with 1 April - 31 March boundary logic in `Asia/Kolkata`.
+- Created unit tests for financial year boundaries in Vitest (all 12 tests passing).
+- Authored `appsscript/Tests_FinancialYear.js` and `appsscript/Tests_Harness.js` custom assertion harness writing test results to Logger and `TestResults` sheet.
+- Authored `appsscript/Seed.js` with `seedDevData()` guarded by `ENV=production` check, seeding 3 users with salted SHA-256 passwords, `DEFAULT` app settings, sample companies, clients, vendor, and initial sequential counters.
+- Registered `setup`, `seedDev`, and `runTests` in `appsscript/Code.js`'s `ACTION_HANDLERS`.

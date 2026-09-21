@@ -11,7 +11,7 @@ This document details the operational decisions, stack characteristics, and inte
 - **D2. Atomic Numbering:**
   Enquiry ID is an auto-incrementing integer (starts at `10001`). Transaction Number is formatted as `TXN/YYYY-YY/00001` and resets each financial year. Both are generated atomically inside `LockService.getScriptLock()` from `number_sequences`.
 - **D3. Financial Year Standard:**
-  The financial year runs from **1 April to 31 March** (format: `2026-27`). Bill numbers follow `<sequence>/<financialYear>` (e.g. `203/2026-27`), resetting to 1 each April 1st, and are allocated only when a bill transitions to `PROCESSED`.
+  The financial year runs from **1 January to 31 December** (Calendar Year basis) using the two-year span format `YYYY-YY` (e.g. 2026 is `2026-27`). Bill numbers follow `<sequence>/<financialYear>` (e.g. `203/2026-27`), resetting to 1 each January 1st, and are allocated only when a bill transitions to `PROCESSED`.
 - **D4. Pending Bills & Processed Bill Edits:**
   Pending Bills comprises all unbilled enquiries at `COMPLETED` stage. Draft bills do not receive numbers. When processed, bills receive immutable numbers. Processed bills can be edited by the operator, with all changes tracked in `audit_logs`.
 - **D5. Bill Consolidation:**

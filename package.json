@@ -1,0 +1,22 @@
+{
+  "name": "transport-logistics-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Transport & Logistics Management System (TMS) - Next.js + Google Sheets / Apps Script",
+  "scripts": {
+    "dev": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "lint": "npm --prefix web run lint",
+    "test": "npm --prefix web run test"
+  },
+  "keywords": [
+    "tms",
+    "logistics",
+    "transport",
+    "nextjs",
+    "google-sheets",
+    "google-apps-script"
+  ],
+  "author": "",
+  "license": "ISC"
+}

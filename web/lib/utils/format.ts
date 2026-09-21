@@ -45,3 +45,21 @@ export function formatDateTime(date: string | number | Date | null | undefined):
   if (!parsed.isValid()) return '-';
   return parsed.format('DD-MM-YYYY hh:mm A');
 }
+
+/**
+ * Calculates Financial Year string (e.g. "2026-27") for a given date in Asia/Kolkata.
+ * Cycle: January 1 to December 31.
+ * Format: "YYYY-YY" (e.g., 2026 is "2026-27").
+ */
+export function getFinancialYear(dateInput?: string | number | Date | dayjs.Dayjs | null): string {
+  const d = dateInput ? dayjs(dateInput).tz(TIMEZONE) : dayjs().tz(TIMEZONE);
+  if (!d.isValid()) {
+    throw new Error('Invalid date provided to getFinancialYear');
+  }
+
+  const year = d.year();
+  const nextYearShort = String(year + 1).slice(-2);
+
+  return `${year}-${nextYearShort}`;
+}
+

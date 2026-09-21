@@ -24,18 +24,18 @@ This checklist itemizes every functional and technical requirement from `PROJECT
 | 1.8 | Technical assumptions and architecture trade-offs in `docs/ASSUMPTIONS.md` | Phase 1 | [x] |
 | 1.9 | Progress tracker created in `docs/PROGRESS.md` | Phase 1 | [x] |
 | **Phase 2: Project Scaffolding** | | | |
-| 2.1 | Next.js 14 App Router project setup with TypeScript strict in `/web` | Phase 2 | [ ] |
-| 2.2 | Ant Design 5, TanStack Query, Axios, React Hook Form, Zod configured | Phase 2 | [ ] |
-| 2.3 | Apps Script Web App entry point `doPost(e)` and `appsscript.json` configured | Phase 2 | [ ] |
-| 2.4 | Shared secret header validation between Next.js and Apps Script | Phase 2 | [ ] |
-| 2.5 | Health check endpoint (`/api/health`) connecting Next.js to Sheet via Apps Script | Phase 2 | [ ] |
-| 2.6 | Vitest, ESLint, Prettier configured; INR currency & date helpers with unit tests | Phase 2 | [ ] |
+| 2.1 | Next.js 14 App Router project setup with TypeScript strict in `/web` | Phase 2 | [x] |
+| 2.2 | Ant Design 5, TanStack Query, Axios, React Hook Form, Zod configured | Phase 2 | [x] |
+| 2.3 | Apps Script Web App entry point `doPost(e)` and `appsscript.json` configured | Phase 2 | [x] |
+| 2.4 | Shared secret header validation between Next.js and Apps Script | Phase 2 | [x] |
+| 2.5 | Health check endpoint (`/api/health`) connecting Next.js to Sheet via Apps Script | Phase 2 | [x] |
+| 2.6 | Vitest, ESLint, Prettier configured; INR currency & date helpers with unit tests | Phase 2 | [x] |
 | **Phase 3: Database (Google Sheets) & Data-Access Layer** | | | |
-| 3.1 | Idempotent `createAllSheets()` creating all 20 tabs with frozen headers | Phase 3 | [ ] |
-| 3.2 | Generic data-access layer `SheetRepo.gs` with batched `getValues`/`setValues` | Phase 3 | [ ] |
-| 3.3 | Financial year helper `getFinancialYear()` (1 April - 31 March boundary logic) | Phase 3 | [ ] |
-| 3.4 | Development seed function `seedDevData()` with production guard check | Phase 3 | [ ] |
-| 3.5 | Apps Script custom assertion test harness `Tests_Harness.gs` | Phase 3 | [ ] |
+| 3.1 | Idempotent `createAllSheets()` creating all 20 tabs with frozen headers | Phase 3 | [x] |
+| 3.2 | Generic data-access layer `SheetRepo.gs` with batched `getValues`/`setValues` | Phase 3 | [x] |
+| 3.3 | Financial year helper `getFinancialYear()` (1 April - 31 March boundary logic) | Phase 3 | [x] |
+| 3.4 | Development seed function `seedDevData()` with production guard check | Phase 3 | [x] |
+| 3.5 | Apps Script custom assertion test harness `Tests_Harness.gs` | Phase 3 | [x] |
 | **Phase 4: Single-User Auth & App Shell** | | | |
 | 4.1 | Salted SHA-256 password verification and session token generation in Apps Script | Phase 4 | [ ] |
 | 4.2 | Next.js Route Handler setting `httpOnly` secure cookie | Phase 4 | [ ] |

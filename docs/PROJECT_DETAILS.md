@@ -118,17 +118,19 @@ When an enquiry is saved or updated:
 - Direct editing or deletion of `source = "ENQUIRY"` rows on the Expenses page is blocked (must be edited from the enquiry).
 
 ### 5.3 Financial Year (FY) Definition
-- Indian standard financial year: **1 April to 31 March**.
-- Format: `YYYY-YY` (e.g., `2026-27`).
+- Operating accounting year: **1 January to 31 December** (Calendar Year basis).
+- Format: `YYYY-YY` (e.g., calendar year 2026 is labeled `2026-27`).
 - Date boundary:
-  - 31-03-2026 23:59:59 → FY `2025-26`
-  - 01-04-2026 00:00:00 → FY `2026-27`
+  - 31-12-2025 23:59:59 → FY `2025-26`
+  - 01-01-2026 00:00:00 → FY `2026-27`
+  - 31-12-2026 23:59:59 → FY `2026-27`
+  - 01-01-2027 00:00:00 → FY `2027-28`
 
 ### 5.4 Sequential Number Formats & LockService
 All sequential numbers MUST be generated inside `LockService.getScriptLock()`:
 1. **Enquiry ID:** Sequential integer (default starts at `10001`).
-2. **Transaction Number:** `TXN/<FY>/<5-digit sequence>` (e.g., `TXN/2026-27/00001`). Resets to 1 each April 1st.
-3. **Bill Number:** `<Sequence>/<FY>` (e.g., `203/2026-27`). Resets to 1 each April 1st (or custom starting number set in Settings). Generated only upon **processing** a bill (never for drafts).
+2. **Transaction Number:** `TXN/<FY>/<5-digit sequence>` (e.g., `TXN/2026-27/00001`). Resets to 1 each January 1st.
+3. **Bill Number:** `<Sequence>/<FY>` (e.g., `203/2026-27`). Resets to 1 each January 1st (or custom starting number set in Settings). Generated only upon **processing** a bill (never for drafts).
 
 ---
 

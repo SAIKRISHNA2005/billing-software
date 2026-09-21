@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatCurrencyINR, formatDate, formatDateTime } from './format';
+import { formatCurrencyINR, formatDate, formatDateTime, getFinancialYear } from './format';
 
 describe('formatCurrencyINR', () => {
   it('formats whole numbers correctly with Indian grouping', () => {
@@ -46,5 +46,29 @@ describe('formatDateTime', () => {
     expect(formatDateTime(null)).toBe('-');
     expect(formatDateTime(undefined)).toBe('-');
     expect(formatDateTime('invalid-date')).toBe('-');
+  });
+});
+
+describe('getFinancialYear', () => {
+  it('boundary: 31-December 23:59:59 IST is previous FY', () => {
+    // UTC 18:29:59 on 31 Dec 2025 = 23:59:59 IST
+    expect(getFinancialYear('2025-12-31T18:29:59.000Z')).toBe('2025-26');
+  });
+
+  it('boundary: 01-January 00:00:00 IST starts new FY', () => {
+    // UTC 18:30:00 on 31 Dec 2025 = 00:00:00 IST on 01 Jan 2026
+    expect(getFinancialYear('2025-12-31T18:30:00.000Z')).toBe('2026-27');
+  });
+
+  it('handles leap year: 29-Feb-2024 correctly', () => {
+    expect(getFinancialYear('2024-02-29T12:00:00.000Z')).toBe('2024-25');
+  });
+
+  it('handles mid-year date: 15-Aug-2026', () => {
+    expect(getFinancialYear('2026-08-15T00:00:00.000Z')).toBe('2026-27');
+  });
+
+  it('handles year-end date: 31-Dec-2026', () => {
+    expect(getFinancialYear('2026-12-31T18:29:59.000Z')).toBe('2026-27');
   });
 });

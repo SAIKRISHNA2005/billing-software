@@ -55,12 +55,12 @@ This document defines the states, rules, numbering conventions, and audit mechan
 
 ## 3. Financial Year (FY) Numbering Rules
 
-1. **Cycle:** Indian Financial Year running from **April 1** to **March 31**.
-2. **Label Format:** `YYYY-YY` (e.g., `2026-27` for 01-Apr-2026 to 31-Mar-2027).
+1. **Cycle:** Accounting Year running from **January 1** to **December 31** (Calendar Year basis).
+2. **Label Format:** `YYYY-YY` (e.g., `2026-27` for 01-Jan-2026 to 31-Dec-2026).
 3. **Sequence Reset:**
-   - On April 1st of each year, the sequence for the new financial year resets to 1 (or the configured start number in Settings).
-   - Bills dated 31-Mar-2026 get formatted as `N/2025-26`.
-   - Bills dated 01-Apr-2026 get formatted as `1/2026-27`.
+   - On January 1st of each year, the sequence for the new financial year resets to 1 (or the configured start number in Settings).
+   - Bills dated 31-Dec-2025 get formatted as `N/2025-26`.
+   - Bills dated 01-Jan-2026 get formatted as `1/2026-27`.
 4. **LockService Protection:**
    Because numbering must never contain duplicates or race-condition gaps, the entire sequence read-increment-save cycle is protected by:
    ```javascript
