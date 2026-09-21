@@ -122,7 +122,11 @@ export const vendorColumns: ColumnsType<VendorRecord> = [
     title: 'Vendor Name',
     dataIndex: 'name',
     key: 'name',
-    render: (name: string) => <strong>{name}</strong>,
+    render: (name: string, record: VendorRecord) => (
+      <a href={`/vendors/${record.id}`} style={{ fontWeight: 600, color: '#1677ff' }}>
+        {name}
+      </a>
+    ),
   },
   { title: 'Contact Person', dataIndex: 'contactPerson', key: 'contactPerson' },
   { title: 'Phone', dataIndex: 'phone', key: 'phone', width: 130 },

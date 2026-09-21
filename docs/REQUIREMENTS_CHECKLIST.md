@@ -70,9 +70,9 @@ This checklist itemizes every functional and technical requirement from `PROJECT
 | 9.3 | Automatic sync of Diesel and Halting amounts from enquiry to `loading_expenses` | Phase 9 | [x] |
 | 9.4 | Read-only protection for `source = ENQUIRY` expenses on the Expenses page | Phase 9 | [x] |
 | **Phase 10: Vendor Settlement & Reporting** | | | |
-| 10.1 | Vendor payments management (Cash, Bank Transfer, Cheque, UPI) | Phase 10 | [ ] |
-| 10.2 | Vendor detail page showing summary cards, trips table, and payment history | Phase 10 | [ ] |
-| 10.3 | Comprehensive Vendor Report with vehicle counts, trips, totals, paid, and balance | Phase 10 | [ ] |
+| 10.1 | Vendor payments management (Cash, Bank Transfer, Cheque, UPI) | Phase 10 | [x] |
+| 10.2 | Vendor detail page showing summary cards, trips table, and payment history | Phase 10 | [x] |
+| 10.3 | Comprehensive Vendor Report with vehicle counts, trips, totals, paid, and balance | Phase 10 | [x] |
 | **Phase 11: Settings & Company Profile** | | | |
 | 11.1 | Company profile settings (Name, Address, Phone, Email, GSTIN, PAN) | Phase 11 | [ ] |
 | 11.2 | Google Drive-hosted seal and authorized signature image upload with preview | Phase 11 | [ ] |

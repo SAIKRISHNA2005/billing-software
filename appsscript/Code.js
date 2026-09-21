@@ -15,6 +15,19 @@ const ACTION_HANDLERS = {
   runTests: function() {
     return runAllTests();
   },
+  runVendorTests: function() {
+    TestHarness.reset();
+    testVendorSuite();
+    const passed = TestHarness.results.filter((r) => r.passed).length;
+    const total = TestHarness.results.length;
+    return {
+      success: passed === total,
+      total,
+      passed,
+      failed: total - passed,
+      results: TestHarness.results,
+    };
+  },
   // Auth Module Actions
   'auth.login': function(payload) {
     return AuthModule.login(payload);
@@ -103,6 +116,15 @@ const ACTION_HANDLERS = {
   'generalExpense.create': function(payload, sessionToken) { return ExpensesModule.createGeneral(payload, sessionToken); },
   'generalExpense.update': function(payload, sessionToken) { return ExpensesModule.updateGeneral(payload.id, payload.patch || payload, sessionToken); },
   'generalExpense.delete': function(payload, sessionToken) { return ExpensesModule.deleteGeneral(payload.id, sessionToken); },
+
+  // Vendor Management Actions (Phase 10)
+  'vendorPayment.list': function(payload, sessionToken) { return VendorModule.listPayments(payload, sessionToken); },
+  'vendorPayment.get': function(payload, sessionToken) { return VendorModule.getPayment(payload.id, sessionToken); },
+  'vendorPayment.create': function(payload, sessionToken) { return VendorModule.createPayment(payload, sessionToken); },
+  'vendorPayment.update': function(payload, sessionToken) { return VendorModule.updatePayment(payload.id, payload.patch || payload, sessionToken); },
+  'vendorPayment.delete': function(payload, sessionToken) { return VendorModule.deletePayment(payload.id, sessionToken); },
+  'vendor.trips': function(payload, sessionToken) { return VendorModule.getVendorTrips(payload.vendorId || payload.id, sessionToken); },
+  'vendor.report': function(payload, sessionToken) { return VendorModule.getVendorReport(payload, sessionToken); },
 };
 
 /**

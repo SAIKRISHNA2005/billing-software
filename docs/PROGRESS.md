@@ -18,7 +18,7 @@ This document tracks phase-by-phase completion across the 22 designated phases o
 | **7** | **Enquiry Frontend** | Add/View/Edit Enquiry screens, live vendor payable calculation | **Completed** | 21-09-2026 |
 | **8** | **Operations** | Vehicle Movement, Pending Jobs, Completed Jobs control room | **Completed** | 21-09-2026 |
 | **9** | **Expenses** | Loading & General expenses, automatic enquiry sync | **Completed** | 21-09-2026 |
-| **10** | **Vendors** | Vendor payments, trip settlements, Vendor Report | Not Started | — |
+| **10** | **Vendors** | Vendor payments, trip settlements, Vendor Report | **Completed** | 21-09-2026 |
 | **11** | **Settings** | Company profile, Drive-hosted seal/signature upload, numbering | Not Started | — |
 | **12** | **Billing Logic (Backend)** | Pending bills, FY bill numbers (`LockService`), processed bills | Not Started | — |
 | **13** | **Billing Frontend** | Pending Bills, Create Bill, Processed Bills, bill edit pages | Not Started | — |
@@ -221,6 +221,36 @@ This document tracks phase-by-phase completion across the 22 designated phases o
   - All 41 frontend unit tests passing across 6 test suites (`npm test`).
   - Next.js production build compiling 39 static and dynamic routes cleanly (`npm run build`).
   - Google Apps Script test harness passing 83/83 tests live on Google Sheets.
+
+### Phase 10: Vendors (Payments, Pending, Vendor Report)
+- **Apps Script (`/appsscript`):**
+  - Created `appsscript/Vendor.js`:
+    - Full CRUD for vendor payments (`vendorPayment.list`, `get`, `create`, `update`, `delete`) with sequential IDs (`VPAY-XXX` under `LockService`), date/vendor/mode/enquiry filters, and aggregated summary totals.
+    - Payment validation: amount > 0, allowed modes (`Cash`, `Bank Transfer`, `Cheque`, `UPI`, `Other`), and overpayment warning check (warns with `warning: true` and descriptive warning message without blocking the payment).
+    - `vendor.trips` action: Retrieves all enquiries for a specific vendor with vehicle, container, advance, extra advance, diesel, halting, bonus, total payable, paid, pending balance, and payment history. Strict compliance with Rule D7 (`VendorFinance.computeVendorPayable` single source of truth formula). Correctly handles unallocated payments towards the vendor's net pending balance.
+    - `vendor.report` action: Generates consolidated vendor financial performance in a single batched pass over the `enquiries` and `vendor_payments` sheets. Calculates distinct vehicles count, trips, advance, diesel, halting, extra advance, bonus, total amount, paid, and pending balance per vendor, with a grand totals summary row.
+    - Integrated audit logging (`writeAuditLog`) on all payment creations, updates, and deletions.
+  - Registered all actions in `appsscript/Code.js`: `vendorPayment.list`, `get`, `create`, `update`, `delete`, `vendor.trips`, `vendor.report`, and `runVendorTests`.
+  - Created `appsscript/Tests_Vendor.js`:
+    - 4 automated test suites (21 assertions) verifying payment CRUD, Check Before Commit requirement (Vendor SPT trips ₹1,45,000 and payments ₹1,20,000 shows Pending ₹25,000), overpayment warning flag generation, and vendor report batched calculation where grand total equals sum of rows.
+    - Hooked `testVendorSuite` into `Tests_Harness.js`.
+- **Next.js Route Handlers (`/web/app/api/vendors`):**
+  - `/api/vendors/payments`: GET (list with filters) and POST (create with Zod validation).
+  - `/api/vendors/payments/[id]`: GET (by id), PUT (update), and DELETE (soft delete).
+  - `/api/vendors/[id]/trips`: GET trips ledger and balance breakdown.
+  - `/api/vendors/report`: GET vendor report with date, vendor, company, client, and loading type filters.
+- **Next.js UI Pages & Components:**
+  - **Vendor Payments (`/vendors/payments`)**: Full table with filters (search, vendor async selector, payment mode, date range), summary KPI cards, add/edit payment drawer with dynamic pending calculation, real-time overpayment warning banners, and delete confirmation.
+  - **Vendor Detail (`/vendors/[id]`)**: Vendor master profile, KPI cards (Total Payable, Total Paid, Pending Balance, Unallocated Payments), tabs for Transport Trips ledger and Payment History, and quick "Record Payment" action.
+  - **Vendor Report (`/vendors/report` & `/reports/vendor`)**: Comprehensive financial report table with filters, KPI overview, and grand totals footer row.
+  - **Vendor Master Integration (`web/components/master/masterConfig.tsx`)**: Vendor names in the Vendor Directory link directly to `/vendors/[id]`.
+  - **Enquiry Detail (`web/app/(app)/enquiries/[id]/page.tsx`)**: Added vendor financial KPI cards (Total Payable, Paid, Pending Balance) and direct vendor profile navigation to the Enquiry Vendor tab.
+- **Verification:**
+  - Authored frontend unit tests in `web/lib/utils/vendorHelper.test.ts` (all 7 tests passing).
+  - All 48 frontend unit tests passing across 7 test suites (`npm test`).
+  - Next.js production build compiling all 41 static and dynamic routes cleanly (`npm run build`).
+  - Google Apps Script test suite passing all 21 vendor tests (100% pass rate) on the live Google Spreadsheet.
+
 
 
 

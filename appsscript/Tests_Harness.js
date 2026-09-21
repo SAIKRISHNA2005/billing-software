@@ -161,6 +161,11 @@ function runAllTests() {
     testExpensesSuite();
   }
 
+  // 8. Run Vendor Suite Tests (Phase 10)
+  if (typeof testVendorSuite === 'function') {
+    testVendorSuite();
+  }
+
   TestHarness.writeResultsToSheet();
 
   const total = TestHarness.results.length;

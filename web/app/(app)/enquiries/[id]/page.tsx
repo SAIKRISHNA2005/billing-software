@@ -368,19 +368,65 @@ export default function EnquiryDetailPage({ params }: PageProps) {
       children: (
         <Card bordered={false}>
           {vendor ? (
-            <Descriptions bordered column={{ xs: 1, sm: 2, md: 2 }}>
-              <Descriptions.Item label="Vendor Name">
-                <Text strong>{vendor.name}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="Contact Person">{vendor.contactPerson || '-'}</Descriptions.Item>
-              <Descriptions.Item label="Phone">{vendor.phone || '-'}</Descriptions.Item>
-              <Descriptions.Item label="Email">{vendor.email || '-'}</Descriptions.Item>
-              <Descriptions.Item label="GSTIN">{vendor.gstin || '-'}</Descriptions.Item>
-              <Descriptions.Item label="PAN">{vendor.pan || '-'}</Descriptions.Item>
-              <Descriptions.Item label="Address" span={2}>
-                {vendor.address || '-'}
-              </Descriptions.Item>
-            </Descriptions>
+            <>
+              <Row gutter={16} style={{ marginBottom: 20 }}>
+                <Col xs={24} sm={8}>
+                  <Card size="small" style={{ backgroundColor: '#f6ffed', borderColor: '#b7eb8f' }}>
+                    <Statistic
+                      title="Vendor Total Payable"
+                      value={vendorFinance?.totalPayable || 0}
+                      precision={2}
+                      prefix="₹"
+                      valueStyle={{ color: '#389e0d' }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={8}>
+                  <Card size="small" style={{ backgroundColor: '#e6f4ff', borderColor: '#91caff' }}>
+                    <Statistic
+                      title="Vendor Total Paid"
+                      value={vendorFinance?.totalPaid || 0}
+                      precision={2}
+                      prefix="₹"
+                      valueStyle={{ color: '#0958d9' }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={8}>
+                  <Card
+                    size="small"
+                    style={{
+                      backgroundColor: (vendorFinance?.balance || 0) > 0 ? '#fffbe6' : '#f6ffed',
+                      borderColor: (vendorFinance?.balance || 0) > 0 ? '#ffe58f' : '#b7eb8f',
+                    }}
+                  >
+                    <Statistic
+                      title="Vendor Balance Pending"
+                      value={vendorFinance?.balance || 0}
+                      precision={2}
+                      prefix="₹"
+                      valueStyle={{ color: (vendorFinance?.balance || 0) > 0 ? '#d46b08' : '#389e0d' }}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+
+              <Descriptions bordered column={{ xs: 1, sm: 2, md: 2 }}>
+                <Descriptions.Item label="Vendor Name">
+                  <a href={`/vendors/${vendor.id}`} style={{ fontWeight: 600, color: '#1677ff' }}>
+                    {vendor.name}
+                  </a>
+                </Descriptions.Item>
+                <Descriptions.Item label="Contact Person">{vendor.contactPerson || '-'}</Descriptions.Item>
+                <Descriptions.Item label="Phone">{vendor.phone || '-'}</Descriptions.Item>
+                <Descriptions.Item label="Email">{vendor.email || '-'}</Descriptions.Item>
+                <Descriptions.Item label="GSTIN">{vendor.gstin || '-'}</Descriptions.Item>
+                <Descriptions.Item label="PAN">{vendor.pan || '-'}</Descriptions.Item>
+                <Descriptions.Item label="Address" span={2}>
+                  {vendor.address || '-'}
+                </Descriptions.Item>
+              </Descriptions>
+            </>
           ) : (
             <Alert
               message="No Vendor Attached"
