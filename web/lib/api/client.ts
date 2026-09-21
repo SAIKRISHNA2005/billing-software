@@ -9,7 +9,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
+  timeout: 60000, // 60s timeout to allow for Google Apps Script cold starts
 });
 
 apiClient.interceptors.response.use(

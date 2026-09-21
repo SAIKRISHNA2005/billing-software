@@ -51,7 +51,7 @@ export async function callAppsScript<TResult = unknown, TPayload = unknown>(
           'x-tms-proxy-secret': sharedSecret || '',
         },
         maxRedirects: 5,
-        timeout: 45000, // Apps Script cold starts can take a few seconds
+        timeout: 60000, // Apps Script cold starts can take up to 30-45s
       }
     );
 
