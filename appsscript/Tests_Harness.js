@@ -166,6 +166,31 @@ function runAllTests() {
     testVendorSuite();
   }
 
+  // 9. Run Settings Suite Tests (Phase 11)
+  if (typeof runSettingsTests === 'function') {
+    runSettingsTests();
+  }
+
+  // 10. Run Billing Suite Tests (Phase 12)
+  if (typeof runBillingTests === 'function') {
+    runBillingTests();
+  }
+
+  // 11. Run Reports Suite Tests (Phase 16)
+  if (typeof runReportsTests === 'function') {
+    runReportsTests();
+  }
+
+  // 12. Run Export Suite Tests (Phase 17)
+  if (typeof runExportTests === 'function') {
+    runExportTests();
+  }
+
+  // 13. Run Dashboard Suite Tests (Phase 18)
+  if (typeof runDashboardTests === 'function') {
+    runDashboardTests();
+  }
+
   TestHarness.writeResultsToSheet();
 
   const total = TestHarness.results.length;

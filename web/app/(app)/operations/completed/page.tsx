@@ -223,9 +223,9 @@ export default function CompletedJobsPage() {
               </Link>
             </Tooltip>
           ) : (
-            <Tooltip title="Create Bill (Phase 13)">
-              <Link href={`/billing/create?enquiryId=${rec.id}`}>
-                <Button size="small" icon={<FileDoneOutlined />} />
+            <Tooltip title="Create Bill for Job">
+              <Link href={`/billing/create?enquiryIds=${rec.id}&companyId=${rec.companyId}&clientId=${rec.clientId}`}>
+                <Button size="small" icon={<FileDoneOutlined />} type="primary" />
               </Link>
             </Tooltip>
           )}

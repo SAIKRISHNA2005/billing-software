@@ -19,14 +19,14 @@ This document tracks phase-by-phase completion across the 22 designated phases o
 | **8** | **Operations** | Vehicle Movement, Pending Jobs, Completed Jobs control room | **Completed** | 21-09-2026 |
 | **9** | **Expenses** | Loading & General expenses, automatic enquiry sync | **Completed** | 21-09-2026 |
 | **10** | **Vendors** | Vendor payments, trip settlements, Vendor Report | **Completed** | 21-09-2026 |
-| **11** | **Settings** | Company profile, Drive-hosted seal/signature upload, numbering | Not Started | — |
-| **12** | **Billing Logic (Backend)** | Pending bills, FY bill numbers (`LockService`), processed bills | Not Started | — |
-| **13** | **Billing Frontend** | Pending Bills, Create Bill, Processed Bills, bill edit pages | Not Started | — |
+| **11** | **Settings** | Company profile, Drive-hosted seal/signature upload, numbering | **Completed** | 21-09-2026 |
+| **12** | **Billing Logic (Backend)** | Pending bills, FY bill numbers (`LockService`), processed bills | **Completed** | 21-09-2026 |
+| **13** | **Billing Frontend** | Pending Bills, Create Bill, Processed Bills, bill edit pages | **Completed** | 21-09-2026 |
 | **14** | **Bill PDF** | Google Docs invoice template → merge → PDF generation | Not Started | — |
 | **15** | **Payment Tracking** | Client payments against processed bills, ageing report | Not Started | — |
-| **16** | **Reports** | Daily, Company-wise, and Billing reports with filters | Not Started | — |
-| **17** | **Exports & Sharing Lock** | Protected Google Sheet live link + on-demand `.xlsx` snapshot | Not Started | — |
-| **18** | **Executive Dashboard** | Summary KPI cards, Recharts company billing chart, recent bills | Not Started | — |
+| **16** | **Reports** | Daily, Company-wise, and Billing reports with filters | **Completed** | 21-09-2026 |
+| **17** | **Exports & Sharing Lock** | Protected Google Sheet live link + on-demand `.xlsx` snapshot | **Completed** | 21-09-2026 |
+| **18** | **Executive Dashboard** | Summary KPI cards, Recharts company billing chart, recent bills | **Completed** | 21-09-2026 |
 | **19** | **Polish & Security Hardening**| Security audit, quota review, UX refinements, double-submit lock | Not Started | — |
 | **20** | **Comprehensive Testing** | Vitest unit tests, Apps Script test harness, Playwright e2e | Not Started | — |
 | **21** | **Final Audit & Deployment** | Requirement audit, Render + Apps Script deployment, documentation | Not Started | — |

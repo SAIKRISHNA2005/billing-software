@@ -125,6 +125,37 @@ const ACTION_HANDLERS = {
   'vendorPayment.delete': function(payload, sessionToken) { return VendorModule.deletePayment(payload.id, sessionToken); },
   'vendor.trips': function(payload, sessionToken) { return VendorModule.getVendorTrips(payload.vendorId || payload.id, sessionToken); },
   'vendor.report': function(payload, sessionToken) { return VendorModule.getVendorReport(payload, sessionToken); },
+
+  // Settings & System Audit Actions (Phase 11)
+  'settings.get': function(payload, sessionToken) { return SettingsModule.getSettings(); },
+  'settings.update': function(payload, sessionToken) { return SettingsModule.updateSettings(payload); },
+  'settings.uploadSeal': function(payload, sessionToken) { return SettingsModule.uploadSeal(payload); },
+  'settings.removeSeal': function(payload, sessionToken) { return SettingsModule.removeSeal(); },
+  'settings.uploadSignature': function(payload, sessionToken) { return SettingsModule.uploadSignature(payload); },
+  'settings.removeSignature': function(payload, sessionToken) { return SettingsModule.removeSignature(); },
+  'settings.previewNextBillNumber': function(payload, sessionToken) { return SettingsModule.previewNextBillNumber(payload.dateStr); },
+  'audit.list': function(payload, sessionToken) { return SettingsModule.listAuditLogs(payload); },
+
+  // Billing Module Actions (Phase 12)
+  'bill.pending': function(payload, sessionToken) { return BillingModule.listPending(payload); },
+  'bill.create': function(payload, sessionToken) { return BillingModule.createBill(payload); },
+  'bill.deleteDraft': function(payload, sessionToken) { return BillingModule.deleteDraft(payload.id); },
+  'bill.process': function(payload, sessionToken) { return BillingModule.processBill(payload); },
+  'bill.updateProcessed': function(payload, sessionToken) { return BillingModule.updateProcessed(payload); },
+  'bill.get': function(payload, sessionToken) { return BillingModule.getBill(payload.id); },
+  'bill.list': function(payload, sessionToken) { return BillingModule.listBills(payload); },
+
+  // Reports Module Actions (Phase 16)
+  'reports.daily': function(payload, sessionToken) { return ReportsModule.getDailyReport(payload); },
+  'reports.company': function(payload, sessionToken) { return ReportsModule.getCompanyReport(payload); },
+  'reports.billing': function(payload, sessionToken) { return ReportsModule.getBillingReport(payload); },
+
+  // Excel & Export Module Actions (Phase 17)
+  'export.masterXlsx': function(payload, sessionToken) { return ExportModule.exportMasterXlsx(); },
+  'export.reportCsv': function(payload, sessionToken) { return ExportModule.exportReportCsv(payload); },
+
+  // Executive Dashboard Actions (Phase 18)
+  'dashboard.summary': function(payload, sessionToken) { return DashboardModule.getDashboardSummary(); },
 };
 
 /**

@@ -29,6 +29,7 @@ import {
   CheckCircleOutlined,
   SafetyCertificateOutlined,
   WalletOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -355,6 +356,64 @@ export default function EnquiryDetailPage({ params }: PageProps) {
       children: (
         <Card bordered={false}>
           <EnquiryExpensesTab enquiryId={enquiry.id} vehicleId={enquiry.vehicleId} />
+        </Card>
+      ),
+    },
+    {
+      key: 'bill',
+      label: (
+        <span>
+          <FileTextOutlined /> Bill Info
+        </span>
+      ),
+      children: (
+        <Card bordered={false}>
+          {enquiry.billId ? (
+            <Alert
+              message={`Associated Bill ID: ${enquiry.billId}`}
+              description={
+                <div style={{ marginTop: 8 }}>
+                  <Text style={{ display: 'block', marginBottom: 12 }}>
+                    This enquiry is included in bill <strong>{enquiry.billId}</strong> (Stage: <strong>{enquiry.stage}</strong>).
+                  </Text>
+                  <Button
+                    type="primary"
+                    icon={<FileTextOutlined />}
+                    onClick={() => router.push(`/billing/processed/${enquiry.billId}`)}
+                  >
+                    View Invoice Details
+                  </Button>
+                </div>
+              }
+              type="success"
+              showIcon
+            />
+          ) : (
+            <Alert
+              message="Not Billed Yet"
+              description={
+                <div style={{ marginTop: 8 }}>
+                  <Text style={{ display: 'block', marginBottom: 12 }}>
+                    This enquiry has not been added to an invoice bill yet. Once completed, it will appear in Pending Bills.
+                  </Text>
+                  {enquiry.stage === 'COMPLETED' && (
+                    <Button
+                      type="primary"
+                      onClick={() =>
+                        router.push(
+                          `/billing/create?enquiryIds=${enquiry.id}&companyId=${enquiry.companyId}&clientId=${enquiry.clientId}`
+                        )
+                      }
+                    >
+                      Create Bill Now
+                    </Button>
+                  )}
+                </div>
+              }
+              type="info"
+              showIcon
+            />
+          )}
         </Card>
       ),
     },
