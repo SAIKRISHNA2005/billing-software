@@ -56,10 +56,10 @@ This checklist itemizes every functional and technical requirement from `PROJECT
 | 6.5 | Single reusable vendor payable calculation function `computeVendorPayable` | Phase 6 | [x] |
 | 6.6 | Movement timestamp update and chronological order validation (out > in) | Phase 6 | [x] |
 | **Phase 7: Enquiry Frontend (Next.js)** | | | |
-| 7.1 | Add Enquiry page with 5 structured sections (Basic, Vehicle, Movement, Money, Vendor) | Phase 7 | [ ] |
-| 7.2 | Real-time live Vendor Total Payable calculation matching backend formula | Phase 7 | [ ] |
-| 7.3 | View / Edit Enquiry table with multi-criteria filters, search, and sorting | Phase 7 | [ ] |
-| 7.4 | Enquiry detail page with 7-stage visual stepper and forward/backward stage controls | Phase 7 | [ ] |
+| 7.1 | Add Enquiry page with 5 structured sections (Basic, Vehicle, Movement, Money, Vendor) | Phase 7 | [x] |
+| 7.2 | Real-time live Vendor Total Payable calculation matching backend formula | Phase 7 | [x] |
+| 7.3 | View / Edit Enquiry table with multi-criteria filters, search, and sorting | Phase 7 | [x] |
+| 7.4 | Enquiry detail page with 7-stage visual stepper and forward/backward stage controls | Phase 7 | [x] |
 | **Phase 8: Operations Management** | | | |
 | 8.1 | Operations > Vehicle Movement page with inline quick-editing of gate times | Phase 8 | [ ] |
 | 8.2 | Operations > Pending Jobs page with quick "Mark Completed" action | Phase 8 | [ ] |

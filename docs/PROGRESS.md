@@ -15,7 +15,7 @@ This document tracks phase-by-phase completion across the 22 designated phases o
 | **4** | **Auth & App Shell** | Single-user login, session proxy cookie, Ant Design App Shell | **Completed** | 21-09-2026 |
 | **5** | **Master Data** | Companies, clients, vendors, vehicles, drivers management | **Completed** | 21-09-2026 |
 | **6** | **Enquiry Logic (Backend)** | Auto numbering (`LockService`), 7-stage state machine, movement | **Completed** | 21-09-2026 |
-| **7** | **Enquiry Frontend** | Add/View/Edit Enquiry screens, live vendor payable calculation | Not Started | — |
+| **7** | **Enquiry Frontend** | Add/View/Edit Enquiry screens, live vendor payable calculation | **Completed** | 21-09-2026 |
 | **8** | **Operations** | Vehicle Movement, Pending Jobs, Completed Jobs control room | Not Started | — |
 | **9** | **Expenses** | Loading & General expenses, automatic enquiry sync | Not Started | — |
 | **10** | **Vendors** | Vendor payments, trip settlements, Vendor Report | Not Started | — |
@@ -141,4 +141,25 @@ This document tracks phase-by-phase completion across the 22 designated phases o
 - **Test Suite (`appsscript/Tests_Enquiry.js`):**
   - Added 6 automated test cases covering rapid-fire consecutive numbering, asset find-or-create, stage workflow & prerequisite enforcement, movement time validation, bill deletion protection, and vendor payable calculations.
   - Hooked into `Tests_Harness.js` inside `runAllTests()`.
+
+### Phase 7: Enquiry Frontend (Next.js)
+- **Utilities & Unit Tests:**
+  - Authored `web/lib/utils/vendorFinance.ts` implementing `computeVendorPayable` mirroring the Apps Script implementation.
+  - Authored `web/lib/utils/vendorFinance.test.ts` asserting exact parity with Apps Script calculation fixture (all 5 tests passing).
+  - Authored `web/lib/utils/enquiryValidation.ts` with Zod validation schema for D12 format enforcement and non-negative financial values.
+  - Authored `web/lib/utils/enquiryValidation.test.ts` (all 5 tests passing).
+- **Route Handlers (Proxy Layer):**
+  - `/api/enquiries` (GET for batched list with filters, POST for atomic dual-sheet creation).
+  - `/api/enquiries/[id]` (GET for detail with entities, PUT for update, DELETE for soft delete).
+  - `/api/enquiries/[id]/movement` (PATCH for gate times & status update).
+  - `/api/enquiries/[id]/stage` (POST for 7-stage state machine transition).
+- **UI Pages & Components:**
+  - **Add Enquiry (`/enquiries/new`)**: 5 structured sections (Basic, Vehicle, Movement with "Set now" buttons, Money with live Vendor Payable indicator, Vendor). Shows success modal with auto-generated Enquiry ID and Transaction Number.
+  - **View / Edit Enquiries (`/enquiries`)**: Ant Design Table with multi-criteria filters (search, loading type, stage, date range, company, client, vendor), sorting, pagination, and View/Edit/Delete actions.
+  - **Enquiry Detail (`/enquiries/[id]`)**: 7-stage visual stepper (`Steps`) with missing prerequisite blocker modal, backward stage reversion dialog, quick gate times editor modal, and 6 clean tabs (Basic, Vehicle, Movement, Money with live vendor summary cards, Vendor, History timeline). No fake tabs.
+  - **Enquiry Edit (`/enquiries/[id]/edit`)**: Form allowing updates, with read-only billing field protection for `BILLING` and `PROCESSED` stages backed by an "Edit Anyway" override confirmation dialog.
+- **Verification:**
+  - All 29 unit tests passing (`npm test`).
+  - ESLint passing with 0 warnings/errors (`npm run lint`).
+  - Next.js production build compiling 34 static and dynamic routes cleanly (`npm run build`).
 
