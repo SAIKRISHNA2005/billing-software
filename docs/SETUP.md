@@ -107,16 +107,29 @@ Once running, verify the backend connection by opening:
 [http://localhost:3000/api/health](http://localhost:3000/api/health)
 
 Expected response:
-```json
-{
-  "success": true,
-  "data": {
-    "ok": true,
-    "sheetConnected": true,
-    "spreadsheetName": "TMS-Production-Database",
-    "timestamp": "2026-09-21T07:35:00.000Z"
-  },
-  "message": "Operation completed successfully",
-  "errors": []
-}
 ```
+
+---
+
+## 4. User Authentication & Login Credentials
+
+### Default Seeded Operator Credentials
+When `seedDevData()` is run in Google Apps Script, the default operator account is created:
+- **Email:** `admin@tms.local`
+- **Default Password:** `Admin@12345` *(or the custom password set in Script Property `SEED_ADMIN_PASSWORD`)*
+
+### Logging In
+1. Navigate to [http://localhost:3000/login](http://localhost:3000/login) (or root `/`, which redirects automatically).
+2. Enter your credentials.
+3. Upon success, an `httpOnly`, `Secure` session cookie named `tms_session` is issued, granting access to the App Shell and Dashboard.
+
+### Changing the Password
+1. Once logged in, click your name/avatar in the top-right corner of the header.
+2. Select **Change Password** from the dropdown.
+3. Enter your current password and your desired new password (minimum 6 characters).
+4. Click **Update Password**.
+5. Apps Script updates the cryptographic salt and SHA-256 hash in the `users` sheet, invalidates active sessions, and prompts you to log in with your new password.
+
+### Security Notes
+- **Rate Limiting:** If 5 consecutive failed login attempts occur within 10 minutes, the account is temporarily locked for 10 minutes via Google Apps Script `CacheService`.
+- **Session Expiry:** By default, sessions remain active for 7 days (`SESSION_TTL_MINUTES=10080`), tracked server-side in the `sessions` sheet.

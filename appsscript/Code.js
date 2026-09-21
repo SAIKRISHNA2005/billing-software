@@ -15,6 +15,19 @@ const ACTION_HANDLERS = {
   runTests: function() {
     return runAllTests();
   },
+  // Auth Module Actions
+  'auth.login': function(payload) {
+    return AuthModule.login(payload);
+  },
+  'auth.logout': function(payload, sessionToken) {
+    return AuthModule.logout(sessionToken);
+  },
+  'auth.me': function(payload, sessionToken) {
+    return AuthModule.me(sessionToken);
+  },
+  'auth.changePassword': function(payload, sessionToken) {
+    return AuthModule.changePassword(payload, sessionToken);
+  },
 };
 
 /**

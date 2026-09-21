@@ -56,8 +56,21 @@ export async function callAppsScript<TResult = unknown, TPayload = unknown>(
     return response.data;
   } catch (error: unknown) {
     let errorMessage = 'Failed to communicate with Google Apps Script backend';
+    let errorCode = 'BACKEND_CONNECTION_ERROR';
+
     if (axios.isAxiosError(error)) {
-      errorMessage = error.response?.data?.message || error.message;
+      if (error.response?.status === 401) {
+        errorMessage = 'Apps Script returned 401 Unauthorized. Ensure the Web App deployment has "Who has access" set to "Anyone" and script permissions are authorized.';
+        errorCode = 'APPS_SCRIPT_AUTH_ERROR';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Apps Script URL not found (404). Check APPS_SCRIPT_EXEC_URL in .env.local.';
+        errorCode = 'APPS_SCRIPT_NOT_FOUND';
+      } else if (typeof error.response?.data === 'string' && error.response.data.includes('<html')) {
+        errorMessage = 'Apps Script returned an HTML page instead of JSON. Ensure the Web App is deployed with "Who has access: Anyone".';
+        errorCode = 'APPS_SCRIPT_HTML_RESPONSE';
+      } else {
+        errorMessage = error.response?.data?.message || error.message;
+      }
     } else if (error instanceof Error) {
       errorMessage = error.message;
     }
@@ -66,7 +79,7 @@ export async function callAppsScript<TResult = unknown, TPayload = unknown>(
       success: false,
       data: null,
       message: errorMessage,
-      errors: [{ message: errorMessage }],
+      errors: [{ message: errorMessage, code: errorCode }],
     };
   }
 }

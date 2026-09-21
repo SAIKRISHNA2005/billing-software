@@ -112,6 +112,11 @@ function runAllTests() {
     testSheetRepoSuite();
   }
 
+  // 3. Run Auth Suite Tests
+  if (typeof testAuthSuite === 'function') {
+    testAuthSuite();
+  }
+
   TestHarness.writeResultsToSheet();
 
   const total = TestHarness.results.length;

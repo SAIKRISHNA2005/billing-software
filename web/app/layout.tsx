@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import StyledComponentsRegistry from '@/lib/antd/AntdRegistry';
 import AntdConfigProvider from '@/components/providers/AntdConfigProvider';
 import QueryProvider from '@/components/providers/QueryProvider';
+import { AuthProvider } from '@/lib/auth/AuthContext';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -16,7 +17,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <StyledComponentsRegistry>
           <AntdConfigProvider>
-            <QueryProvider>{children}</QueryProvider>
+            <QueryProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </QueryProvider>
           </AntdConfigProvider>
         </StyledComponentsRegistry>
       </body>

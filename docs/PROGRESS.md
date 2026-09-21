@@ -12,7 +12,7 @@ This document tracks phase-by-phase completion across the 22 designated phases o
 | **1** | **Rules & Architecture Freeze** | `AI_RULES.md` + 8 foundational design documents in `docs/` | **Completed** | 21-09-2026 |
 | **2** | **Project Scaffolding** | Next.js 14 app + Apps Script Web App skeleton + health check | **Completed** | 21-09-2026 |
 | **3** | **Database & Data-Access** | 20 Sheets tabs, `SheetRepo.gs`, financial year helper, seed dev data | **Completed** | 21-09-2026 |
-| **4** | **Auth & App Shell** | Single-user login, session proxy cookie, Ant Design App Shell | Not Started | — |
+| **4** | **Auth & App Shell** | Single-user login, session proxy cookie, Ant Design App Shell | **Completed** | 21-09-2026 |
 | **5** | **Master Data** | Companies, clients, vendors, vehicles, drivers management | Not Started | — |
 | **6** | **Enquiry Logic (Backend)** | Auto numbering (`LockService`), 7-stage state machine, movement | Not Started | — |
 | **7** | **Enquiry Frontend** | Add/View/Edit Enquiry screens, live vendor payable calculation | Not Started | — |
@@ -70,8 +70,28 @@ This document tracks phase-by-phase completion across the 22 designated phases o
 ### Phase 3: Database (Google Sheets) & Data-Access Layer
 - Authored `appsscript/Setup.js` with idempotent `createAllSheets()` creating all 20 business sheets with frozen, styled header rows matching `DATABASE_DESIGN.md`.
 - Authored `appsscript/SheetRepo.js` generic data-access layer implementing batched `getValues()` and `setValues()`, with `LockService.getScriptLock()` on `number_sequences`.
-- Authored `appsscript/FinancialYear.js` calculating Indian FY (`YYYY-YY`) with 1 April - 31 March boundary logic in `Asia/Kolkata`.
+- Authored `appsscript/FinancialYear.js` calculating Indian FY (`YYYY-YY`) with January 1 to December 31 calendar year boundary logic in `Asia/Kolkata`.
 - Created unit tests for financial year boundaries in Vitest (all 12 tests passing).
 - Authored `appsscript/Tests_FinancialYear.js` and `appsscript/Tests_Harness.js` custom assertion harness writing test results to Logger and `TestResults` sheet.
-- Authored `appsscript/Seed.js` with `seedDevData()` guarded by `ENV=production` check, seeding 3 users with salted SHA-256 passwords, `DEFAULT` app settings, sample companies, clients, vendor, and initial sequential counters.
+- Authored `appsscript/Seed.js` with `seedDevData()` guarded by `ENV=production` check, seeding the primary user (`admin@tms.local`) with salted SHA-256 passwords, `DEFAULT` app settings, sample companies, clients, vendor, and initial sequential counters.
 - Registered `setup`, `seedDev`, and `runTests` in `appsscript/Code.js`'s `ACTION_HANDLERS`.
+
+### Phase 4: Single-User Authentication & App Shell
+- **Apps Script (`/appsscript`):**
+  - Authored `Auth.js` with actions `login`, `logout`, `me`, and `changePassword`.
+  - Implemented salted SHA-256 password hash verification (`Utilities.computeDigest`).
+  - Added rate-limiting via `CacheService.getScriptCache()` (5 failed attempts locks out for 10 minutes).
+  - Authored `Session.js` with `requireSession(sessionToken)` verifying session row and expiration date.
+  - Authored `Audit.js` with `writeAuditLog(entity, entityId, action, oldValue, newValue, userId)` appending JSON-serialized records to `audit_logs`.
+  - Created `Tests_Auth.js` and registered auth test cases in `Tests_Harness.js`.
+- **Next.js (`/web`):**
+  - Created Route Handlers under `/app/api/auth/*`: `/login` (sets `httpOnly` secure `tms_session` cookie), `/logout` (invalidates session & clears cookie), `/me` (validates session token & returns user profile), `/change-password` (updates password & clears session).
+  - Created server helper `web/lib/server/session.ts` for reading and manipulating the `tms_session` cookie.
+  - Created client-side `AuthProvider` & `useAuth()` hook in `web/lib/auth/AuthContext.tsx` with automatic 401 redirect to `/login`.
+  - Implemented modern Ant Design 5 login page at `/login` with clean validation, alerts, and loading states.
+  - Implemented complete `AppShell` with collapsible sidebar, header with user avatar, name, Change Password modal, and Logout.
+  - Sidebar menu configured exactly to the 9 primary modules with 20 navigation routes: Dashboard, Enquiries, Operations, Expenses, Billing, Vendors, Reports, Exports, Settings.
+  - Future-phase route placeholders created using reusable `ComingSoon` component.
+  - Authenticated `/dashboard` page displaying session metadata, quick actions, and business status.
+  - Updated `docs/SETUP.md` with seeded credentials (`admin@tms.local` / `Admin@12345`), session configuration, and password change instructions.
+

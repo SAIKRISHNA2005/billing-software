@@ -37,11 +37,11 @@ This checklist itemizes every functional and technical requirement from `PROJECT
 | 3.4 | Development seed function `seedDevData()` with production guard check | Phase 3 | [x] |
 | 3.5 | Apps Script custom assertion test harness `Tests_Harness.gs` | Phase 3 | [x] |
 | **Phase 4: Single-User Auth & App Shell** | | | |
-| 4.1 | Salted SHA-256 password verification and session token generation in Apps Script | Phase 4 | [ ] |
-| 4.2 | Next.js Route Handler setting `httpOnly` secure cookie | Phase 4 | [ ] |
-| 4.3 | Login page with form validation, rate-limiting lockout after 5 failed attempts | Phase 4 | [ ] |
-| 4.4 | Protected route layout with automatic 401 redirect to `/login` | Phase 4 | [ ] |
-| 4.5 | Responsive App Shell sidebar containing all modules without role restrictions | Phase 4 | [ ] |
+| 4.1 | Salted SHA-256 password verification and session token generation in Apps Script | Phase 4 | [x] |
+| 4.2 | Next.js Route Handler setting `httpOnly` secure cookie | Phase 4 | [x] |
+| 4.3 | Login page with form validation, rate-limiting lockout after 5 failed attempts | Phase 4 | [x] |
+| 4.4 | Protected route layout with automatic 401 redirect to `/login` | Phase 4 | [x] |
+| 4.5 | Responsive App Shell sidebar containing all modules without role restrictions | Phase 4 | [x] |
 | **Phase 5: Master Data Management** | | | |
 | 5.1 | Master CRUD for Companies, Clients, Vendors, Vehicles, Drivers | Phase 5 | [ ] |
 | 5.2 | Vehicle number uppercase validation (e.g. `TN04AB1234`) | Phase 5 | [ ] |
