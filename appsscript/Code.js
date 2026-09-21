@@ -76,6 +76,15 @@ const ACTION_HANDLERS = {
 
   // Containers Lookup Action
   'containers.lookup': function(payload, sessionToken) { return MasterDataModule.lookup('containers', payload, sessionToken); },
+
+  // Enquiry Module Actions
+  'enquiry.create': function(payload, sessionToken) { return EnquiryModule.create(payload, sessionToken); },
+  'enquiry.list': function(payload, sessionToken) { return EnquiryModule.list(payload, sessionToken); },
+  'enquiry.get': function(payload, sessionToken) { return EnquiryModule.get(payload.id, sessionToken); },
+  'enquiry.update': function(payload, sessionToken) { return EnquiryModule.update(payload.id, payload.patch || payload, sessionToken); },
+  'enquiry.delete': function(payload, sessionToken) { return EnquiryModule.delete(payload.id, sessionToken); },
+  'enquiry.updateMovement': function(payload, sessionToken) { return EnquiryModule.updateMovement(payload.id || payload.enquiryId, payload.movement || payload, sessionToken); },
+  'enquiry.moveStage': function(payload, sessionToken) { return EnquiryModule.moveStage(payload.id || payload.enquiryId, payload.toStage, payload.remarks, sessionToken); },
 };
 
 /**

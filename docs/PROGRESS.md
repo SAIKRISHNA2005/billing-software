@@ -14,7 +14,7 @@ This document tracks phase-by-phase completion across the 22 designated phases o
 | **3** | **Database & Data-Access** | 20 Sheets tabs, `SheetRepo.gs`, financial year helper, seed dev data | **Completed** | 21-09-2026 |
 | **4** | **Auth & App Shell** | Single-user login, session proxy cookie, Ant Design App Shell | **Completed** | 21-09-2026 |
 | **5** | **Master Data** | Companies, clients, vendors, vehicles, drivers management | **Completed** | 21-09-2026 |
-| **6** | **Enquiry Logic (Backend)** | Auto numbering (`LockService`), 7-stage state machine, movement | Not Started | — |
+| **6** | **Enquiry Logic (Backend)** | Auto numbering (`LockService`), 7-stage state machine, movement | **Completed** | 21-09-2026 |
 | **7** | **Enquiry Frontend** | Add/View/Edit Enquiry screens, live vendor payable calculation | Not Started | — |
 | **8** | **Operations** | Vehicle Movement, Pending Jobs, Completed Jobs control room | Not Started | — |
 | **9** | **Expenses** | Loading & General expenses, automatic enquiry sync | Not Started | — |
@@ -114,4 +114,31 @@ This document tracks phase-by-phase completion across the 22 designated phases o
   - Implemented tabbed `Settings > Master Data` screen (`/settings/master`) for Companies, Clients, Vendors, Vehicles, Drivers.
   - Implemented dedicated `Vendors > Vendor List` screen (`/vendors`) powered by the vendor master manager.
   - Authored unit test suite for format validation helpers (`web/lib/utils/masterValidation.test.ts`, all 19 tests passing).
+
+### Phase 6: Enquiry Logic (Apps Script)
+- **Vendor Finance (`appsscript/VendorFinance.js`):**
+  - Implemented centralized `computeVendorPayable(enquiry, vendorPayments)` implementing D7: `payable = advance + extraAdvance + diesel + haltingAmount + bonus`.
+  - Exported both globally and on `VendorFinance` namespace for zero-redundancy re-use across list, get, operations, and billing.
+- **Enquiry State Machine & Data Logic (`appsscript/Enquiry.js`):**
+  - Implemented atomic numbering under `LockService.getScriptLock()`:
+    - Auto-incrementing consecutive Enquiry ID (`10001+`).
+    - Financial year transaction number (`TXN/${fy}/${pad5}`).
+  - Asset find-or-create:
+    - Auto-resolves vehicle by number, validating D12 uppercase pattern and normalizing spaces.
+    - Auto-resolves driver by 10-digit mobile number (`^[6-9]\d{9}$`).
+    - Auto-resolves container by ISO 6346 format (`^[A-Z]{4}[0-9]{7}$`).
+  - Atomic dual-sheet write in `enquiry.create`: writes `enquiries` row and `movements` row together. Compensatory rollback deletes the enquiry row if the movement write fails.
+  - Batched in-memory filtering, search, sorting, and pagination in `enquiry.list`.
+  - Detailed `enquiry.get` resolving movement, stage history, vendor finance, and linked master entities.
+  - Movement gate times management in `enquiry.updateMovement` validating chronological order (D13: `out >= in`).
+  - 7-stage workflow in `enquiry.moveStage`:
+    - Strict one-stage forward progression with validation rules (`VEHICLE_ASSIGNED` requires vehicle + driver; `CONTAINER_MOVEMENT` requires container; `PORT_MOVEMENT` requires company out time; `COMPLETED` requires port out time).
+    - On reaching `COMPLETED`, automatically sets `shippingStatus = COMPLETED`, `movementStatus = MOVED`, records `completedAt`, and auto-syncs diesel and halting expenses into `loading_expenses`.
+    - Enforces that `BILLING` and `PROCESSED` can only be set by billing actions (direct calls rejected).
+    - Backward transitions permitted (except out of `BILLING`/`PROCESSED`).
+    - Audit logging and stage history recording on all transitions.
+  - Soft delete in `enquiry.delete` blocked if the enquiry is associated with a bill (`billId != null`).
+- **Test Suite (`appsscript/Tests_Enquiry.js`):**
+  - Added 6 automated test cases covering rapid-fire consecutive numbering, asset find-or-create, stage workflow & prerequisite enforcement, movement time validation, bill deletion protection, and vendor payable calculations.
+  - Hooked into `Tests_Harness.js` inside `runAllTests()`.
 

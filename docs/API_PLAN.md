@@ -75,13 +75,13 @@ Generic Route Handler pattern: `/api/master/[entity]` (where entity = `companies
 ### 2.4 Enquiry (Transport Job)
 | Next.js Route | Method | Apps Script Action | Payload & Description |
 |---|---|---|---|
-| `/api/enquiries` | `POST` | `enquiry.create` | `{ basic, vehicle, movement, money, vendor }` - Creates enquiry & movement row under `LockService` |
-| `/api/enquiries` | `GET` | `enquiry.list` | Query filters: `dateFrom`, `dateTo`, `companyId`, `clientId`, `stage`, `vendorId`, `loadingType`, `search` |
-| `/api/enquiries/[id]` | `GET` | `enquiry.get` | Returns full enquiry, movement times, vendor calculation, stage history |
-| `/api/enquiries/[id]` | `PUT` | `enquiry.update` | Updates fields; triggers expense auto-sync |
-| `/api/enquiries/[id]` | `DELETE` | `enquiry.delete` | Soft deletes; blocked if already in a bill |
-| `/api/enquiries/[id]/movement` | `PATCH` | `enquiry.updateMovement` | Updates the 6 gate times + movement/shipping status |
-| `/api/enquiries/[id]/stage` | `POST` | `enquiry.moveStage` | `{ toStage, remarks }` - Enforces prerequisites or records backward move |
+| `/api/enquiries` | `POST` | `enquiry.create` | `{ companyId, clientId, loadingType, vehicleNumber, driverNumber, containerNumber, sealNumber, diesel, advance, haltingDays, haltingAmount, bonus, extraAdvance, freightAmount, vendorId, ...movementTimes }` - Creates enquiry & movement row atomically under `LockService` with sequential Enquiry ID (10001+) and Transaction Number (`TXN/YYYY-YY/00001+`). Automatically find-or-creates vehicle, driver, and container records conforming to D12 formats. Initial stage: `ENQUIRY_CREATED`. Returns `{ enquiry, movement, stageHistory }`. |
+| `/api/enquiries` | `GET` | `enquiry.list` | Query params: `page`, `pageSize`, `search`, `sortBy`, `sortOrder`, `companyId`, `clientId`, `stage`, `vendorId`, `loadingType`, `movementStatus`, `shippingStatus`, `dateFrom`, `dateTo`. Returns `{ items, total, page, pageSize, totalPages }` with vendor finance breakdown computed per item. |
+| `/api/enquiries/[id]` | `GET` | `enquiry.get` | Returns `{ enquiry, movement, stageHistory, vendorFinance, company, client, vendor, vehicle, driver }`. |
+| `/api/enquiries/[id]` | `PUT` | `enquiry.update` | `{ patch }` - Updates basic, vehicle, or financial fields. Automatically resolves changed vehicle/driver/container. Syncs loading expenses if completed. |
+| `/api/enquiries/[id]` | `DELETE` | `enquiry.delete` | Soft deletes enquiry and movement (`active = false`). Blocked with 400 error if enquiry is already associated with a bill (`billId != null`). |
+| `/api/enquiries/[id]/movement` | `PATCH` | `enquiry.updateMovement` | `{ companyInTime, companyOutTime, printInTime, printOutTime, portInTime, portOutTime, movementStatus, shippingStatus }`. Validates chronological order (D13: `out >= in`). |
+| `/api/enquiries/[id]/stage` | `POST` | `enquiry.moveStage` | `{ toStage, remarks }` - 7-stage state machine (`ENQUIRY_CREATED` → `VEHICLE_ASSIGNED` → `CONTAINER_MOVEMENT` → `PORT_MOVEMENT` → `COMPLETED` → `BILLING` → `PROCESSED`). Validates 1-stage forward advance prerequisites (`VEHICLE_ASSIGNED` requires vehicle + driver; `CONTAINER_MOVEMENT` requires container; `PORT_MOVEMENT` requires companyOutTime; `COMPLETED` requires portOutTime, sets `shippingStatus = COMPLETED`, `movementStatus = MOVED`, records `completedAt`, and auto-syncs diesel/halting expenses to `loading_expenses`). Rejects direct jumps to `BILLING` or `PROCESSED`. Backward transitions permitted except out of `BILLING`/`PROCESSED`. Logs to `stage_history` and `audit_logs`. |
 
 ---
 

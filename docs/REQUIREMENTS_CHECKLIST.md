@@ -49,12 +49,12 @@ This checklist itemizes every functional and technical requirement from `PROJECT
 | 5.4 | Soft deactivation preventing hard delete of in-use entities | Phase 5 | [x] |
 | 5.5 | Reusable async-search dropdown select component with inline "+ Add New" | Phase 5 | [x] |
 | **Phase 6: Enquiry Logic (Apps Script)** | | | |
-| 6.1 | Atomic auto-increment Enquiry ID starting at 10001 under `LockService` | Phase 6 | [ ] |
-| 6.2 | Atomic Transaction Number `TXN/YYYY-YY/00001` resetting each financial year | Phase 6 | [ ] |
-| 6.3 | Dual-sheet atomic creation of enquiry and linked movement row | Phase 6 | [ ] |
-| 6.4 | 7-stage state machine with prerequisite validation for forward transitions | Phase 6 | [ ] |
-| 6.5 | Single reusable vendor payable calculation function `computeVendorPayable` | Phase 6 | [ ] |
-| 6.6 | Movement timestamp update and chronological order validation (out > in) | Phase 6 | [ ] |
+| 6.1 | Atomic auto-increment Enquiry ID starting at 10001 under `LockService` | Phase 6 | [x] |
+| 6.2 | Atomic Transaction Number `TXN/YYYY-YY/00001` resetting each financial year | Phase 6 | [x] |
+| 6.3 | Dual-sheet atomic creation of enquiry and linked movement row | Phase 6 | [x] |
+| 6.4 | 7-stage state machine with prerequisite validation for forward transitions | Phase 6 | [x] |
+| 6.5 | Single reusable vendor payable calculation function `computeVendorPayable` | Phase 6 | [x] |
+| 6.6 | Movement timestamp update and chronological order validation (out > in) | Phase 6 | [x] |
 | **Phase 7: Enquiry Frontend (Next.js)** | | | |
 | 7.1 | Add Enquiry page with 5 structured sections (Basic, Vehicle, Movement, Money, Vendor) | Phase 7 | [ ] |
 | 7.2 | Real-time live Vendor Total Payable calculation matching backend formula | Phase 7 | [ ] |

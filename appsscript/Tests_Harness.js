@@ -146,6 +146,11 @@ function runAllTests() {
     testMasterDataSuite();
   }
 
+  // 5. Run Enquiry Suite Tests
+  if (typeof testEnquirySuite === 'function') {
+    testEnquirySuite();
+  }
+
   TestHarness.writeResultsToSheet();
 
   const total = TestHarness.results.length;
