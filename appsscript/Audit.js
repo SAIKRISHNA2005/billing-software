@@ -35,5 +35,16 @@ function writeAuditLog(entity, entityId, action, oldValue, newValue, userId) {
 
 const AuditModule = {
   writeAuditLog: writeAuditLog,
+  log: function(options) {
+    if (!options) return;
+    writeAuditLog(
+      options.entity,
+      options.entityId,
+      options.action,
+      options.oldValue || null,
+      options.newValue || options.details || null,
+      options.userId
+    );
+  },
 };
 

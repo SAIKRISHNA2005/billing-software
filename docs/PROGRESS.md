@@ -17,7 +17,7 @@ This document tracks phase-by-phase completion across the 22 designated phases o
 | **6** | **Enquiry Logic (Backend)** | Auto numbering (`LockService`), 7-stage state machine, movement | **Completed** | 21-09-2026 |
 | **7** | **Enquiry Frontend** | Add/View/Edit Enquiry screens, live vendor payable calculation | **Completed** | 21-09-2026 |
 | **8** | **Operations** | Vehicle Movement, Pending Jobs, Completed Jobs control room | **Completed** | 21-09-2026 |
-| **9** | **Expenses** | Loading & General expenses, automatic enquiry sync | Not Started | — |
+| **9** | **Expenses** | Loading & General expenses, automatic enquiry sync | **Completed** | 21-09-2026 |
 | **10** | **Vendors** | Vendor payments, trip settlements, Vendor Report | Not Started | — |
 | **11** | **Settings** | Company profile, Drive-hosted seal/signature upload, numbering | Not Started | — |
 | **12** | **Billing Logic (Backend)** | Pending bills, FY bill numbers (`LockService`), processed bills | Not Started | — |
@@ -184,5 +184,43 @@ This document tracks phase-by-phase completion across the 22 designated phases o
   - All 37 unit tests passing across 5 suites (`npm test`).
   - ESLint passing with 0 warnings/errors (`npm run lint`).
   - Next.js production build compiling 37 static and dynamic routes cleanly (`npm run build`).
+
+### Phase 9: Expenses Management & Auto-Sync
+- **Apps Script (`/appsscript`):**
+  - Created `appsscript/Expenses.js`:
+    - Full CRUD for Loading Expenses (`loadingExpense.list`, `get`, `create`, `update`, `delete`) with sequential IDs (`LEXP-XXX` under `LockService`), date/category/vehicle/enquiry/client/company filters, and aggregated totals (`totalAmount`, `count`, `categoryBreakdown`).
+    - Full CRUD for General Expenses (`generalExpense.list`, `get`, `create`, `update`, `delete`) with sequential IDs (`GEXP-XXX` under `LockService`), date/category/search filters, and category breakdown.
+    - Implemented **Auto-Sync Rule D8** (`syncEnquiryExpenses` and `deleteEnquiryExpenses`): automatically upserts or soft-deletes linked `source = "ENQUIRY"` rows in `loading_expenses` whenever an enquiry is created, updated, or deleted.
+    - Strict protection: blocks direct edit/delete on `source = "ENQUIRY"` rows with `"Edit this from the enquiry"`.
+    - Integrated audit logging for all expense mutations.
+  - Modified `appsscript/Enquiry.js`:
+    - Integrated `ExpensesModule.syncEnquiryExpenses` into `create` and `update`.
+    - Integrated `ExpensesModule.deleteEnquiryExpenses` into `delete`.
+    - Delegated legacy sync logic to `ExpensesModule`.
+  - Modified `appsscript/Code.js`:
+    - Registered 10 expense action handlers in `ACTION_HANDLERS`.
+  - Modified `appsscript/Audit.js`:
+    - Added `AuditModule.log` convenience wrapper.
+  - Modified `appsscript/SheetRepo.js`:
+    - Added `deleteRow` alias for `softDeleteRow`.
+  - Created `appsscript/Tests_Expenses.js`:
+    - Automated test suite (7 tests) verifying loading & general expense CRUD, totals calculation, auto-sync upon enquiry creation (Diesel ₹3,000), update without duplicates (Diesel ₹3,500), zero amount removal, soft delete cleanup, and protection against direct edit/delete of enquiry-sourced expenses.
+  - Hooked `testExpensesSuite` into `Tests_Harness.js` (all 83 tests in the full test harness pass with 0 failures).
+- **Next.js Route Handlers (`/web/app/api/expenses`):**
+  - `/api/expenses/loading` (GET with query filters, POST with Zod validation).
+  - `/api/expenses/loading/[id]` (GET, PUT with Zod validation, DELETE).
+  - `/api/expenses/general` (GET with query filters, POST with Zod validation).
+  - `/api/expenses/general/[id]` (GET, PUT with Zod validation, DELETE).
+- **Next.js UI Pages & Components:**
+  - **Loading Expenses (`/expenses/loading`)**: Full management table, KPI summary cards (Total Loading Expenses, Trip Expenses Count, Diesel Total, Halting Total), filter bar, table footer totals row, lock icon & tooltip on auto-synced rows, and Add/Edit Drawer with auto vehicle resolution from enquiry.
+  - **General Expenses (`/expenses/general`)**: Full management table, KPI cards (Total General Expenses, Recorded Entries, Salary, Utilities), filter bar, table footer totals row, and Add/Edit Drawer for office overheads.
+  - **Enquiry Detail (`/enquiries/[id]`)**: Added dedicated **"Expenses"** tab (`EnquiryExpensesTab`) showing all trip expenses linked to the enquiry, auto-synced Diesel/Halting with lock icon, KPI breakdown cards, and a quick "Add Trip Expense" modal.
+  - **Utilities (`web/lib/utils/expensesHelper.ts`)**: Currency formatting (`formatINR`), category color mappings, and total calculations.
+- **Verification:**
+  - Authored frontend unit tests in `web/lib/utils/expensesHelper.test.ts` (all 4 tests passing).
+  - All 41 frontend unit tests passing across 6 test suites (`npm test`).
+  - Next.js production build compiling 39 static and dynamic routes cleanly (`npm run build`).
+  - Google Apps Script test harness passing 83/83 tests live on Google Sheets.
+
 
 

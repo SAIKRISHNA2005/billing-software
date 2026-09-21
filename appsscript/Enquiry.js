@@ -331,6 +331,11 @@ const EnquiryModule = {
     // 7. Audit Log
     writeAuditLog('enquiries', enquiryId, 'CREATE', null, insertedEnquiry, session.userId);
 
+    // 8. Auto-Sync Enquiry Expenses (Rule D8)
+    if (typeof ExpensesModule !== 'undefined' && ExpensesModule.syncEnquiryExpenses) {
+      ExpensesModule.syncEnquiryExpenses(insertedEnquiry, session.userId);
+    }
+
     return {
       enquiry: insertedEnquiry,
       movement: insertedMovement,
@@ -578,6 +583,11 @@ const EnquiryModule = {
     const updated = SheetRepo.updateRow('enquiries', id, patch, session.userId);
     writeAuditLog('enquiries', id, 'UPDATE', oldRecord, updated, session.userId);
 
+    // Auto-Sync Enquiry Expenses (Rule D8)
+    if (typeof ExpensesModule !== 'undefined' && ExpensesModule.syncEnquiryExpenses) {
+      ExpensesModule.syncEnquiryExpenses(updated, session.userId);
+    }
+
     return updated;
   },
 
@@ -598,6 +608,11 @@ const EnquiryModule = {
 
     SheetRepo.softDeleteRow('enquiries', id, session.userId);
     writeAuditLog('enquiries', id, 'DELETE', enquiry, { deletedAt: new Date().toISOString() }, session.userId);
+
+    // Clean up linked auto-synced expenses (Rule D8)
+    if (typeof ExpensesModule !== 'undefined' && ExpensesModule.deleteEnquiryExpenses) {
+      ExpensesModule.deleteEnquiryExpenses(id, session.userId);
+    }
 
     return {
       success: true,
@@ -738,7 +753,9 @@ const EnquiryModule = {
       }
 
       // Auto-sync expenses (D8)
-      this._syncEnquiryExpenses(enquiry, session.userId);
+      if (typeof ExpensesModule !== 'undefined' && ExpensesModule.syncEnquiryExpenses) {
+        ExpensesModule.syncEnquiryExpenses(enquiry, session.userId);
+      }
     }
 
     const updatedEnquiry = SheetRepo.updateRow('enquiries', enquiryId, enquiryPatch, session.userId);
@@ -768,50 +785,8 @@ const EnquiryModule = {
    * Synchronizes Diesel and Halting amounts from enquiry to loading_expenses (D8)
    */
   _syncEnquiryExpenses(enquiry, sessionUserId) {
-    try {
-      const allExpenses = SheetRepo.getAllRows('loading_expenses', true);
-      const enqId = enquiry.id;
-      const dateStr = enquiry.date || Utilities.formatDate(new Date(), 'Asia/Kolkata', 'dd-MM-yyyy');
-
-      // 1. Diesel Expense
-      const dieselAmt = parseFloat(enquiry.dieselAmount) || 0;
-      if (dieselAmt > 0) {
-        const existingDiesel = allExpenses.find((e) => e.enquiryId === enqId && e.category === 'Diesel');
-        if (!existingDiesel) {
-          SheetRepo.insertRow('loading_expenses', {
-            id: 'LEXP-' + Utilities.getUuid().slice(0, 8).toUpperCase(),
-            expenseDate: dateStr,
-            category: 'Diesel',
-            amount: dieselAmt,
-            vehicleId: enquiry.vehicleId || '',
-            enquiryId: enqId,
-            vendorId: enquiry.vendorId || '',
-            notes: 'Auto-synced from Enquiry ' + enquiry.enquiryNumber,
-            source: 'ENQUIRY',
-          }, sessionUserId);
-        }
-      }
-
-      // 2. Halting Expense
-      const haltingAmt = parseFloat(enquiry.haltingAmount) || 0;
-      if (haltingAmt > 0) {
-        const existingHalting = allExpenses.find((e) => e.enquiryId === enqId && e.category === 'Halting');
-        if (!existingHalting) {
-          SheetRepo.insertRow('loading_expenses', {
-            id: 'LEXP-' + Utilities.getUuid().slice(0, 8).toUpperCase(),
-            expenseDate: dateStr,
-            category: 'Halting',
-            amount: haltingAmt,
-            vehicleId: enquiry.vehicleId || '',
-            enquiryId: enqId,
-            vendorId: enquiry.vendorId || '',
-            notes: 'Auto-synced from Enquiry ' + enquiry.enquiryNumber + ' (' + (enquiry.haltingDays || 0) + ' days)',
-            source: 'ENQUIRY',
-          }, sessionUserId);
-        }
-      }
-    } catch (e) {
-      Logger.log('Warning: _syncEnquiryExpenses failed: ' + e.message);
+    if (typeof ExpensesModule !== 'undefined' && ExpensesModule.syncEnquiryExpenses) {
+      ExpensesModule.syncEnquiryExpenses(enquiry, sessionUserId);
     }
   },
 };

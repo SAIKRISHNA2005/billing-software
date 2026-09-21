@@ -65,10 +65,10 @@ This checklist itemizes every functional and technical requirement from `PROJECT
 | 8.2 | Operations > Pending Jobs page with quick "Mark Completed" action | Phase 8 | [x] |
 | 8.3 | Operations > Completed Jobs page listing jobs ready for billing | Phase 8 | [x] |
 | **Phase 9: Expense Tracking & Auto-Sync** | | | |
-| 9.1 | Loading Expenses CRUD with category breakdown and vehicle/enquiry linking | Phase 9 | [ ] |
-| 9.2 | General Expenses CRUD for administrative and office overheads | Phase 9 | [ ] |
-| 9.3 | Automatic sync of Diesel and Halting amounts from enquiry to `loading_expenses` | Phase 9 | [ ] |
-| 9.4 | Read-only protection for `source = ENQUIRY` expenses on the Expenses page | Phase 9 | [ ] |
+| 9.1 | Loading Expenses CRUD with category breakdown and vehicle/enquiry linking | Phase 9 | [x] |
+| 9.2 | General Expenses CRUD for administrative and office overheads | Phase 9 | [x] |
+| 9.3 | Automatic sync of Diesel and Halting amounts from enquiry to `loading_expenses` | Phase 9 | [x] |
+| 9.4 | Read-only protection for `source = ENQUIRY` expenses on the Expenses page | Phase 9 | [x] |
 | **Phase 10: Vendor Settlement & Reporting** | | | |
 | 10.1 | Vendor payments management (Cash, Bank Transfer, Cheque, UPI) | Phase 10 | [ ] |
 | 10.2 | Vendor detail page showing summary cards, trips table, and payment history | Phase 10 | [ ] |

@@ -199,4 +199,11 @@ const SheetRepo = {
     const patch = { deletedAt: new Date().toISOString() };
     return this.updateRow(sheetName, id, patch, deletedBy);
   },
+
+  /**
+   * Alias for softDeleteRow (matches soft deletion standard)
+   */
+  deleteRow(sheetName, id, deletedBy) {
+    return this.softDeleteRow(sheetName, id, deletedBy);
+  },
 };

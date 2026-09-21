@@ -156,6 +156,11 @@ function runAllTests() {
     testOperationsSuite();
   }
 
+  // 7. Run Expenses Suite Tests (Phase 9)
+  if (typeof testExpensesSuite === 'function') {
+    testExpensesSuite();
+  }
+
   TestHarness.writeResultsToSheet();
 
   const total = TestHarness.results.length;

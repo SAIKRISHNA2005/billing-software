@@ -90,6 +90,19 @@ const ACTION_HANDLERS = {
   'operations.movements': function(payload, sessionToken) { return EnquiryModule.operationsMovements(payload, sessionToken); },
   'operations.pending': function(payload, sessionToken) { return EnquiryModule.operationsPending(payload, sessionToken); },
   'operations.completed': function(payload, sessionToken) { return EnquiryModule.operationsCompleted(payload, sessionToken); },
+
+  // Expenses Module Actions (Phase 9)
+  'loadingExpense.list': function(payload, sessionToken) { return ExpensesModule.listLoading(payload, sessionToken); },
+  'loadingExpense.get': function(payload, sessionToken) { return ExpensesModule.getLoading(payload.id, sessionToken); },
+  'loadingExpense.create': function(payload, sessionToken) { return ExpensesModule.createLoading(payload, sessionToken); },
+  'loadingExpense.update': function(payload, sessionToken) { return ExpensesModule.updateLoading(payload.id, payload.patch || payload, sessionToken); },
+  'loadingExpense.delete': function(payload, sessionToken) { return ExpensesModule.deleteLoading(payload.id, sessionToken); },
+
+  'generalExpense.list': function(payload, sessionToken) { return ExpensesModule.listGeneral(payload, sessionToken); },
+  'generalExpense.get': function(payload, sessionToken) { return ExpensesModule.getGeneral(payload.id, sessionToken); },
+  'generalExpense.create': function(payload, sessionToken) { return ExpensesModule.createGeneral(payload, sessionToken); },
+  'generalExpense.update': function(payload, sessionToken) { return ExpensesModule.updateGeneral(payload.id, payload.patch || payload, sessionToken); },
+  'generalExpense.delete': function(payload, sessionToken) { return ExpensesModule.deleteGeneral(payload.id, sessionToken); },
 };
 
 /**

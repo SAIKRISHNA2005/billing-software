@@ -28,12 +28,14 @@ import {
   HistoryOutlined,
   CheckCircleOutlined,
   SafetyCertificateOutlined,
+  WalletOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api/client';
 import { StageStepper } from '@/components/enquiry/StageStepper';
 import { MovementTimesModal } from '@/components/enquiry/MovementTimesModal';
+import { EnquiryExpensesTab } from '@/components/enquiry/EnquiryExpensesTab';
 import { STAGE_TAG_COLORS, STAGE_LABELS } from '@/lib/utils/enquiryValidation';
 import { formatCurrencyINR, formatDate, formatDateTime } from '@/lib/utils/format';
 
@@ -340,6 +342,19 @@ export default function EnquiryDetailPage({ params }: PageProps) {
               {formatCurrencyINR(enquiry.bonus)}
             </Descriptions.Item>
           </Descriptions>
+        </Card>
+      ),
+    },
+    {
+      key: 'expenses',
+      label: (
+        <span>
+          <WalletOutlined /> Expenses
+        </span>
+      ),
+      children: (
+        <Card bordered={false}>
+          <EnquiryExpensesTab enquiryId={enquiry.id} vehicleId={enquiry.vehicleId} />
         </Card>
       ),
     },
