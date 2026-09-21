@@ -79,9 +79,10 @@ SESSION_COOKIE_NAME="tms_session"
 # Application Environment
 NODE_ENV="development"
 
-# Default Timezone
-TZ="Asia/Kolkata"
+# Default Timezone (On Vercel, use NEXT_PUBLIC_TIMEZONE since 'TZ' is a reserved key)
+NEXT_PUBLIC_TIMEZONE="Asia/Kolkata"
 ```
+
 
 ---
 

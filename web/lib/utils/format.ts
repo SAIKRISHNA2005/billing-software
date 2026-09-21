@@ -5,7 +5,7 @@ import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const TIMEZONE = 'Asia/Kolkata';
+const TIMEZONE = process.env.NEXT_PUBLIC_TIMEZONE || 'Asia/Kolkata';
 
 /**
  * Formats a numeric value into Indian Rupee currency format (e.g. ₹1,85,000.00)
