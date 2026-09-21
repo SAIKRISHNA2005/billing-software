@@ -93,3 +93,10 @@ function deleteAllSessionsForUser(userId) {
   }
   return deletedCount;
 }
+
+const SessionModule = {
+  requireSession: requireSession,
+  deleteSessionByToken: deleteSessionByToken,
+  deleteAllSessionsForUser: deleteAllSessionsForUser,
+};
+

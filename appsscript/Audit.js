@@ -32,3 +32,8 @@ function writeAuditLog(entity, entityId, action, oldValue, newValue, userId) {
     Logger.log('Warning: writeAuditLog failed: ' + err.message);
   }
 }
+
+const AuditModule = {
+  writeAuditLog: writeAuditLog,
+};
+

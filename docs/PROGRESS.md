@@ -13,7 +13,7 @@ This document tracks phase-by-phase completion across the 22 designated phases o
 | **2** | **Project Scaffolding** | Next.js 14 app + Apps Script Web App skeleton + health check | **Completed** | 21-09-2026 |
 | **3** | **Database & Data-Access** | 20 Sheets tabs, `SheetRepo.gs`, financial year helper, seed dev data | **Completed** | 21-09-2026 |
 | **4** | **Auth & App Shell** | Single-user login, session proxy cookie, Ant Design App Shell | **Completed** | 21-09-2026 |
-| **5** | **Master Data** | Companies, clients, vendors, vehicles, drivers management | Not Started | — |
+| **5** | **Master Data** | Companies, clients, vendors, vehicles, drivers management | **Completed** | 21-09-2026 |
 | **6** | **Enquiry Logic (Backend)** | Auto numbering (`LockService`), 7-stage state machine, movement | Not Started | — |
 | **7** | **Enquiry Frontend** | Add/View/Edit Enquiry screens, live vendor payable calculation | Not Started | — |
 | **8** | **Operations** | Vehicle Movement, Pending Jobs, Completed Jobs control room | Not Started | — |
@@ -94,4 +94,24 @@ This document tracks phase-by-phase completion across the 22 designated phases o
   - Future-phase route placeholders created using reusable `ComingSoon` component.
   - Authenticated `/dashboard` page displaying session metadata, quick actions, and business status.
   - Updated `docs/SETUP.md` with seeded credentials (`admin@tms.local` / `Admin@12345`), session configuration, and password change instructions.
+
+### Phase 5: Master Data Management
+- **Apps Script (`/appsscript`):**
+  - Authored `MasterData.js` managing Companies, Clients, Vendors, Vehicles, Drivers, and Containers lookup.
+  - Implemented `<entity>.list`, `<entity>.get`, `<entity>.create`, `<entity>.update`, `<entity>.deactivate`, `<entity>.reactivate`, and `<entity>.lookup` actions.
+  - Enforced D12 uppercase vehicle formatting regex (`^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$`) with automatic space/hyphen stripping.
+  - Enforced D12 driver 10-digit mobile number validation (`^[6-9]\d{9}$`).
+  - Implemented case-insensitive batched uniqueness checks (`SheetRepo.getAllRows`) preventing duplicate names, vehicle numbers, and driver mobile numbers.
+  - Soft deactivation (`active: false`) preserving historical references on enquiries and bills.
+  - Automated audit logging (`AuditModule.writeAuditLog`) on create, update, deactivate, and reactivate.
+  - Created `Tests_MasterData.js` GAS test suite covering creation, format validation, duplicate rejection, and lookup exclusion; registered in `Tests_Harness.js`.
+- **Next.js (`/web`):**
+  - Implemented generic API Route Handlers:
+    - `/api/master/[entity]` (GET for list/lookup with pagination & filters, POST for create).
+    - `/api/master/[entity]/[id]` (GET, PUT, DELETE for deactivate, PATCH for reactivate).
+  - Built reusable `GenericMasterManager` component with Ant Design 5 Table, search, active/all filter, pagination, create/edit Drawer form, and Popconfirm deactivation.
+  - Built reusable `AsyncMasterSelect` search-as-you-type dropdown component with inline **`+ Add New`** creation modal and automatic selection.
+  - Implemented tabbed `Settings > Master Data` screen (`/settings/master`) for Companies, Clients, Vendors, Vehicles, Drivers.
+  - Implemented dedicated `Vendors > Vendor List` screen (`/vendors`) powered by the vendor master manager.
+  - Authored unit test suite for format validation helpers (`web/lib/utils/masterValidation.test.ts`, all 19 tests passing).
 

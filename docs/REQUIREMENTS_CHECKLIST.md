@@ -43,11 +43,11 @@ This checklist itemizes every functional and technical requirement from `PROJECT
 | 4.4 | Protected route layout with automatic 401 redirect to `/login` | Phase 4 | [x] |
 | 4.5 | Responsive App Shell sidebar containing all modules without role restrictions | Phase 4 | [x] |
 | **Phase 5: Master Data Management** | | | |
-| 5.1 | Master CRUD for Companies, Clients, Vendors, Vehicles, Drivers | Phase 5 | [ ] |
-| 5.2 | Vehicle number uppercase validation (e.g. `TN04AB1234`) | Phase 5 | [ ] |
-| 5.3 | Driver 10-digit mobile number validation | Phase 5 | [ ] |
-| 5.4 | Soft deactivation preventing hard delete of in-use entities | Phase 5 | [ ] |
-| 5.5 | Reusable async-search dropdown select component with inline "+ Add New" | Phase 5 | [ ] |
+| 5.1 | Master CRUD for Companies, Clients, Vendors, Vehicles, Drivers | Phase 5 | [x] |
+| 5.2 | Vehicle number uppercase validation (e.g. `TN04AB1234`) | Phase 5 | [x] |
+| 5.3 | Driver 10-digit mobile number validation | Phase 5 | [x] |
+| 5.4 | Soft deactivation preventing hard delete of in-use entities | Phase 5 | [x] |
+| 5.5 | Reusable async-search dropdown select component with inline "+ Add New" | Phase 5 | [x] |
 | **Phase 6: Enquiry Logic (Apps Script)** | | | |
 | 6.1 | Atomic auto-increment Enquiry ID starting at 10001 under `LockService` | Phase 6 | [ ] |
 | 6.2 | Atomic Transaction Number `TXN/YYYY-YY/00001` resetting each financial year | Phase 6 | [ ] |

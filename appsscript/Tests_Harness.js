@@ -58,6 +58,30 @@ const TestHarness = {
     }
   },
 
+  assert(condition, testName) {
+    this.assertTrue(condition, testName);
+  },
+
+  assertThrows(fn, testName) {
+    let threw = false;
+    let errorMsg = '';
+    try {
+      fn();
+    } catch (e) {
+      threw = true;
+      errorMsg = e.message;
+    }
+    this.assertTrue(threw, testName + (threw ? '' : ' (expected error but none was thrown)'));
+  },
+
+  test(testName, fn) {
+    try {
+      fn();
+    } catch (e) {
+      this.assertTrue(false, `${testName} threw unexpected error: ${e.message}`);
+    }
+  },
+
   writeResultsToSheet() {
     try {
       const spreadsheetId = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
@@ -115,6 +139,11 @@ function runAllTests() {
   // 3. Run Auth Suite Tests
   if (typeof testAuthSuite === 'function') {
     testAuthSuite();
+  }
+
+  // 4. Run Master Data Suite Tests
+  if (typeof testMasterDataSuite === 'function') {
+    testMasterDataSuite();
   }
 
   TestHarness.writeResultsToSheet();

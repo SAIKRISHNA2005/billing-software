@@ -28,6 +28,54 @@ const ACTION_HANDLERS = {
   'auth.changePassword': function(payload, sessionToken) {
     return AuthModule.changePassword(payload, sessionToken);
   },
+
+  // Master Data Generic Actions: Companies
+  'companies.list': function(payload, sessionToken) { return MasterDataModule.list('companies', payload, sessionToken); },
+  'companies.get': function(payload, sessionToken) { return MasterDataModule.get('companies', payload.id, sessionToken); },
+  'companies.create': function(payload, sessionToken) { return MasterDataModule.create('companies', payload, sessionToken); },
+  'companies.update': function(payload, sessionToken) { return MasterDataModule.update('companies', payload.id, payload.patch || payload, sessionToken); },
+  'companies.deactivate': function(payload, sessionToken) { return MasterDataModule.deactivate('companies', payload.id, sessionToken); },
+  'companies.reactivate': function(payload, sessionToken) { return MasterDataModule.reactivate('companies', payload.id, sessionToken); },
+  'companies.lookup': function(payload, sessionToken) { return MasterDataModule.lookup('companies', payload, sessionToken); },
+
+  // Master Data Generic Actions: Clients
+  'clients.list': function(payload, sessionToken) { return MasterDataModule.list('clients', payload, sessionToken); },
+  'clients.get': function(payload, sessionToken) { return MasterDataModule.get('clients', payload.id, sessionToken); },
+  'clients.create': function(payload, sessionToken) { return MasterDataModule.create('clients', payload, sessionToken); },
+  'clients.update': function(payload, sessionToken) { return MasterDataModule.update('clients', payload.id, payload.patch || payload, sessionToken); },
+  'clients.deactivate': function(payload, sessionToken) { return MasterDataModule.deactivate('clients', payload.id, sessionToken); },
+  'clients.reactivate': function(payload, sessionToken) { return MasterDataModule.reactivate('clients', payload.id, sessionToken); },
+  'clients.lookup': function(payload, sessionToken) { return MasterDataModule.lookup('clients', payload, sessionToken); },
+
+  // Master Data Generic Actions: Vendors
+  'vendors.list': function(payload, sessionToken) { return MasterDataModule.list('vendors', payload, sessionToken); },
+  'vendors.get': function(payload, sessionToken) { return MasterDataModule.get('vendors', payload.id, sessionToken); },
+  'vendors.create': function(payload, sessionToken) { return MasterDataModule.create('vendors', payload, sessionToken); },
+  'vendors.update': function(payload, sessionToken) { return MasterDataModule.update('vendors', payload.id, payload.patch || payload, sessionToken); },
+  'vendors.deactivate': function(payload, sessionToken) { return MasterDataModule.deactivate('vendors', payload.id, sessionToken); },
+  'vendors.reactivate': function(payload, sessionToken) { return MasterDataModule.reactivate('vendors', payload.id, sessionToken); },
+  'vendors.lookup': function(payload, sessionToken) { return MasterDataModule.lookup('vendors', payload, sessionToken); },
+
+  // Master Data Generic Actions: Vehicles
+  'vehicles.list': function(payload, sessionToken) { return MasterDataModule.list('vehicles', payload, sessionToken); },
+  'vehicles.get': function(payload, sessionToken) { return MasterDataModule.get('vehicles', payload.id, sessionToken); },
+  'vehicles.create': function(payload, sessionToken) { return MasterDataModule.create('vehicles', payload, sessionToken); },
+  'vehicles.update': function(payload, sessionToken) { return MasterDataModule.update('vehicles', payload.id, payload.patch || payload, sessionToken); },
+  'vehicles.deactivate': function(payload, sessionToken) { return MasterDataModule.deactivate('vehicles', payload.id, sessionToken); },
+  'vehicles.reactivate': function(payload, sessionToken) { return MasterDataModule.reactivate('vehicles', payload.id, sessionToken); },
+  'vehicles.lookup': function(payload, sessionToken) { return MasterDataModule.lookup('vehicles', payload, sessionToken); },
+
+  // Master Data Generic Actions: Drivers
+  'drivers.list': function(payload, sessionToken) { return MasterDataModule.list('drivers', payload, sessionToken); },
+  'drivers.get': function(payload, sessionToken) { return MasterDataModule.get('drivers', payload.id, sessionToken); },
+  'drivers.create': function(payload, sessionToken) { return MasterDataModule.create('drivers', payload, sessionToken); },
+  'drivers.update': function(payload, sessionToken) { return MasterDataModule.update('drivers', payload.id, payload.patch || payload, sessionToken); },
+  'drivers.deactivate': function(payload, sessionToken) { return MasterDataModule.deactivate('drivers', payload.id, sessionToken); },
+  'drivers.reactivate': function(payload, sessionToken) { return MasterDataModule.reactivate('drivers', payload.id, sessionToken); },
+  'drivers.lookup': function(payload, sessionToken) { return MasterDataModule.lookup('drivers', payload, sessionToken); },
+
+  // Containers Lookup Action
+  'containers.lookup': function(payload, sessionToken) { return MasterDataModule.lookup('containers', payload, sessionToken); },
 };
 
 /**
