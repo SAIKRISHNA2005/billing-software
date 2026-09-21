@@ -88,9 +88,9 @@ Generic Route Handler pattern: `/api/master/[entity]` (where entity = `companies
 ### 2.5 Operations Control
 | Next.js Route | Method | Apps Script Action | Description |
 |---|---|---|---|
-| `/api/operations/movements` | `GET` | `operations.movements` | Active movements (`VEHICLE_ASSIGNED` to `PORT_MOVEMENT`) |
-| `/api/operations/pending` | `GET` | `operations.pending` | Uncompleted jobs before `COMPLETED` stage |
-| `/api/operations/completed` | `GET` | `operations.completed` | Completed jobs (`COMPLETED` or later) |
+| `/api/operations/movements` | `GET` | `operations.movements` | Active movements (`VEHICLE_ASSIGNED` to `PORT_MOVEMENT`). Query params: `page`, `limit`, `search`, `companyId`, `clientId`, `vendorId`, `loadingType`, `dateFrom`, `dateTo`, `sortField`, `sortOrder`. Returns items with 6 gate times, movement & shipping statuses. |
+| `/api/operations/pending` | `GET` | `operations.pending` | Uncompleted jobs before `COMPLETED` stage (`ENQUIRY_CREATED`, `VEHICLE_ASSIGNED`, `CONTAINER_MOVEMENT`, `PORT_MOVEMENT`). Supports filters and quick completion via `enquiry.moveStage`. |
+| `/api/operations/completed` | `GET` | `operations.completed` | Completed jobs (`COMPLETED` or later: `COMPLETED`, `BILLING`, `PROCESSED`). Returns completed timestamp, billing status (`billId`), and vendor payable. |
 
 ---
 

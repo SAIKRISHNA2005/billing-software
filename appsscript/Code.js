@@ -85,6 +85,11 @@ const ACTION_HANDLERS = {
   'enquiry.delete': function(payload, sessionToken) { return EnquiryModule.delete(payload.id, sessionToken); },
   'enquiry.updateMovement': function(payload, sessionToken) { return EnquiryModule.updateMovement(payload.id || payload.enquiryId, payload.movement || payload, sessionToken); },
   'enquiry.moveStage': function(payload, sessionToken) { return EnquiryModule.moveStage(payload.id || payload.enquiryId, payload.toStage, payload.remarks, sessionToken); },
+
+  // Operations Control Actions (Phase 8)
+  'operations.movements': function(payload, sessionToken) { return EnquiryModule.operationsMovements(payload, sessionToken); },
+  'operations.pending': function(payload, sessionToken) { return EnquiryModule.operationsPending(payload, sessionToken); },
+  'operations.completed': function(payload, sessionToken) { return EnquiryModule.operationsCompleted(payload, sessionToken); },
 };
 
 /**

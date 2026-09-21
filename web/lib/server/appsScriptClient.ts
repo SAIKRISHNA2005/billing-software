@@ -22,8 +22,10 @@ export async function callAppsScript<TResult = unknown, TPayload = unknown>(
   payload?: TPayload,
   sessionToken?: string | null
 ): Promise<ApiResponse<TResult>> {
-  const execUrl = process.env.APPS_SCRIPT_EXEC_URL;
-  const sharedSecret = process.env.APPS_SCRIPT_SHARED_SECRET;
+  const rawUrl = process.env.APPS_SCRIPT_EXEC_URL;
+  const execUrl = rawUrl ? rawUrl.trim().replace(/^["']|["']$/g, '') : '';
+  const rawSecret = process.env.APPS_SCRIPT_SHARED_SECRET;
+  const sharedSecret = rawSecret ? rawSecret.trim().replace(/^["']|["']$/g, '') : '';
 
   if (!execUrl) {
     return {

@@ -349,6 +349,7 @@ const EnquiryModule = {
     const companyId = params?.companyId;
     const clientId = params?.clientId;
     const stage = params?.stage;
+    const stages = params?.stages;
     const vendorId = params?.vendorId;
     const loadingType = params?.loadingType;
     const movementStatus = params?.movementStatus;
@@ -358,11 +359,15 @@ const EnquiryModule = {
     const sortField = params?.sortField || 'enquiryNumber';
     const sortOrder = params?.sortOrder === 'asc' ? 1 : -1; // default newest first
 
+    const dateFromMs = params?.dateFrom ? this._parseTime(params.dateFrom) : null;
+    const dateToMs = params?.dateTo ? this._parseTime(params.dateTo) : null;
+
     // Batched single reads
     const enquiries = SheetRepo.getAllRows('enquiries', false);
     const movements = SheetRepo.getAllRows('movements', false);
     const vehicles = SheetRepo.getAllRows('vehicles', true);
     const drivers = SheetRepo.getAllRows('drivers', true);
+    const containers = SheetRepo.getAllRows('containers', true);
     const companies = SheetRepo.getAllRows('companies', true);
     const clients = SheetRepo.getAllRows('clients', true);
 
@@ -374,6 +379,9 @@ const EnquiryModule = {
 
     const drvMap = new Map();
     drivers.forEach((d) => drvMap.set(d.id, d.name + ' (' + d.phone + ')'));
+
+    const conMap = new Map();
+    containers.forEach((c) => conMap.set(c.id, c.containerNumber));
 
     const cmpMap = new Map();
     companies.forEach((c) => cmpMap.set(c.id, c.name));
@@ -387,14 +395,25 @@ const EnquiryModule = {
       if (companyId && e.companyId !== companyId) return false;
       if (clientId && e.clientId !== clientId) return false;
       if (stage && e.stage !== stage) return false;
+      if (stages && Array.isArray(stages) && !stages.includes(e.stage)) return false;
       if (vendorId && e.vendorId !== vendorId) return false;
       if (loadingType && e.loadingType !== loadingType) return false;
       if (movementStatus && mov && mov.movementStatus !== movementStatus) return false;
       if (shippingStatus && mov && mov.shippingStatus !== shippingStatus) return false;
 
+      if (dateFromMs) {
+        const enqDateMs = this._parseTime(e.date || e.createdAt);
+        if (enqDateMs && enqDateMs < dateFromMs) return false;
+      }
+      if (dateToMs) {
+        const enqDateMs = this._parseTime(e.date || e.createdAt);
+        if (enqDateMs && enqDateMs > (dateToMs + 86399999)) return false;
+      }
+
       if (search) {
         const vehNum = (vehMap.get(e.vehicleId) || '').toLowerCase();
         const drvName = (drvMap.get(e.driverId) || '').toLowerCase();
+        const conNum = (conMap.get(e.containerId) || '').toLowerCase();
         const cmpName = (cmpMap.get(e.companyId) || '').toLowerCase();
         const cliName = (cliMap.get(e.clientId) || '').toLowerCase();
 
@@ -404,6 +423,7 @@ const EnquiryModule = {
           String(e.sealNumber).toLowerCase().includes(search) ||
           vehNum.includes(search) ||
           drvName.includes(search) ||
+          conNum.includes(search) ||
           cmpName.includes(search) ||
           cliName.includes(search);
 
@@ -438,6 +458,7 @@ const EnquiryModule = {
         clientName: cliMap.get(e.clientId) || e.clientId,
         vehicleNumber: vehMap.get(e.vehicleId) || '',
         driverInfo: drvMap.get(e.driverId) || '',
+        containerNumber: conMap.get(e.containerId) || '',
         vendorFinance: computeVendorPayable(e),
       };
     });
@@ -448,6 +469,39 @@ const EnquiryModule = {
       page,
       limit,
     };
+  },
+
+  /**
+   * Action: "operations.movements"
+   * Active movements (VEHICLE_ASSIGNED to PORT_MOVEMENT)
+   */
+  operationsMovements(params, sessionToken) {
+    const enriched = Object.assign({}, params || {}, {
+      stages: ['VEHICLE_ASSIGNED', 'CONTAINER_MOVEMENT', 'PORT_MOVEMENT'],
+    });
+    return this.list(enriched, sessionToken);
+  },
+
+  /**
+   * Action: "operations.pending"
+   * Uncompleted jobs (before COMPLETED stage)
+   */
+  operationsPending(params, sessionToken) {
+    const enriched = Object.assign({}, params || {}, {
+      stages: ['ENQUIRY_CREATED', 'VEHICLE_ASSIGNED', 'CONTAINER_MOVEMENT', 'PORT_MOVEMENT'],
+    });
+    return this.list(enriched, sessionToken);
+  },
+
+  /**
+   * Action: "operations.completed"
+   * Completed jobs (COMPLETED or later)
+   */
+  operationsCompleted(params, sessionToken) {
+    const enriched = Object.assign({}, params || {}, {
+      stages: ['COMPLETED', 'BILLING', 'PROCESSED'],
+    });
+    return this.list(enriched, sessionToken);
   },
 
   /**

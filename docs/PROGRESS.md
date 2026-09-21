@@ -16,7 +16,7 @@ This document tracks phase-by-phase completion across the 22 designated phases o
 | **5** | **Master Data** | Companies, clients, vendors, vehicles, drivers management | **Completed** | 21-09-2026 |
 | **6** | **Enquiry Logic (Backend)** | Auto numbering (`LockService`), 7-stage state machine, movement | **Completed** | 21-09-2026 |
 | **7** | **Enquiry Frontend** | Add/View/Edit Enquiry screens, live vendor payable calculation | **Completed** | 21-09-2026 |
-| **8** | **Operations** | Vehicle Movement, Pending Jobs, Completed Jobs control room | Not Started | — |
+| **8** | **Operations** | Vehicle Movement, Pending Jobs, Completed Jobs control room | **Completed** | 21-09-2026 |
 | **9** | **Expenses** | Loading & General expenses, automatic enquiry sync | Not Started | — |
 | **10** | **Vendors** | Vendor payments, trip settlements, Vendor Report | Not Started | — |
 | **11** | **Settings** | Company profile, Drive-hosted seal/signature upload, numbering | Not Started | — |
@@ -162,4 +162,27 @@ This document tracks phase-by-phase completion across the 22 designated phases o
   - All 29 unit tests passing (`npm test`).
   - ESLint passing with 0 warnings/errors (`npm run lint`).
   - Next.js production build compiling 34 static and dynamic routes cleanly (`npm run build`).
+
+### Phase 8: Operations Management
+- **Apps Script (`/appsscript`):**
+  - Enhanced `EnquiryModule.list` in `Enquiry.js` with `stages` array filtering, `containers` lookup resolution, and flexible date range filtering.
+  - Implemented `operationsMovements`: active transport movements (`VEHICLE_ASSIGNED` to `PORT_MOVEMENT`).
+  - Implemented `operationsPending`: uncompleted jobs before `COMPLETED` stage.
+  - Implemented `operationsCompleted`: completed jobs at `COMPLETED`, `BILLING`, or `PROCESSED`.
+  - Registered `'operations.movements'`, `'operations.pending'`, and `'operations.completed'` in `Code.js`.
+  - Authored automated test suite in `appsscript/Tests_Operations.js` (4 tests) and hooked into `runAllTests()`.
+- **Next.js Route Handlers (`/web/app/api/operations`):**
+  - `/api/operations/movements` (GET with multi-filter query support).
+  - `/api/operations/pending` (GET for pre-completion pipeline).
+  - `/api/operations/completed` (GET for finalized jobs).
+- **Next.js UI Screens:**
+  - **Vehicle Movement Control Room (`/operations/movement`)**: Compact table displaying jobs in active transit with inline quick-edit modal to update Factory, Print, and Port In/Out times and statuses directly from the row without opening the full enquiry.
+  - **Pending Jobs (`/operations/pending`)**: Active job pipeline with a direct **"Mark Completed"** action that advances the job to `COMPLETED` when rules allow (or provides an inline dialog to record Port Gate-Out time and complete the job).
+  - **Completed Jobs (`/operations/completed`)**: Read-only directory of completed transport jobs displaying completion timestamps, billing readiness status, and direct links to enquiry details and bill creation.
+- **Verification:**
+  - Authored operations helper & validation unit tests in `web/lib/utils/operationsHelper.test.ts` (all 8 tests passing).
+  - All 37 unit tests passing across 5 suites (`npm test`).
+  - ESLint passing with 0 warnings/errors (`npm run lint`).
+  - Next.js production build compiling 37 static and dynamic routes cleanly (`npm run build`).
+
 

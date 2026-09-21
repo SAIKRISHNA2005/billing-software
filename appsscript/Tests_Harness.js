@@ -151,6 +151,11 @@ function runAllTests() {
     testEnquirySuite();
   }
 
+  // 6. Run Operations Suite Tests
+  if (typeof testOperationsSuite === 'function') {
+    testOperationsSuite();
+  }
+
   TestHarness.writeResultsToSheet();
 
   const total = TestHarness.results.length;

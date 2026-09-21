@@ -61,9 +61,9 @@ This checklist itemizes every functional and technical requirement from `PROJECT
 | 7.3 | View / Edit Enquiry table with multi-criteria filters, search, and sorting | Phase 7 | [x] |
 | 7.4 | Enquiry detail page with 7-stage visual stepper and forward/backward stage controls | Phase 7 | [x] |
 | **Phase 8: Operations Management** | | | |
-| 8.1 | Operations > Vehicle Movement page with inline quick-editing of gate times | Phase 8 | [ ] |
-| 8.2 | Operations > Pending Jobs page with quick "Mark Completed" action | Phase 8 | [ ] |
-| 8.3 | Operations > Completed Jobs page listing jobs ready for billing | Phase 8 | [ ] |
+| 8.1 | Operations > Vehicle Movement page with inline quick-editing of gate times | Phase 8 | [x] |
+| 8.2 | Operations > Pending Jobs page with quick "Mark Completed" action | Phase 8 | [x] |
+| 8.3 | Operations > Completed Jobs page listing jobs ready for billing | Phase 8 | [x] |
 | **Phase 9: Expense Tracking & Auto-Sync** | | | |
 | 9.1 | Loading Expenses CRUD with category breakdown and vehicle/enquiry linking | Phase 9 | [ ] |
 | 9.2 | General Expenses CRUD for administrative and office overheads | Phase 9 | [ ] |
