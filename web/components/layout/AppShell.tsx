@@ -179,8 +179,17 @@ export default function AppShell({ children }: AppShellProps) {
           key: '/billing/processed',
           label: <Link href="/billing/processed">Processed Bills</Link>,
         },
+        {
+          key: '/billing/payments',
+          label: <Link href="/billing/payments">Client Payments</Link>,
+        },
+        {
+          key: '/billing/ageing',
+          label: <Link href="/billing/ageing">Ageing Analysis</Link>,
+        },
       ],
     },
+
     {
       key: 'vendors',
       icon: <TeamOutlined />,

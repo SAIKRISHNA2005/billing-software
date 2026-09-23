@@ -154,9 +154,17 @@ const ACTION_HANDLERS = {
   'export.masterXlsx': function(payload, sessionToken) { return ExportModule.exportMasterXlsx(); },
   'export.reportCsv': function(payload, sessionToken) { return ExportModule.exportReportCsv(payload); },
 
-  // Executive Dashboard Actions (Phase 18)
-  'dashboard.summary': function(payload, sessionToken) { return DashboardModule.getDashboardSummary(); },
+  // PDF Module Action (Phase 14)
+  'bill.generatePdf': function(payload, sessionToken) { return PDFModule.generateBillPdf(payload, sessionToken); },
+
+  // Client Payments Module Actions (Phase 15)
+  'billPayment.list': function(payload, sessionToken) { return PaymentsModule.list(payload, sessionToken); },
+  'billPayment.create': function(payload, sessionToken) { return PaymentsModule.create(payload, sessionToken); },
+  'billPayment.update': function(payload, sessionToken) { return PaymentsModule.update(payload, sessionToken); },
+  'billPayment.delete': function(payload, sessionToken) { return PaymentsModule.delete(payload, sessionToken); },
+  'billPayment.ageing': function(payload, sessionToken) { return PaymentsModule.ageing(payload, sessionToken); },
 };
+
 
 /**
  * Direct Toolbar Runner Functions
