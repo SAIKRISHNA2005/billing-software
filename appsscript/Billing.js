@@ -74,6 +74,11 @@ var BillingModule = (function () {
         freightAmount: freight,
         haltingAmount: halting,
         suggestedAmount: suggestedAmount,
+        weight: e.weight || '-',
+        haltingDays: parseInt(e.haltingDays, 10) || 0,
+        containerSize: e.containerSize || '40 FT',
+        createdAt: e.createdAt || e.date || '',
+        enquiryNumber: e.enquiryNumber || e.id || '',
         completedAt: e.completedAt || e.updatedAt || e.createdAt
       };
     });
@@ -427,6 +432,9 @@ var BillingModule = (function () {
       clientId: bill.clientId || '',
       clientName: clientName,
       totalAmount: parseFloat(bill.totalAmount) || 0,
+      paidAmount: parseFloat(bill.paidAmount) || 0,
+      pendingAmount: bill.pendingAmount !== undefined && bill.pendingAmount !== '' ? parseFloat(bill.pendingAmount) : (parseFloat(bill.totalAmount || 0) - (parseFloat(bill.paidAmount) || 0)),
+      paymentStatus: bill.paymentStatus || (parseFloat(bill.paidAmount) >= parseFloat(bill.totalAmount) && parseFloat(bill.totalAmount) > 0 ? 'PAID' : (parseFloat(bill.paidAmount) > 0 ? 'PARTIAL' : 'UNPAID')),
       remarks: bill.remarks || '',
       processedAt: bill.processedAt || '',
       createdAt: bill.createdAt || '',
@@ -504,6 +512,9 @@ var BillingModule = (function () {
         clientId: b.clientId || '',
         clientName: clientMap[b.clientId] || b.clientId || '',
         totalAmount: parseFloat(b.totalAmount) || 0,
+        paidAmount: parseFloat(b.paidAmount) || 0,
+        pendingAmount: b.pendingAmount !== undefined && b.pendingAmount !== '' ? parseFloat(b.pendingAmount) : (parseFloat(b.totalAmount || 0) - (parseFloat(b.paidAmount) || 0)),
+        paymentStatus: b.paymentStatus || (parseFloat(b.paidAmount) >= parseFloat(b.totalAmount) && parseFloat(b.totalAmount) > 0 ? 'PAID' : (parseFloat(b.paidAmount) > 0 ? 'PARTIAL' : 'UNPAID')),
         remarks: b.remarks || '',
         processedAt: b.processedAt || '',
         createdAt: b.createdAt || ''

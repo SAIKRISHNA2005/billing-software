@@ -45,10 +45,26 @@ export function isValidContainerNumber(val?: string | null): boolean {
 export const enquiryFormSchema = z.object({
   companyId: z.string().min(1, 'Company is required'),
   clientId: z.string().min(1, 'Client is required'),
-  loadingType: z.enum(['Import', 'Export'], {
-    required_error: 'Loading Type must be either Import or Export',
+  loadingType: z.enum(['Import', 'Export', 'Empty', 'Offload', 'Flattrack'], {
+    required_error: 'Loading Type must be selected',
   }),
   date: z.string().optional(),
+
+  // Section 1 - Basic Details extras
+  containerSize: z.string().optional(),
+  noOfContainers: z.coerce.number().min(1).max(15).default(1),
+
+  // Section 2 - Client & Booking extras
+  bookingNumber: z.string().optional(),
+  bookingDate: z.string().optional(),
+  weight: z.string().optional(),
+  clientAddress: z.string().optional(),
+  clientAdd1: z.string().optional(),
+  clientAdd2: z.string().optional(),
+  clientAdd3: z.string().optional(),
+  clientPan: z.string().optional(),
+  clientGstin: z.string().optional(),
+  comments: z.string().optional(),
 
   // Vehicle / Driver / Container
   vehicleNumber: z
@@ -91,25 +107,58 @@ export const enquiryFormSchema = z.object({
   containerType: z.string().optional(),
   sealNumber: z.string().optional(),
 
+  // Additional container items for multiple containers
+  containers: z
+    .array(
+      z.object({
+        containerNumber: z.string().optional(),
+        sealNumber: z.string().optional(),
+        vehicleNumber: z.string().optional(),
+        driverName: z.string().optional(),
+        driverPhone: z.string().optional(),
+      })
+    )
+    .optional(),
+
   // Vendor
   vendorId: z.string().optional(),
+  vendorDriverName: z.string().optional(),
+  amountPaid: z.coerce.number().min(0).optional(),
+  paymentType: z.string().optional(),
+  paymentDate: z.string().optional(),
 
-  // Movement gate times
+  // Movement gate times & statuses
   companyInTime: z.string().optional(),
   companyOutTime: z.string().optional(),
   printInTime: z.string().optional(),
   printOutTime: z.string().optional(),
   portInTime: z.string().optional(),
   portOutTime: z.string().optional(),
+  movementStatus: z.string().optional(),
+  shippingStatus: z.string().optional(),
 
-  // Money fields - non-negative
+  // Charges & Payments
   freightAmount: z.coerce.number().min(0, 'Freight amount cannot be negative').default(0),
   dieselAmount: z.coerce.number().min(0, 'Diesel amount cannot be negative').default(0),
   advanceAmount: z.coerce.number().min(0, 'Advance amount cannot be negative').default(0),
   extraAdvance: z.coerce.number().min(0, 'Extra advance cannot be negative').default(0),
   haltingDays: z.coerce.number().int().min(0, 'Halting days cannot be negative').default(0),
   haltingAmount: z.coerce.number().min(0, 'Halting amount cannot be negative').default(0),
+  otherCharges: z.coerce.number().min(0, 'Other charges cannot be negative').default(0),
+  billAmount: z.coerce.number().min(0, 'Bill amount cannot be negative').optional(),
+  paidStatus: z.string().optional(),
+  amountReceived: z.coerce.number().min(0, 'Amount received cannot be negative').optional(),
+  amountReceivedDate: z.string().optional(),
   bonus: z.coerce.number().min(0, 'Bonus cannot be negative').default(0),
+
+  // Route & Documents
+  shipmentDate: z.string().optional(),
+  containerFrom: z.string().optional(),
+  containerTo: z.string().optional(),
+  invoiceNumber: z.string().optional(),
+  invoiceDate: z.string().optional(),
+  truckCount20: z.coerce.number().min(0).optional(),
+  truckCount40: z.coerce.number().min(0).optional(),
 });
 
 export type EnquiryFormData = z.infer<typeof enquiryFormSchema>;

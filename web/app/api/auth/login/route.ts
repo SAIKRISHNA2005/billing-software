@@ -36,8 +36,45 @@ export async function POST(req: NextRequest) {
 
     const { email, password } = parseResult.data;
 
+    // Resolve client IP and Geolocation
+    const forwarded = req.headers.get('x-forwarded-for');
+    const realIp = req.headers.get('x-real-ip');
+    const cfIp = req.headers.get('cf-connecting-ip');
+    const ip = forwarded ? forwarded.split(',')[0].trim() : realIp || cfIp || '127.0.0.1';
+
+    const city = req.headers.get('x-vercel-ip-city') || req.headers.get('cf-ipcity');
+    const region = req.headers.get('x-vercel-ip-country-region') || req.headers.get('cf-region');
+    const country = req.headers.get('x-vercel-ip-country') || req.headers.get('cf-ipcountry');
+
+    let location = body.location || body.clientLocation;
+    const lat = body.latitude !== undefined ? Number(body.latitude) : null;
+    const lng = body.longitude !== undefined ? Number(body.longitude) : null;
+    const acc = body.accuracy !== undefined ? Math.round(Number(body.accuracy)) : null;
+
+    if (lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng)) {
+      const coordsStr = `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}${acc ? ` (±${acc}m)` : ''}`;
+      if (location && typeof location === 'string') {
+        if (!location.includes('GPS:')) {
+          location = `${location} [${coordsStr}]`;
+        }
+      } else {
+        location = `Exact Location [${coordsStr}]`;
+      }
+    } else if (!location) {
+      if (city && country) {
+        location = `${city}, ${region ? region + ', ' : ''}${country}`;
+      } else {
+        location = 'Chennai, Tamil Nadu, India';
+      }
+    }
+
     // Call Google Apps Script backend
-    const result = await callAppsScript<LoginResponseData>('auth.login', { email, password });
+    const result = await callAppsScript<LoginResponseData>('auth.login', {
+      email,
+      password,
+      location,
+      ipAddress: ip,
+    });
 
     if (!result.success || !result.data?.token) {
       const isBackendError = result.errors?.some(

@@ -87,8 +87,15 @@ const ACTION_HANDLERS = {
   'drivers.reactivate': function(payload, sessionToken) { return MasterDataModule.reactivate('drivers', payload.id, sessionToken); },
   'drivers.lookup': function(payload, sessionToken) { return MasterDataModule.lookup('drivers', payload, sessionToken); },
 
-  // Containers Lookup Action
+  // Containers Actions
+  'containers.list': function(payload, sessionToken) { return MasterDataModule.list('containers', payload, sessionToken); },
+  'containers.get': function(payload, sessionToken) { return MasterDataModule.get('containers', payload.id, sessionToken); },
+  'containers.create': function(payload, sessionToken) { return MasterDataModule.create('containers', payload, sessionToken); },
+  'containers.update': function(payload, sessionToken) { return MasterDataModule.update('containers', payload.id, payload.patch || payload, sessionToken); },
+  'containers.deactivate': function(payload, sessionToken) { return MasterDataModule.deactivate('containers', payload.id, sessionToken); },
+  'containers.reactivate': function(payload, sessionToken) { return MasterDataModule.reactivate('containers', payload.id, sessionToken); },
   'containers.lookup': function(payload, sessionToken) { return MasterDataModule.lookup('containers', payload, sessionToken); },
+
 
   // Enquiry Module Actions
   'enquiry.create': function(payload, sessionToken) { return EnquiryModule.create(payload, sessionToken); },
@@ -98,6 +105,7 @@ const ACTION_HANDLERS = {
   'enquiry.delete': function(payload, sessionToken) { return EnquiryModule.delete(payload.id, sessionToken); },
   'enquiry.updateMovement': function(payload, sessionToken) { return EnquiryModule.updateMovement(payload.id || payload.enquiryId, payload.movement || payload, sessionToken); },
   'enquiry.moveStage': function(payload, sessionToken) { return EnquiryModule.moveStage(payload.id || payload.enquiryId, payload.toStage, payload.remarks, sessionToken); },
+  'enquiry.getNextNumbers': function(payload, sessionToken) { return EnquiryModule.getNextNumbers(sessionToken); },
 
   // Operations Control Actions (Phase 8)
   'operations.movements': function(payload, sessionToken) { return EnquiryModule.operationsMovements(payload, sessionToken); },
@@ -135,6 +143,23 @@ const ACTION_HANDLERS = {
   'settings.removeSignature': function(payload, sessionToken) { return SettingsModule.removeSignature(); },
   'settings.previewNextBillNumber': function(payload, sessionToken) { return SettingsModule.previewNextBillNumber(payload.dateStr); },
   'audit.list': function(payload, sessionToken) { return SettingsModule.listAuditLogs(payload); },
+  'audit.ensureLocations': function(payload, sessionToken) { return AuditModule.ensureAuditLocations(); },
+
+  // Dashboard Module Actions (Phase 18)
+  'dashboard.summary': function(payload, sessionToken) { return DashboardModule.getDashboardSummary(); },
+
+  // Expense Aliases
+  'expenses.general.list': function(payload, sessionToken) { return ExpensesModule.listGeneral(payload, sessionToken); },
+  'expenses.loading.list': function(payload, sessionToken) { return ExpensesModule.listLoading(payload, sessionToken); },
+
+  // Master Data Aliases
+  'master.customers': function(payload, sessionToken) { return MasterDataModule.list('clients', payload, sessionToken); },
+  'master.clients': function(payload, sessionToken) { return MasterDataModule.list('clients', payload, sessionToken); },
+  'master.companies': function(payload, sessionToken) { return MasterDataModule.list('companies', payload, sessionToken); },
+  'master.vendors': function(payload, sessionToken) { return MasterDataModule.list('vendors', payload, sessionToken); },
+  'master.vehicles': function(payload, sessionToken) { return MasterDataModule.list('vehicles', payload, sessionToken); },
+  'master.drivers': function(payload, sessionToken) { return MasterDataModule.list('drivers', payload, sessionToken); },
+  'master.containers': function(payload, sessionToken) { return MasterDataModule.list('containers', payload, sessionToken); },
 
   // Billing Module Actions (Phase 12)
   'bill.pending': function(payload, sessionToken) { return BillingModule.listPending(payload); },
@@ -163,7 +188,25 @@ const ACTION_HANDLERS = {
   'billPayment.update': function(payload, sessionToken) { return PaymentsModule.update(payload, sessionToken); },
   'billPayment.delete': function(payload, sessionToken) { return PaymentsModule.delete(payload, sessionToken); },
   'billPayment.ageing': function(payload, sessionToken) { return PaymentsModule.ageing(payload, sessionToken); },
+
+  // Live Reporting Workbooks Synchronization Actions
+  'reporting.syncDailyRow': function(payload) { return ReportingSyncModule.syncDailyRow(payload); },
+  'reporting.deleteDailyRow': function(payload) { return ReportingSyncModule.deleteDailyRow(payload); },
+  'reporting.syncClientRow': function(payload) { return ReportingSyncModule.syncClientRow(payload); },
+  'reporting.deleteClientRow': function(payload) { return ReportingSyncModule.deleteClientRow(payload); },
+  'reporting.ensureClientSheet': function(payload) { return ReportingSyncModule.ensureClientSheet(payload); },
+  'reporting.syncCompanyRow': function(payload) { return ReportingSyncModule.syncCompanyRow(payload); },
+  'reporting.deleteCompanyRow': function(payload) { return ReportingSyncModule.deleteCompanyRow(payload); },
+  'reporting.ensureCompanySheet': function(payload) { return ReportingSyncModule.ensureCompanySheet(payload); },
+  'reporting.syncBillRow': function(payload) { return ReportingSyncModule.syncBillRow(payload); },
+  'reporting.deleteBillRow': function(payload) { return ReportingSyncModule.deleteBillRow(payload); },
+  'reporting.initialFullSync': function(payload) { return ReportingSyncModule.initialFullSync(payload); },
+
+  // System Seeding & Reset Actions
+  'system.resetAndSeedEdgeCases': function(payload, sessionToken) { return seedRealEdgeCaseData(payload); },
 };
+
+
 
 
 /**

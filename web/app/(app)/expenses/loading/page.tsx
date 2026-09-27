@@ -36,6 +36,7 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 import {
   LoadingExpenseItem,
   LOADING_EXPENSE_CATEGORIES,
@@ -361,16 +362,16 @@ export default function LoadingExpensesPage() {
               icon={<EditOutlined />}
               onClick={() => handleOpenDrawer(record)}
             />
-            <Popconfirm
-              title="Delete this expense record?"
-              description="Are you sure you want to delete this trip expense?"
-              onConfirm={() => handleDelete(record.id)}
+            <ActionConfirmPopover
+              title="Delete Loading Expense?"
+              description="Are you sure you want to permanently delete this loading operational expense?"
               okText="Yes, Delete"
-              cancelText="Cancel"
-              okButtonProps={{ danger: true }}
+              cancelText="No, Keep It"
+              onConfirm={() => handleDelete(record.id)}
+              placement="topRight"
             >
               <Button size="small" danger icon={<DeleteOutlined />} />
-            </Popconfirm>
+            </ActionConfirmPopover>
           </Space>
         );
       },
@@ -565,9 +566,23 @@ export default function LoadingExpensesPage() {
         extra={
           <Space>
             <Button onClick={() => setDrawerVisible(false)}>Cancel</Button>
-            <Button type="primary" loading={drawerLoading} onClick={handleDrawerSubmit}>
-              {editingItem ? 'Update' : 'Save Expense'}
-            </Button>
+            <ActionConfirmPopover
+              title={editingItem ? 'Save Updated Loading Expense?' : 'Record New Loading Expense?'}
+              description={
+                editingItem
+                  ? 'Confirm saving modifications for this loading trip expense entry.'
+                  : 'Confirm saving this operational loading trip expense.'
+              }
+              okText={editingItem ? 'Yes, Update' : 'Yes, Save Expense'}
+              cancelText="No, Cancel"
+              onConfirm={handleDrawerSubmit}
+              loading={drawerLoading}
+              placement="bottomRight"
+            >
+              <Button type="primary" loading={drawerLoading}>
+                {editingItem ? 'Update' : 'Save Expense'}
+              </Button>
+            </ActionConfirmPopover>
           </Space>
         }
       >

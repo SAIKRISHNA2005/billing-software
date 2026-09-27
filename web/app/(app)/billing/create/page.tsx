@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { formatCurrencyINR } from '@/lib/utils/format';
+import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -313,23 +314,42 @@ export default function CreateBillPage() {
             <Button size="large" onClick={() => router.push('/billing/pending')}>
               Cancel
             </Button>
-            <Button
-              size="large"
-              icon={<SaveOutlined />}
+            <ActionConfirmPopover
+              title="Save Bill Draft?"
+              description="Save current invoice selections and charges as a draft to edit or process later."
+              okText="Yes, Save Draft"
+              cancelText="No, Cancel"
+              onConfirm={handleSaveDraft}
               loading={submitting}
-              onClick={handleSaveDraft}
+              placement="top"
             >
-              Save Draft
-            </Button>
-            <Button
-              type="primary"
-              size="large"
-              icon={<CheckOutlined />}
+              <Button
+                size="large"
+                icon={<SaveOutlined />}
+                loading={submitting}
+              >
+                Save Draft
+              </Button>
+            </ActionConfirmPopover>
+
+            <ActionConfirmPopover
+              title="Process & Issue Official Bill?"
+              description="Are you sure you want to process and allocate the next sequential bill number? This creates the permanent invoice and live synchronized report."
+              okText="Yes, Process Bill"
+              cancelText="No, Review"
+              onConfirm={handleProcessBill}
               loading={submitting}
-              onClick={handleProcessBill}
+              placement="topRight"
             >
-              Process & Allocate Bill Number
-            </Button>
+              <Button
+                type="primary"
+                size="large"
+                icon={<CheckOutlined />}
+                loading={submitting}
+              >
+                Process & Allocate Bill Number
+              </Button>
+            </ActionConfirmPopover>
           </Space>
         </Card>
       </Form>

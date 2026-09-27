@@ -4,7 +4,7 @@
  * STRICT RULES: R13 (LockService for number_sequences), R14 (Batch getValues/setValues, no cell-by-cell loops).
  */
 
-const SheetRepo = {
+var SheetRepo = {
   /**
    * Helper to get Google Sheet by tab name
    */
@@ -14,7 +14,10 @@ const SheetRepo = {
       throw new Error('SPREADSHEET_ID is not configured in Script Properties.');
     }
     const ss = SpreadsheetApp.openById(spreadsheetId);
-    const sheet = ss.getSheetByName(sheetName);
+    let sheet = ss.getSheetByName(sheetName);
+    if (!sheet && sheetName === 'processed_bills') {
+      sheet = ss.getSheetByName('bills');
+    }
     if (!sheet) {
       throw new Error('Sheet not found: "' + sheetName + '". Please run createAllSheets() first.');
     }
@@ -76,14 +79,30 @@ const SheetRepo = {
    */
   insertRow(sheetName, obj, createdBy) {
     let lock = null;
+    let acquiredHere = false;
     if (sheetName === 'number_sequences') {
       lock = LockService.getScriptLock();
-      lock.waitLock(30000); // 30s timeout
+      if (!lock.hasLock()) {
+        lock.waitLock(30000); // 30s timeout
+        acquiredHere = true;
+      }
     }
 
     try {
       const sheet = this.getSheet(sheetName);
-      const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      let headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+      // Auto-append any missing headers from obj to sheet
+      if (sheetName !== 'number_sequences') {
+        const objKeys = Object.keys(obj);
+        const missingHeaders = objKeys.filter((k) => !headers.includes(k) && !k.startsWith('_'));
+        if (missingHeaders.length > 0) {
+          const startCol = headers.length + 1;
+          sheet.getRange(1, startCol, 1, missingHeaders.length).setValues([missingHeaders]);
+          sheet.getRange(1, startCol, 1, missingHeaders.length).setFontWeight('bold').setBackground('#f3f4f6');
+          headers = headers.concat(missingHeaders);
+        }
+      }
 
       // Auto-assign ID if missing and not number_sequences
       if (sheetName !== 'number_sequences' && !obj.id) {
@@ -108,7 +127,7 @@ const SheetRepo = {
       sheet.getRange(sheet.getLastRow() + 1, 1, 1, rowValues.length).setValues([rowValues]);
       return obj;
     } finally {
-      if (lock) {
+      if (lock && acquiredHere) {
         lock.releaseLock();
       }
     }
@@ -121,9 +140,13 @@ const SheetRepo = {
    */
   updateRow(sheetName, id, patch, updatedBy) {
     let lock = null;
+    let acquiredHere = false;
     if (sheetName === 'number_sequences') {
       lock = LockService.getScriptLock();
-      lock.waitLock(30000);
+      if (!lock.hasLock()) {
+        lock.waitLock(30000);
+        acquiredHere = true;
+      }
     }
 
     try {
@@ -136,7 +159,19 @@ const SheetRepo = {
       }
 
       const data = sheet.getRange(1, 1, lastRow, lastCol).getValues();
-      const headers = data[0];
+      let headers = data[0];
+
+      // Auto-append any missing headers from patch to sheet
+      if (sheetName !== 'number_sequences') {
+        const objKeys = Object.keys(patch);
+        const missingHeaders = objKeys.filter((k) => !headers.includes(k) && !k.startsWith('_'));
+        if (missingHeaders.length > 0) {
+          const startCol = headers.length + 1;
+          sheet.getRange(1, startCol, 1, missingHeaders.length).setValues([missingHeaders]);
+          sheet.getRange(1, startCol, 1, missingHeaders.length).setFontWeight('bold').setBackground('#f3f4f6');
+          headers = headers.concat(missingHeaders);
+        }
+      }
       const idKey = sheetName === 'number_sequences' ? 'sequenceKey' : 'id';
       const idColIdx = headers.indexOf(idKey);
 
@@ -186,7 +221,7 @@ const SheetRepo = {
 
       return updatedObj;
     } finally {
-      if (lock) {
+      if (lock && acquiredHere) {
         lock.releaseLock();
       }
     }
@@ -201,9 +236,24 @@ const SheetRepo = {
   },
 
   /**
+   * Clears all content from row 2 downwards, preserving header row 1.
+   */
+  clearSheetData(sheetName) {
+    const sheet = this.getSheet(sheetName);
+    const lastRow = sheet.getLastRow();
+    const lastCol = sheet.getLastColumn();
+    if (lastRow > 1 && lastCol > 0) {
+      sheet.getRange(2, 1, lastRow - 1, lastCol).clearContent();
+    }
+  },
+
+  /**
    * Alias for softDeleteRow (matches soft deletion standard)
    */
   deleteRow(sheetName, id, deletedBy) {
     return this.softDeleteRow(sheetName, id, deletedBy);
   },
 };
+
+var SheetRepoModule = SheetRepo;
+

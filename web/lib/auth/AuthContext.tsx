@@ -9,11 +9,18 @@ export interface AuthUser {
   email: string;
 }
 
+export interface LocationData {
+  location?: string;
+  latitude?: number;
+  longitude?: number;
+  accuracy?: number;
+}
+
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, locationData?: LocationData) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -43,12 +50,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     fetchCurrentUser();
   }, [fetchCurrentUser]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, locationData?: LocationData) => {
     setIsLoading(true);
     try {
       const response = await apiClient.post<{ success: boolean; data: { user: AuthUser } }>('/auth/login', {
         email,
         password,
+        location: locationData?.location,
+        latitude: locationData?.latitude,
+        longitude: locationData?.longitude,
+        accuracy: locationData?.accuracy,
       });
 
       if (response.data.success && response.data.data?.user) {

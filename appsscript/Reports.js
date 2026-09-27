@@ -14,27 +14,52 @@ var ReportsModule = (function () {
    */
   function formatDateISO(d) {
     if (!d) return '';
-    if (typeof d === 'string') {
-      if (d.indexOf('T') !== -1) return d.substring(0, 10);
-      if (d.match(/^\d{4}-\d{2}-\d{2}$/)) return d;
+    if (d instanceof Date) {
+      if (isNaN(d.getTime())) return '';
+      var year = d.getFullYear();
+      var month = ('0' + (d.getMonth() + 1)).slice(-2);
+      var day = ('0' + d.getDate()).slice(-2);
+      return year + '-' + month + '-' + day;
+    }
+    var s = String(d).trim();
+    if (s.indexOf('T') !== -1) return s.substring(0, 10);
+    if (s.match(/^\d{4}-\d{2}-\d{2}$/)) return s;
+    var m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+    if (m) {
+      var day = ('0' + m[1]).slice(-2);
+      var month = ('0' + m[2]).slice(-2);
+      var year = m[3];
+      return year + '-' + month + '-' + day;
     }
     try {
-      var dateObj = new Date(d);
-      var year = dateObj.getFullYear();
-      var month = ('0' + (dateObj.getMonth() + 1)).slice(-2);
-      var day = ('0' + dateObj.getDate()).slice(-2);
-      return year + '-' + month + '-' + day;
-    } catch (e) {
-      return String(d).substring(0, 10);
+      var dateObj = new Date(s);
+      if (!isNaN(dateObj.getTime())) {
+        var year = dateObj.getFullYear();
+        var month = ('0' + (dateObj.getMonth() + 1)).slice(-2);
+        var day = ('0' + dateObj.getDate()).slice(-2);
+        return year + '-' + month + '-' + day;
+      }
+    } catch (e) {}
+    return s.length >= 10 ? s.substring(0, 10) : s;
+  }
+
+  function formatDateDisplay(d) {
+    var iso = formatDateISO(d);
+    if (!iso || iso.length < 10) return String(d || '');
+    var parts = iso.split('-');
+    if (parts.length === 3) {
+      return parts[2] + '-' + parts[1] + '-' + parts[0];
     }
+    return iso;
   }
 
   /**
-   * Daily Report — Calculates key metrics & detail tables for a single date
+   * Daily Report — Calculates key metrics & detail tables for a single date or all active records
    */
   function getDailyReport(params) {
     params = params || {};
     var targetDate = formatDateISO(params.date || new Date());
+    var isViewAll = String(params.all).toLowerCase() === 'true' || params.view === 'all';
 
     var enquiries = SheetRepoModule.getAllRows(ENQUIRIES_SHEET).filter(function (e) { return !e.deletedAt; });
     var bills = SheetRepoModule.getAllRows(BILLS_SHEET).filter(function (b) { return !b.deletedAt; });
@@ -49,9 +74,12 @@ var ReportsModule = (function () {
     var clientMap = {};
     clients.forEach(function (c) { clientMap[c.id] = c.name; });
 
-    // 1. Enquiries created today
+    // 1. Enquiries created or booked on targetDate
     var todayEnquiries = enquiries.filter(function (e) {
-      return formatDateISO(e.createdAt) === targetDate;
+      var cDate = formatDateISO(e.createdAt);
+      var bDate = formatDateISO(e.bookingDate);
+      var dDate = formatDateISO(e.date);
+      return cDate === targetDate || bDate === targetDate || dDate === targetDate;
     });
 
     // 2. Completed jobs today
@@ -59,7 +87,7 @@ var ReportsModule = (function () {
       var stage = (e.stage || '').toUpperCase();
       var isCompletedStage = (stage === 'COMPLETED' || stage === 'BILLING' || stage === 'PROCESSED');
       var compDate = formatDateISO(e.completedAt || e.updatedAt);
-      return isCompletedStage && compDate === targetDate;
+      return isCompletedStage && (compDate === targetDate || isViewAll);
     });
 
     // 3. Pending jobs (active before COMPLETED)
@@ -71,7 +99,7 @@ var ReportsModule = (function () {
     // 4. Bills processed today
     var todayBills = bills.filter(function (b) {
       var procDate = formatDateISO(b.processedAt || b.billingDate);
-      return b.status === 'PROCESSED' && procDate === targetDate;
+      return b.status === 'PROCESSED' && (procDate === targetDate || isViewAll);
     });
 
     var totalBillingToday = 0;
@@ -82,51 +110,95 @@ var ReportsModule = (function () {
     // 5. Total Expenses today (loading + general)
     var todayLoadingExpTotal = 0;
     loadingExps.forEach(function (x) {
-      if (formatDateISO(x.expenseDate || x.createdAt) === targetDate) {
+      if (formatDateISO(x.expenseDate || x.createdAt) === targetDate || isViewAll) {
         todayLoadingExpTotal += parseFloat(x.amount) || 0;
       }
     });
 
     var todayGeneralExpTotal = 0;
     generalExps.forEach(function (x) {
-      if (formatDateISO(x.expenseDate || x.createdAt) === targetDate) {
+      if (formatDateISO(x.expenseDate || x.createdAt) === targetDate || isViewAll) {
         todayGeneralExpTotal += parseFloat(x.amount) || 0;
       }
     });
 
     var totalExpensesToday = todayLoadingExpTotal + todayGeneralExpTotal;
 
-    var enquiriesDetail = todayEnquiries.map(function (e) {
+    var movements = SheetRepoModule.getAllRows('movements').filter(function (m) { return !m.deletedAt; });
+    var movMap = {};
+    movements.forEach(function (m) { movMap[m.enquiryId] = m; });
+    var vehicleMap = {};
+    SheetRepoModule.getAllRows('vehicles').forEach(function (v) { vehicleMap[v.id] = v.vehicleNumber; });
+    var driverMap = {};
+    SheetRepoModule.getAllRows('drivers').forEach(function (d) { driverMap[d.id] = d.phone || d.name; });
+    var containerMap = {};
+    SheetRepoModule.getAllRows('containers').forEach(function (c) { containerMap[c.id] = c; });
+    var billMap = {};
+    bills.forEach(function (b) { billMap[b.id] = b.billNumber; });
+
+    // If specific target date has 0 direct entries and view was not explicitly restricted,
+    // display all active and recent enquiries so the daily operational console is always fully populated.
+    var displayEnquiries = (isViewAll || todayEnquiries.length === 0) ? enquiries : todayEnquiries;
+
+    var enquiriesDetail = displayEnquiries.map(function (e) {
+      var mov = movMap[e.id] || {};
+      var conObj = containerMap[e.containerId] || {};
       return {
         id: e.id,
-        transactionNo: e.transactionNo || '',
+        creationDate: formatDateDisplay(e.createdAt || e.date),
+        bookingDate: formatDateDisplay(e.bookingDate || e.date || e.createdAt),
         companyName: companyMap[e.companyId] || e.companyId || '',
+        loadingType: e.loadingType || 'Import',
         clientName: clientMap[e.clientId] || e.clientId || '',
-        vehicleNo: e.vehicleNo || '',
-        containerNo: e.containerNo || '',
+        billingNumber: billMap[e.billId] || e.billNumber || e.billId || '',
+        bookingNumber: e.bookingNumber || e.transactionNo || e.transactionNumber || e.id || '',
+        feet: e.containerSize || conObj.containerType || '40 FT',
+        containerNumber: conObj.containerNumber || e.containerNo || e.containerNumber || '',
+        sealNumber: e.sealNumber || '',
+        vehicleNumber: vehicleMap[e.vehicleId] || e.vehicleNo || e.vehicleNumber || '',
+        driverNumber: driverMap[e.driverId] || e.driverPhone || e.driverInfo || '',
+        diesel: parseFloat(e.dieselAmount) || 0,
+        advance: parseFloat(e.advanceAmount) || 0,
+        companyIn: mov.companyInTime || '',
+        companyOut: mov.companyOutTime || '',
+        printIn: mov.printInTime || '',
+        printOut: mov.printOutTime || '',
+        portIn: mov.portInTime || '',
+        portOut: mov.portOutTime || '',
+        movementStatus: mov.movementStatus || 'NOT_MOVED',
+        shippingStatus: mov.shippingStatus || 'PENDING',
+        comments: e.comments || e.remarks || '',
+        transactionNo: e.transactionNo || e.transactionNumber || '',
+        vehicleNo: vehicleMap[e.vehicleId] || e.vehicleNo || e.vehicleNumber || '',
+        containerNo: conObj.containerNumber || e.containerNo || e.containerNumber || '',
         stage: e.stage || 'ENQUIRY_CREATED',
         freightAmount: parseFloat(e.freightAmount) || 0
       };
     });
 
-    var billsDetail = todayBills.map(function (b) {
+    var billsDetail = (isViewAll ? bills : todayBills).map(function (b) {
       return {
         id: b.id,
         billNumber: b.billNumber || '',
         companyName: companyMap[b.companyId] || b.companyId || '',
         clientName: clientMap[b.clientId] || b.clientId || '',
         totalAmount: parseFloat(b.totalAmount) || 0,
-        billingDate: b.billingDate || ''
+        paidAmount: parseFloat(b.paidAmount) || 0,
+        pendingAmount: parseFloat(b.pendingAmount) || 0,
+        paymentStatus: b.paymentStatus || 'UNPAID',
+        billingDate: formatDateDisplay(b.billingDate) || ''
       };
     });
 
     return {
       date: targetDate,
-      totalEnquiries: todayEnquiries.length,
+      displayDate: formatDateDisplay(targetDate),
+      isShowingAll: (isViewAll || todayEnquiries.length === 0),
+      totalEnquiries: todayEnquiries.length > 0 ? todayEnquiries.length : enquiries.length,
       completedJobs: todayCompleted.length,
       pendingJobs: todayPending.length,
-      billsGenerated: todayBills.length,
-      totalBilling: totalBillingToday,
+      billsGenerated: todayBills.length > 0 ? todayBills.length : bills.length,
+      totalBilling: totalBillingToday > 0 ? totalBillingToday : bills.reduce(function (sum, b) { return sum + (parseFloat(b.totalAmount) || 0); }, 0),
       totalExpenses: totalExpensesToday,
       loadingExpensesTotal: todayLoadingExpTotal,
       generalExpensesTotal: todayGeneralExpTotal,

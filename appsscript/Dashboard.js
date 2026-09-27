@@ -128,18 +128,98 @@ var DashboardModule = (function () {
     // 7. Company-wise Billing chart data (current FY)
     var currentFY = FinancialYearModule.getFinancialYear(new Date());
     var companyBillingChart = {};
+    var companyProcessedCounts = {};
     bills.forEach(function (b) {
-      if (b.status === 'PROCESSED' && b.financialYear === currentFY) {
+      if (b.status === 'PROCESSED') {
         var cName = companyMap[b.companyId] || b.companyId || 'Other';
         companyBillingChart[cName] = (companyBillingChart[cName] || 0) + (parseFloat(b.totalAmount) || 0);
+        companyProcessedCounts[cName] = (companyProcessedCounts[cName] || 0) + 1;
       }
     });
 
     var chartItems = Object.keys(companyBillingChart).map(function (cName) {
-      return { companyName: cName, totalBilling: companyBillingChart[cName] };
+      return {
+        companyName: cName,
+        totalBilling: companyBillingChart[cName],
+        billsCount: companyProcessedCounts[cName] || 0
+      };
     });
 
-    // 8. Recent 10 processed bills
+    // 8. Pending Bills Company-wise Breakdown
+    var pendingCompanyMap = {};
+    unbilledCompleted.forEach(function (e) {
+      var cName = companyMap[e.companyId] || e.companyId || 'Other';
+      if (!pendingCompanyMap[cName]) {
+        pendingCompanyMap[cName] = { count: 0, amount: 0 };
+      }
+      pendingCompanyMap[cName].count++;
+      pendingCompanyMap[cName].amount += (parseFloat(e.freightAmount) || 0) + (parseFloat(e.haltingAmount) || 0);
+    });
+
+    var pendingBillsCompanyChart = Object.keys(pendingCompanyMap).map(function (cName) {
+      return {
+        companyName: cName,
+        count: pendingCompanyMap[cName].count,
+        amount: pendingCompanyMap[cName].amount
+      };
+    });
+
+    // 9. Total Expenses comparison (Loading vs General) and Category Breakdown
+    var totalLoadingAmount = 0;
+    var loadingCatMap = {};
+    loadingExps.forEach(function (x) {
+      var amt = parseFloat(x.amount) || 0;
+      totalLoadingAmount += amt;
+      var cat = x.category || 'Other Trip';
+      loadingCatMap[cat] = (loadingCatMap[cat] || 0) + amt;
+    });
+
+    var totalGeneralAmount = 0;
+    var generalCatMap = {};
+    generalExps.forEach(function (x) {
+      var amt = parseFloat(x.amount) || 0;
+      totalGeneralAmount += amt;
+      var cat = x.category || 'Office Admin';
+      generalCatMap[cat] = (generalCatMap[cat] || 0) + amt;
+    });
+
+    var expensesComparison = [
+      { type: 'Loading Expenses', amount: totalLoadingAmount, count: loadingExps.length },
+      { type: 'General Expenses', amount: totalGeneralAmount, count: generalExps.length }
+    ];
+
+    // 10. Daily Revenue & Daily Operations Trend (Last 14 days)
+    var dailyTrendMap = {};
+    for (var i = 13; i >= 0; i--) {
+      var d = new Date();
+      d.setDate(d.getDate() - i);
+      var ds = formatDateISO(d);
+      var monthDay = (d.getDate() < 10 ? '0' : '') + d.getDate() + '/' + (d.getMonth() + 1 < 10 ? '0' : '') + (d.getMonth() + 1);
+      dailyTrendMap[ds] = { date: ds, displayDate: monthDay, revenue: 0, billsCount: 0, trips: 0 };
+    }
+
+    bills.forEach(function (b) {
+      if (b.status === 'PROCESSED') {
+        var ds = formatDateISO(b.billingDate || b.processedAt || b.createdAt);
+        if (dailyTrendMap[ds]) {
+          dailyTrendMap[ds].revenue += parseFloat(b.totalAmount) || 0;
+          dailyTrendMap[ds].billsCount += 1;
+        }
+      }
+    });
+
+    enquiries.forEach(function (e) {
+      var ds = formatDateISO(e.createdAt || e.date);
+      if (dailyTrendMap[ds]) {
+        dailyTrendMap[ds].trips += 1;
+      }
+    });
+
+    var dailyRevenueChart = Object.keys(dailyTrendMap).sort().map(function (k) {
+      return dailyTrendMap[k];
+    });
+
+    // 11. Recent 10 processed bills
     var processedBills = bills.filter(function (b) { return b.status === 'PROCESSED'; });
     processedBills.sort(function (a, b) {
       return (b.processedAt || b.createdAt || '').localeCompare(a.processedAt || a.createdAt || '');
@@ -166,12 +246,17 @@ var DashboardModule = (function () {
       pendingVendorPayments: totalVendorPending,
       currentFinancialYear: currentFY,
       companyBillingChart: chartItems,
+      pendingBillsCompanyChart: pendingBillsCompanyChart,
+      expensesComparison: expensesComparison,
+      totalLoadingAmount: totalLoadingAmount,
+      totalGeneralAmount: totalGeneralAmount,
+      dailyRevenueChart: dailyRevenueChart,
       recentBills: recentBills
     };
 
-    // Cache summary for 10 seconds
+    // Cache summary for 5 seconds
     try {
-      cache.put('TMS_DASHBOARD_SUMMARY', JSON.stringify(summary), 10);
+      cache.put('TMS_DASHBOARD_SUMMARY', JSON.stringify(summary), 5);
     } catch (e) {}
 
     return summary;

@@ -36,6 +36,10 @@ import { apiClient } from '@/lib/api/client';
 import { AsyncMasterSelect } from '@/components/common/AsyncMasterSelect';
 import { formatDateTime, formatDate } from '@/lib/utils/format';
 import { STAGE_TAG_COLORS, STAGE_LABELS } from '@/lib/utils/enquiryValidation';
+import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
+import { RecordDetailPopover } from '@/components/common/RecordDetailPopover';
+import { VehicleStatusToggle } from '@/components/common/VehicleStatusToggle';
+import axios from 'axios';
 
 const { Title, Paragraph, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -90,6 +94,29 @@ export default function PendingJobsPage() {
   const [portOutTime, setPortOutTime] = useState<dayjs.Dayjs | null>(dayjs());
   const [completing, setCompleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [vehicleStatusOverrides, setVehicleStatusOverrides] = useState<Record<string, boolean>>({});
+
+  const handleToggleVehicleStatus = async (rec: PendingRow, newStatus: boolean) => {
+    setVehicleStatusOverrides((prev) => ({
+      ...prev,
+      [rec.id]: newStatus,
+    }));
+
+    if (newStatus) {
+      message.success(`Vehicle ${rec.vehicleNumber ? rec.vehicleNumber + ' ' : ''}marked as sent for work!`);
+    } else {
+      message.info(`Vehicle marked as not sent for work.`);
+    }
+
+    try {
+      await axios.patch(`/api/enquiries/${rec.id}/movement`, {
+        movementStatus: newStatus ? 'MOVED' : 'NOT_MOVED',
+        shippingStatus: newStatus ? 'IN_PROGRESS' : 'PENDING',
+      }).catch(() => null);
+    } catch {
+      // non-blocking
+    }
+  };
 
   const fetchPendingJobs = useCallback(async () => {
     setLoading(true);
@@ -264,6 +291,46 @@ export default function PendingJobsPage() {
       ),
     },
     {
+      title: (
+        <div style={{ textAlign: 'center' }}>
+          <div>Vehicle Status</div>
+          <div style={{ fontSize: 11, fontWeight: 'normal', color: '#6b7280' }}>Sent for work</div>
+        </div>
+      ),
+      key: 'vehicleStatus',
+      width: 140,
+      align: 'center',
+      render: (_, rec) => {
+        const hasVehicle = Boolean(
+          rec.vehicleNumber && rec.vehicleNumber !== '-' && String(rec.vehicleNumber).trim() !== ''
+        );
+        const isToggled =
+          vehicleStatusOverrides[rec.id] !== undefined
+            ? vehicleStatusOverrides[rec.id]
+            : hasVehicle;
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+            <VehicleStatusToggle
+              checked={isToggled}
+              vehicleNumber={rec.vehicleNumber}
+              onChange={(newVal) => handleToggleVehicleStatus(rec, newVal)}
+            />
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: 0.3,
+                color: isToggled ? '#1677ff' : '#8c8c8c',
+              }}
+            >
+              {isToggled ? 'SENT FOR WORK' : 'NOT ASSIGNED'}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
       title: 'Current Stage',
       dataIndex: 'stage',
       key: 'stage',
@@ -293,23 +360,28 @@ export default function PendingJobsPage() {
       fixed: 'right',
       render: (_, rec) => (
         <Space size="small">
-          <Tooltip title="Advance job to COMPLETED stage">
+          <ActionConfirmPopover
+            title={`Advance Job #${rec.enquiryNumber || rec.id} to COMPLETED?`}
+            description="Are you sure you want to mark this consignment job as completed?"
+            okText="Yes, Complete"
+            cancelText="No, Cancel"
+            onConfirm={() => handleInitiateComplete(rec)}
+          >
             <Button
               type="primary"
               size="small"
               icon={<CheckCircleOutlined />}
-              onClick={() => handleInitiateComplete(rec)}
               style={{ backgroundColor: '#52c41a' }}
             >
               Complete
             </Button>
-          </Tooltip>
+          </ActionConfirmPopover>
 
-          <Tooltip title="View Details">
-            <Link href={`/enquiries/${rec.id}`}>
-              <Button size="small" icon={<EyeOutlined />} />
-            </Link>
-          </Tooltip>
+          <RecordDetailPopover record={rec} title={`Job #${rec.enquiryNumber || rec.id}`}>
+            <Tooltip title="View Job Popover">
+              <Button size="small" icon={<EyeOutlined style={{ color: '#1677ff' }} />} />
+            </Tooltip>
+          </RecordDetailPopover>
         </Space>
       ),
     },

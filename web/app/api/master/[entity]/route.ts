@@ -84,10 +84,25 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const body = await req.json();
     const action = `${entity}.create`;
 
-    const result = await callAppsScript(action, body, sessionToken);
+    const result = (await callAppsScript(action, body, sessionToken)) as any;
+    if (result.success && entity === 'clients' && (body.name || result.data?.name)) {
+      const clientName = body.name || result.data?.name;
+      const { syncClientCreationToReports } = await import('@/lib/server/reportSyncService');
+      syncClientCreationToReports(clientName, sessionToken).catch((err) =>
+        console.error('[LiveSync] Client sheet auto-create sync failed:', err)
+      );
+    } else if (result.success && entity === 'companies' && (body.name || result.data?.name)) {
+      const companyName = body.name || result.data?.name;
+      const { syncCompanyCreationToReports } = await import('@/lib/server/reportSyncService');
+      syncCompanyCreationToReports(companyName, sessionToken).catch((err) =>
+        console.error('[LiveSync] Company sheet auto-create sync failed:', err)
+      );
+    }
     return NextResponse.json(result, { status: result.success ? 201 : 400 });
+
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to create master data record';
     return NextResponse.json({ success: false, data: null, message }, { status: 500 });
   }
 }
+

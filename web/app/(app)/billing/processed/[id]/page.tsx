@@ -57,6 +57,14 @@ export default function ProcessedBillDetailPage() {
         setPdfData(res.data.data);
         if (preview) {
           setPdfModalVisible(true);
+        } else if (res.data.data?.pdfBase64) {
+          const link = document.createElement('a');
+          link.href = 'data:application/pdf;base64,' + res.data.data.pdfBase64;
+          link.download = `Invoice_${bill?.billNumber ? String(bill.billNumber).replace(/\//g, '-') : id}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          message.success('Invoice PDF downloaded successfully!');
         } else if (res.data.data.pdfUrl) {
           window.open(res.data.data.pdfUrl, '_blank');
         } else {
@@ -254,10 +262,27 @@ export default function ProcessedBillDetailPage() {
           <Button key="close" onClick={() => setPdfModalVisible(false)}>
             Close
           </Button>,
+          pdfData?.pdfBase64 && (
+            <Button
+              key="download-pdf"
+              type="primary"
+              icon={<DownloadOutlined />}
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = 'data:application/pdf;base64,' + pdfData.pdfBase64;
+                link.download = `Invoice_${bill?.billNumber ? String(bill.billNumber).replace(/\//g, '-') : id}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                message.success('Invoice PDF downloaded successfully!');
+              }}
+            >
+              Download PDF
+            </Button>
+          ),
           pdfData?.pdfUrl && (
             <Button
               key="download"
-              type="primary"
               icon={<DownloadOutlined />}
               onClick={() => window.open(pdfData.pdfUrl, '_blank')}
             >

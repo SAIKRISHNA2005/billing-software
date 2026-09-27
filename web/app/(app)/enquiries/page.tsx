@@ -35,6 +35,10 @@ import { apiClient } from '@/lib/api/client';
 import { AsyncMasterSelect } from '@/components/common/AsyncMasterSelect';
 import { formatCurrencyINR, formatDate } from '@/lib/utils/format';
 import { STAGE_TAG_COLORS, STAGE_LABELS } from '@/lib/utils/enquiryValidation';
+import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
+import { RecordDetailPopover } from '@/components/common/RecordDetailPopover';
+import { VehicleStatusToggle } from '@/components/common/VehicleStatusToggle';
+import axios from 'axios';
 
 const { Title, Paragraph, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -48,7 +52,7 @@ interface EnquiryRow {
   companyName?: string;
   clientId: string;
   clientName?: string;
-  loadingType: 'Import' | 'Export';
+  loadingType: string;
   vehicleId?: string;
   vehicleNumber?: string;
   driverId?: string;
@@ -56,8 +60,15 @@ interface EnquiryRow {
   containerId?: string;
   containerNumber?: string;
   sealNumber?: string;
+  freightAmount?: number;
+  advanceAmount?: number;
+  haltingAmount?: number;
+  otherCharges?: number;
+  weight?: string;
+  shipmentDate?: string;
   stage: string;
   billId?: string;
+  vehicleStatus?: boolean;
   movement?: {
     movementStatus?: string;
     shippingStatus?: string;
@@ -90,6 +101,29 @@ export default function EnquiriesListPage() {
   const [loadingType, setLoadingType] = useState<string | undefined>();
   const [stage, setStage] = useState<string | undefined>();
   const [dateRange, setDateRange] = useState<[string, string] | null>(null);
+  const [vehicleStatusOverrides, setVehicleStatusOverrides] = useState<Record<string, boolean>>({});
+
+  const handleToggleVehicleStatus = async (record: EnquiryRow, newStatus: boolean) => {
+    setVehicleStatusOverrides((prev) => ({
+      ...prev,
+      [record.id]: newStatus,
+    }));
+
+    if (newStatus) {
+      message.success(`Vehicle ${record.vehicleNumber ? record.vehicleNumber + ' ' : ''}marked as sent for work!`);
+    } else {
+      message.info(`Vehicle marked as not sent for work.`);
+    }
+
+    try {
+      await axios.patch(`/api/enquiries/${record.id}/movement`, {
+        movementStatus: newStatus ? 'MOVED' : 'NOT_MOVED',
+        shippingStatus: newStatus ? 'IN_PROGRESS' : 'PENDING',
+      }).catch(() => null);
+    } catch {
+      // non-blocking
+    }
+  };
 
   // Fetch enquiries
   const fetchEnquiries = useCallback(async () => {
@@ -172,9 +206,11 @@ export default function EnquiriesListPage() {
       width: 110,
       sorter: true,
       render: (enqNo, record) => (
-        <Link href={`/enquiries/${record.id}`} style={{ fontWeight: 600 }}>
-          {`ENQ-${enqNo}`}
-        </Link>
+        <RecordDetailPopover record={record} title={`Enquiry #ENQ-${enqNo}`}>
+          <Link href={`/enquiries/${record.id}`} style={{ fontWeight: 600, color: '#1677ff' }}>
+            {`ENQ-${enqNo}`}
+          </Link>
+        </RecordDetailPopover>
       ),
     },
     {
@@ -182,10 +218,13 @@ export default function EnquiriesListPage() {
       dataIndex: 'transactionNumber',
       key: 'transactionNumber',
       width: 170,
+      responsive: ['xl'],
       render: (val, record) => (
-        <Text copyable style={{ fontSize: 13 }}>
-          {val || '-'}
-        </Text>
+        <RecordDetailPopover record={record} title={`TXN ${val || record.id}`}>
+          <Text copyable style={{ fontSize: 13, cursor: 'pointer' }}>
+            {val || '-'}
+          </Text>
+        </RecordDetailPopover>
       ),
     },
     {
@@ -200,6 +239,7 @@ export default function EnquiriesListPage() {
       dataIndex: 'companyName',
       key: 'companyName',
       ellipsis: true,
+      responsive: ['md'],
       render: (name, rec) => name || rec.companyId,
     },
     {
@@ -207,6 +247,7 @@ export default function EnquiriesListPage() {
       dataIndex: 'clientName',
       key: 'clientName',
       ellipsis: true,
+      responsive: ['md'],
       render: (name, rec) => name || rec.clientId,
     },
     {
@@ -214,8 +255,9 @@ export default function EnquiriesListPage() {
       dataIndex: 'loadingType',
       key: 'loadingType',
       width: 90,
+      responsive: ['sm'],
       render: (type) => (
-        <Tag color={type === 'Import' ? 'blue' : 'orange'} style={{ fontWeight: 500 }}>
+        <Tag color={type === 'Import' ? 'blue' : type === 'Export' ? 'orange' : 'purple'} style={{ fontWeight: 500 }}>
           {type}
         </Tag>
       ),
@@ -226,6 +268,47 @@ export default function EnquiriesListPage() {
       key: 'vehicleNumber',
       width: 130,
       render: (veh) => (veh ? <Text strong>{veh}</Text> : <Text type="secondary">-</Text>),
+    },
+    {
+      title: (
+        <div style={{ textAlign: 'center' }}>
+          <div>Vehicle Status</div>
+          <div style={{ fontSize: 11, fontWeight: 'normal', color: '#6b7280' }}>Sent for work</div>
+        </div>
+      ),
+      key: 'vehicleStatus',
+      width: 140,
+      align: 'center',
+      render: (_, rec) => {
+        const hasVehicle = Boolean(
+          rec.vehicleNumber && rec.vehicleNumber !== '-' && String(rec.vehicleNumber).trim() !== ''
+        );
+        // Default to ON if vehicle details mentioned, OFF if not. User can toggle anytime.
+        const isToggled =
+          vehicleStatusOverrides[rec.id] !== undefined
+            ? vehicleStatusOverrides[rec.id]
+            : (rec.vehicleStatus !== undefined ? rec.vehicleStatus : hasVehicle);
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+            <VehicleStatusToggle
+              checked={isToggled}
+              vehicleNumber={rec.vehicleNumber}
+              onChange={(newVal) => handleToggleVehicleStatus(rec, newVal)}
+            />
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: 0.3,
+                color: isToggled ? '#1677ff' : '#8c8c8c',
+              }}
+            >
+              {isToggled ? 'SENT FOR WORK' : 'NOT ASSIGNED'}
+            </span>
+          </div>
+        );
+      },
     },
     {
       title: 'Container',
@@ -239,6 +322,7 @@ export default function EnquiriesListPage() {
       dataIndex: 'driverInfo',
       key: 'driverInfo',
       ellipsis: true,
+      responsive: ['xl'],
       render: (drv) => drv || <Text type="secondary">-</Text>,
     },
     {
@@ -256,6 +340,7 @@ export default function EnquiriesListPage() {
       title: 'Movement',
       key: 'movementStatus',
       width: 110,
+      responsive: ['lg'],
       render: (_, rec) => {
         const movStatus = rec.movement?.movementStatus || 'NOT_MOVED';
         return (
@@ -269,6 +354,7 @@ export default function EnquiriesListPage() {
       title: 'Shipping',
       key: 'shippingStatus',
       width: 120,
+      responsive: ['lg'],
       render: (_, rec) => {
         const shipStatus = rec.movement?.shippingStatus || 'PENDING';
         let color = 'default';
@@ -276,6 +362,15 @@ export default function EnquiriesListPage() {
         if (shipStatus === 'COMPLETED') color = 'green';
         return <Tag color={color}>{shipStatus}</Tag>;
       },
+    },
+    {
+      title: 'Freight',
+      dataIndex: 'freightAmount',
+      key: 'freightAmount',
+      width: 120,
+      align: 'right',
+      responsive: ['xxl'],
+      render: (val) => (val ? formatCurrencyINR(val) : '-'),
     },
     {
       title: 'Vendor Payable',
@@ -297,32 +392,33 @@ export default function EnquiriesListPage() {
 
         return (
           <Space size="small">
-            <Tooltip title="View Details">
-              <Button
-                type="text"
-                icon={<EyeOutlined />}
-                size="small"
-                onClick={() => router.push(`/enquiries/${record.id}`)}
-              />
-            </Tooltip>
+            <RecordDetailPopover record={record} title={`Enquiry #ENQ-${record.enquiryNumber || record.id}`}>
+              <Tooltip title="Quick View Popover">
+                <Button
+                  type="text"
+                  icon={<EyeOutlined style={{ color: '#1677ff' }} />}
+                  size="small"
+                />
+              </Tooltip>
+            </RecordDetailPopover>
 
             <Tooltip title="Edit Enquiry">
               <Button
                 type="text"
-                icon={<EditOutlined />}
+                icon={<EditOutlined style={{ color: '#52c41a' }} />}
                 size="small"
                 onClick={() => router.push(`/enquiries/${record.id}/edit`)}
               />
             </Tooltip>
 
             <Tooltip title={isBilled ? 'Cannot delete billed enquiry' : 'Delete Enquiry'}>
-              <Popconfirm
-                title="Delete this enquiry?"
-                description="This will soft-delete the transport enquiry and linked movement records."
-                onConfirm={() => handleDelete(record.id, record)}
+              <ActionConfirmPopover
+                title="Delete this transport enquiry?"
+                description="Are you sure you want to delete this enquiry? It will soft-delete the record and remove linked movements."
                 okText="Yes, Delete"
-                okType="danger"
+                cancelText="No, Keep It"
                 disabled={Boolean(isBilled)}
+                onConfirm={() => handleDelete(record.id, record)}
               >
                 <Button
                   type="text"
@@ -331,7 +427,7 @@ export default function EnquiriesListPage() {
                   size="small"
                   disabled={Boolean(isBilled)}
                 />
-              </Popconfirm>
+              </ActionConfirmPopover>
             </Tooltip>
           </Space>
         );
@@ -508,7 +604,56 @@ export default function EnquiriesListPage() {
           dataSource={data}
           rowKey="id"
           loading={loading}
-          scroll={{ x: 1300 }}
+          scroll={{ x: 1100 }}
+          expandable={{
+            expandedRowRender: (record) => (
+              <div style={{ padding: '12px 20px', backgroundColor: '#fafafa', borderRadius: 6, border: '1px solid #f0f0f0' }}>
+                <Row gutter={[16, 12]}>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>TXN Number</Text>
+                    <Text strong>{record.transactionNumber || '-'}</Text>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Company</Text>
+                    <Text strong>{record.companyName || record.companyId || '-'}</Text>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Client</Text>
+                    <Text strong>{record.clientName || record.clientId || '-'}</Text>
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Driver Info</Text>
+                    <Text strong>{record.driverInfo || '-'}</Text>
+                  </Col>
+                  <Col xs={12} sm={8} md={4}>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Freight Amount</Text>
+                    <Text strong>{formatCurrencyINR(record.freightAmount)}</Text>
+                  </Col>
+                  <Col xs={12} sm={8} md={4}>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Advance Cash</Text>
+                    <Text strong>{formatCurrencyINR(record.advanceAmount)}</Text>
+                  </Col>
+                  <Col xs={12} sm={8} md={4}>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Halting Charges</Text>
+                    <Text strong>{formatCurrencyINR(record.haltingAmount)}</Text>
+                  </Col>
+                  <Col xs={12} sm={8} md={4}>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Other Charges</Text>
+                    <Text strong>{formatCurrencyINR(record.otherCharges)}</Text>
+                  </Col>
+                  <Col xs={12} sm={8} md={4}>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Vendor Payable</Text>
+                    <Text strong style={{ color: '#389e0d' }}>{formatCurrencyINR(record.vendorFinance?.totalPayable)}</Text>
+                  </Col>
+                  <Col xs={12} sm={8} md={4}>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Movement Status</Text>
+                    <Tag>{record.movement?.movementStatus || 'NOT_MOVED'}</Tag>
+                  </Col>
+                </Row>
+              </div>
+            ),
+            rowExpandable: () => true,
+          }}
           pagination={{
             current: page,
             pageSize,

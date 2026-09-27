@@ -238,11 +238,24 @@ const PaymentsModule = (function () {
 
     const clientsMap = {};
 
+    const allClients = SheetRepo.getAllRows('clients', true);
+    const clientLookup = {};
+    allClients.forEach(function (c) { clientLookup[c.id] = c.name; });
+
     bills.forEach(function (b) {
-      const pending = Number(b.pendingAmount || 0);
+      const billTotal = Number(b.totalAmount) || 0;
+      const billPaid = Number(b.paidAmount) || 0;
+      const pending = Number(
+        b.pendingAmount !== undefined && b.pendingAmount !== ''
+          ? b.pendingAmount
+          : b.outstandingAmount !== undefined && b.outstandingAmount !== ''
+          ? b.outstandingAmount
+          : Math.max(0, billTotal - billPaid)
+      );
       if (pending <= 0) return; // Only process unpaid/partial bills
 
-      const billDate = b.billDate ? new Date(b.billDate) : today;
+      const rawDate = b.billingDate || b.billDate;
+      const billDate = rawDate ? new Date(rawDate) : today;
       const diffTime = Math.abs(today - billDate);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -250,7 +263,7 @@ const PaymentsModule = (function () {
       summary.totalOverdueBills += 1;
 
       const clientId = b.clientId || 'UNKNOWN';
-      const clientName = b.clientName || 'Unknown Client';
+      const clientName = b.clientName || clientLookup[b.clientId] || b.clientId || 'Unknown Client';
 
       if (!clientsMap[clientId]) {
         clientsMap[clientId] = {

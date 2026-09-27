@@ -49,10 +49,19 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const result = await callAppsScript('enquiry.create', body, sessionToken);
+    const result = (await callAppsScript('enquiry.create', body, sessionToken)) as any;
+    if (result.success && result.data) {
+      const enquiryData = result.data.enquiry || result.data;
+      const { syncEnquiryToReports } = await import('@/lib/server/reportSyncService');
+      syncEnquiryToReports(enquiryData, undefined, sessionToken).catch((err) =>
+        console.error('[LiveSync] Enquiry create sync failed:', err)
+      );
+    }
+
     return NextResponse.json(result, { status: result.success ? 201 : 400 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to create enquiry';
     return NextResponse.json({ success: false, data: null, message }, { status: 500 });
   }
 }
+

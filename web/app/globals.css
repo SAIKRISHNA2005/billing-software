@@ -16,3 +16,192 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* Popover Confirmation Action Buttons (Green Yes / Red No) */
+.popover-confirm-yes {
+  background-color: #52c41a !important;
+  border-color: #52c41a !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.popover-confirm-yes:hover,
+.popover-confirm-yes:focus {
+  background-color: #389e0d !important;
+  border-color: #237804 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(82, 196, 26, 0.5) !important;
+}
+
+.popover-confirm-no {
+  background-color: #ffffff !important;
+  border-color: #ff4d4f !important;
+  color: #ff4d4f !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.popover-confirm-no:hover,
+.popover-confirm-no:focus {
+  background-color: #ff4d4f !important;
+  border-color: #cf1322 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(255, 77, 79, 0.5) !important;
+}
+
+/* Popover card styling */
+.action-popover-card .ant-popover-inner {
+  border-radius: 12px !important;
+  padding: 16px 18px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16) !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Custom Vehicle Status Toggle Button */
+.vehicle-status-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  vertical-align: middle !important;
+  user-select: none !important;
+  cursor: pointer !important;
+  padding: 0 2.5px !important;
+}
+
+.vehicle-status-toggle .toggle-circle {
+  display: block !important;
+  position: static !important;
+  border-radius: 50% !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+}
+
+/* TOGGLE ON: The whole toggle button is blue and circle is white (right side) */
+.vehicle-status-toggle.toggle-on {
+  justify-content: flex-end !important;
+  background: linear-gradient(180deg, #1890ff 0%, #0958d9 100%) !important;
+  border: 2px solid #1677ff !important;
+  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.35) !important;
+}
+
+.vehicle-status-toggle.toggle-on .toggle-circle {
+  background: #ffffff !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.28) !important;
+}
+
+/* TOGGLE OFF: The whole toggle button is white and circle is blue (left side) */
+.vehicle-status-toggle.toggle-off {
+  justify-content: flex-start !important;
+  background: #ffffff !important;
+  border: 2px solid #cfd6e4 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+.vehicle-status-toggle.toggle-off .toggle-circle {
+  background: linear-gradient(180deg, #1890ff 0%, #0958d9 100%) !important;
+  box-shadow: 0 2px 5px rgba(22, 119, 255, 0.35) !important;
+}
+
+.vehicle-status-toggle:hover {
+  transform: translateY(-1px);
+}
+
+.vehicle-status-toggle.toggle-on:hover {
+  box-shadow: 0 4px 14px rgba(22, 119, 255, 0.55) !important;
+}
+
+.vehicle-status-toggle.toggle-off:hover {
+  border-color: #1677ff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ==========================================================================
+   ActionConfirmPopover & RecordDetailPopover Card Styles
+   ========================================================================== */
+.popover-confirm-yes {
+  background-color: #52c41a !important;
+  border-color: #52c41a !important;
+  color: #ffffff !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.popover-confirm-yes:hover,
+.popover-confirm-yes:focus {
+  background-color: #389e0d !important;
+  border-color: #389e0d !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+.popover-confirm-no {
+  background-color: #ffffff !important;
+  border: 1.5px solid #ff4d4f !important;
+  color: #ff4d4f !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.popover-confirm-no:hover,
+.popover-confirm-no:focus {
+  background-color: #ff4d4f !important;
+  border-color: #cf1322 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+.action-popover-card .ant-popover-inner {
+  border-radius: 12px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15), 0 4px 14px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 14px 16px !important;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints & Layout Adaptations
+   ========================================================================== */
+@media (max-width: 768px) {
+  .ant-layout-header {
+    padding: 0 12px !important;
+  }
+
+  .ant-layout-content {
+    margin: 12px 12px 0 !important;
+  }
+
+  .ant-table-wrapper {
+    overflow-x: auto;
+  }
+
+  /* Make filter buttons and selects wrap nicely on mobile */
+  .ant-space-wrap {
+    row-gap: 8px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .ant-card-body {
+    padding: 12px !important;
+  }
+
+  .ant-typography h2 {
+    font-size: 20px !important;
+  }
+
+  .ant-typography h3 {
+    font-size: 18px !important;
+  }
+}
+

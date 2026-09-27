@@ -8,6 +8,7 @@ import { useRouter, useParams } from 'next/navigation';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { formatCurrencyINR } from '@/lib/utils/format';
+import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 
 const { Title, Text } = Typography;
 
@@ -234,15 +235,24 @@ export default function EditProcessedBillPage() {
             <Button size="large" onClick={() => router.back()}>
               Cancel
             </Button>
-            <Button
-              type="primary"
-              size="large"
-              icon={<SaveOutlined />}
+            <ActionConfirmPopover
+              title="Save Changes to Processed Bill?"
+              description="Are you sure you want to update the line items, charges, and remarks for this issued invoice?"
+              okText="Yes, Save Changes"
+              cancelText="No, Cancel"
+              onConfirm={handleSave}
               loading={submitting}
-              onClick={handleSave}
+              placement="topRight"
             >
-              Save Updated Processed Bill
-            </Button>
+              <Button
+                type="primary"
+                size="large"
+                icon={<SaveOutlined />}
+                loading={submitting}
+              >
+                Save Updated Processed Bill
+              </Button>
+            </ActionConfirmPopover>
           </Space>
         </Card>
       </Form>

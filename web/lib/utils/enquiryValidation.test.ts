@@ -56,6 +56,26 @@ describe('enquiryValidation (D12 & rules)', () => {
     }
   });
 
+  it('validates expanded loading types (Empty, Offload, Flattrack)', () => {
+    ['Empty', 'Offload', 'Flattrack'].forEach((type) => {
+      const res = enquiryFormSchema.safeParse({
+        companyId: 'CMP-001',
+        clientId: 'CLI-001',
+        loadingType: type,
+        noOfContainers: 2,
+        bookingNumber: 'BK-10029',
+        weight: '18000 KG',
+        containerFrom: 'ZIRCON CFS',
+        containerTo: 'GODREJ AMBATTUR',
+        containers: [
+          { containerNumber: 'MSCU1234567', vehicleNumber: 'TN04AB1234' },
+          { containerNumber: 'GESU7654321', vehicleNumber: 'TN20BZ4732' },
+        ],
+      });
+      expect(res.success).toBe(true);
+    });
+  });
+
   it('rejects invalid vehicle and driver formats', () => {
     const invalidVehicle = {
       companyId: 'CMP-001',
@@ -72,5 +92,28 @@ describe('enquiryValidation (D12 & rules)', () => {
       driverPhone: '12345', // not 10 digits
     };
     expect(enquiryFormSchema.safeParse(invalidDriver).success).toBe(false);
+  });
+
+  it('validates invoiceNumber and truck counts correctly', () => {
+    const currentYear = new Date().getFullYear();
+    const validData = {
+      companyId: 'CMP-001',
+      clientId: 'CLI-001',
+      loadingType: 'Import',
+      containerSize: '20 FT',
+      noOfContainers: 3,
+      truckCount20: 3,
+      truckCount40: 0,
+      invoiceNumber: `INV-${currentYear}-001`,
+      invoiceDate: '27-09-2026',
+    };
+
+    const res = enquiryFormSchema.safeParse(validData);
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.truckCount20).toBe(3);
+      expect(res.data.truckCount40).toBe(0);
+      expect(res.data.invoiceNumber).toBe(`INV-${currentYear}-001`);
+    }
   });
 });

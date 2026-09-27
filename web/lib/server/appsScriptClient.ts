@@ -36,27 +36,41 @@ export async function callAppsScript<TResult = unknown, TPayload = unknown>(
     };
   }
 
-  try {
-    const response = await axios.post<ApiResponse<TResult>>(
-      execUrl,
-      {
-        action,
-        payload: payload || {},
-        sessionToken: sessionToken || null,
-        secret: sharedSecret || '', // Pass in body as well to ensure it survives Google redirect proxies
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tms-proxy-secret': sharedSecret || '',
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const response = await axios.post<ApiResponse<TResult>>(
+        execUrl,
+        {
+          action,
+          payload: payload || {},
+          sessionToken: sessionToken || null,
+          secret: sharedSecret || '',
         },
-        maxRedirects: 5,
-        timeout: 60000, // Apps Script cold starts can take up to 30-45s
-      }
-    );
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-tms-proxy-secret': sharedSecret || '',
+          },
+          maxRedirects: 5,
+          timeout: 120000,
+        }
+      );
 
-    return response.data;
-  } catch (error: unknown) {
+      const result = response.data;
+      return result;
+    } catch (error: unknown) {
+      lastError = error;
+      if (attempt < 2 && axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 502 || error.response?.status === 503 || !error.response)) {
+        await new Promise((r) => setTimeout(r, 1500));
+        continue;
+      }
+      break;
+    }
+  }
+
+  const error = lastError;
+
     let errorMessage = 'Failed to communicate with Google Apps Script backend';
     let errorCode = 'BACKEND_CONNECTION_ERROR';
 
@@ -83,5 +97,4 @@ export async function callAppsScript<TResult = unknown, TPayload = unknown>(
       message: errorMessage,
       errors: [{ message: errorMessage, code: errorCode }],
     };
-  }
 }

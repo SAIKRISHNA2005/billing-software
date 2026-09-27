@@ -35,3 +35,8 @@ function getFinancialYear(inputDate) {
 
   return year + '-' + nextYearShort;
 }
+
+var FinancialYearModule = {
+  getFinancialYear: getFinancialYear
+};
+

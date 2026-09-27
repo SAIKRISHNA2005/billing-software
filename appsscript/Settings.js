@@ -258,14 +258,16 @@ var SettingsModule = (function () {
       });
     }
 
-    // Apply search filter (action, entity, entityId)
+    // Apply search filter (action, entity, entityId, userId, location)
     if (params.search) {
       var query = String(params.search).toLowerCase();
       rows = rows.filter(function (r) {
         return (
           (r.action || '').toLowerCase().indexOf(query) !== -1 ||
           (r.entity || '').toLowerCase().indexOf(query) !== -1 ||
-          (r.entityId || '').toLowerCase().indexOf(query) !== -1
+          (r.entityId || '').toLowerCase().indexOf(query) !== -1 ||
+          (r.userId || '').toLowerCase().indexOf(query) !== -1 ||
+          (r.location || '').toLowerCase().indexOf(query) !== -1
         );
       });
     }

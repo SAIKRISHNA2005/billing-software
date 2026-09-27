@@ -12,7 +12,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const body = await req.json().catch(() => ({}));
     const payload = { ...body, id: params.id };
 
-    const result = await callAppsScript('bill.process', payload, sessionToken);
+    const result = (await callAppsScript('bill.process', payload, sessionToken)) as any;
+    if (result.success && result.data) {
+      const { syncProcessedBillToReports } = await import('@/lib/server/reportSyncService');
+      syncProcessedBillToReports(result.data, sessionToken).catch((err) =>
+        console.error('[LiveSync] Process bill sync failed:', err)
+      );
+    }
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json(
@@ -21,3 +27,4 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     );
   }
 }
+

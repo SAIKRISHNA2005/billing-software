@@ -14,7 +14,7 @@ export default function NewEnquiryPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
-  const [createdResult, setCreatedResult] = useState<{ id: string; transactionNumber: string } | null>(null);
+  const [createdResult, setCreatedResult] = useState<{ id: string; transactionNumber: string; invoiceNumber?: string } | null>(null);
 
   const handleSubmit = async (values: Record<string, any>) => {
     setSubmitting(true);
@@ -25,6 +25,7 @@ export default function NewEnquiryPage() {
         setCreatedResult({
           id: res.data.data.enquiry.id,
           transactionNumber: res.data.data.enquiry.transactionNumber,
+          invoiceNumber: res.data.data.enquiry.invoiceNumber,
         });
         setSuccessModalOpen(true);
       } else {
@@ -84,6 +85,11 @@ export default function NewEnquiryPage() {
               <p style={{ fontSize: 16, margin: '8px 0', color: '#1677ff' }}>
                 Transaction No: <strong>{createdResult?.transactionNumber}</strong>
               </p>
+              {createdResult?.invoiceNumber && (
+                <p style={{ fontSize: 16, margin: '8px 0', color: '#52c41a' }}>
+                  Invoice No: <strong>{createdResult?.invoiceNumber}</strong>
+                </p>
+              )}
               <p style={{ color: '#666', fontSize: 13, marginTop: 12 }}>
                 Enquiry and linked movement gate records have been successfully saved.
               </p>

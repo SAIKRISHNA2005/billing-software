@@ -26,10 +26,17 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       movement: body.movement || body,
     };
 
-    const result = await callAppsScript('enquiry.updateMovement', payload, sessionToken);
+    const result = (await callAppsScript('enquiry.updateMovement', payload, sessionToken)) as any;
+    if (result.success && result.data) {
+      const { syncEnquiryToReports } = await import('@/lib/server/reportSyncService');
+      syncEnquiryToReports(result.data, undefined, sessionToken).catch((err) =>
+        console.error('[LiveSync] Movement update sync failed:', err)
+      );
+    }
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to update movement times';
     return NextResponse.json({ success: false, data: null, message }, { status: 500 });
   }
 }
+

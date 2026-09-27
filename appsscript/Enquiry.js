@@ -21,12 +21,15 @@ const EnquiryModule = {
    */
   _getNextNumbers() {
     const lock = LockService.getScriptLock();
-    lock.waitLock(30000); // 30s timeout
+    let acquiredHere = false;
+    if (!lock.hasLock()) {
+      lock.waitLock(30000); // 30s timeout
+      acquiredHere = true;
+    }
 
     try {
       const now = new Date().toISOString();
       const currentFy = getFinancialYear();
-      const seqSheet = SheetRepo.getSheet('number_sequences');
       const allSequences = SheetRepo.getAllRows('number_sequences', true);
 
       // 1. Resolve Enquiry Sequential Number
@@ -76,12 +79,56 @@ const EnquiryModule = {
       const paddedTxn = ('00000' + nextTxnNum).slice(-5);
       const transactionNumber = 'TXN/' + currentFy + '/' + paddedTxn;
 
+      // 3. Resolve Invoice Sequential Number for current Year (Format: INV-YYYY-001)
+      const currentYear = new Date().getFullYear();
+      const invoiceKey = 'invoice_' + currentYear;
+      let invSeqRow = allSequences.find((s) => s.sequenceKey === invoiceKey);
+      let nextInvNum;
+
+      if (invSeqRow) {
+        nextInvNum = parseInt(invSeqRow.currentValue, 10) + 1;
+        SheetRepo.updateRow('number_sequences', invoiceKey, {
+          currentValue: nextInvNum,
+          updatedAt: now,
+        });
+      } else {
+        // Fallback scan: check existing enquiries in case sequences was reset
+        let maxExisting = 0;
+        try {
+          const enqRows = SheetRepo.getAllRows('enquiries', false);
+          const prefix = 'INV-' + currentYear + '-';
+          enqRows.forEach((r) => {
+            if (r.invoiceNumber && String(r.invoiceNumber).startsWith(prefix)) {
+              const numPart = parseInt(String(r.invoiceNumber).replace(prefix, ''), 10);
+              if (!isNaN(numPart) && numPart > maxExisting) {
+                maxExisting = numPart;
+              }
+            }
+          });
+        } catch (e) {
+          // ignore scan error
+        }
+        nextInvNum = maxExisting + 1;
+        SheetRepo.insertRow('number_sequences', {
+          sequenceKey: invoiceKey,
+          financialYear: String(currentYear),
+          currentValue: nextInvNum,
+          updatedAt: now,
+        });
+      }
+
+      const paddedInv = ('000' + nextInvNum).slice(-3);
+      const invoiceNumber = 'INV-' + currentYear + '-' + paddedInv;
+
       return {
         enquiryNumber: nextEnquiryNum,
         transactionNumber,
+        invoiceNumber,
       };
     } finally {
-      lock.releaseLock();
+      if (acquiredHere) {
+        lock.releaseLock();
+      }
     }
   },
 
@@ -227,8 +274,8 @@ const EnquiryModule = {
     // 1. Validation of required basic fields
     if (!data.companyId) throw new Error('Company is required.');
     if (!data.clientId) throw new Error('Client is required.');
-    if (!data.loadingType || !['Import', 'Export'].includes(data.loadingType)) {
-      throw new Error('Loading Type must be either "Import" or "Export".');
+    if (!data.loadingType || !['Import', 'Export', 'Empty', 'Offload', 'Flattrack'].includes(data.loadingType)) {
+      throw new Error('Loading Type must be one of: "Import", "Export", "Empty", "Offload", "Flattrack".');
     }
 
     // Verify company and client existence
@@ -243,11 +290,16 @@ const EnquiryModule = {
     const containerObj = this._resolveContainer(data.containerNumber || data.containerId, data.containerType, session.userId);
 
     // 3. Acquire lock and generate sequential numbers
-    const { enquiryNumber, transactionNumber } = this._getNextNumbers();
+    const { enquiryNumber, transactionNumber, invoiceNumber } = this._getNextNumbers();
     const enquiryId = 'ENQ-' + enquiryNumber;
 
     const now = new Date();
     const dateFormatted = Utilities.formatDate(now, 'Asia/Kolkata', 'dd-MM-yyyy');
+
+    // Auto-assign invoiceNumber if blank
+    const resolvedInvoiceNumber = (data.invoiceNumber && String(data.invoiceNumber).trim() !== '')
+      ? String(data.invoiceNumber).trim()
+      : invoiceNumber;
 
     // 4. Construct Enquiry Record
     const enquiryRecord = {
@@ -271,6 +323,21 @@ const EnquiryModule = {
       haltingDays: parseInt(data.haltingDays, 10) || 0,
       haltingAmount: parseFloat(data.haltingAmount) || 0,
       bonus: parseFloat(data.bonus) || 0,
+      bookingNumber: data.bookingNumber || '',
+      bookingDate: data.bookingDate || '',
+      containerSize: data.containerSize || '',
+      noOfContainers: data.noOfContainers || 1,
+      weight: data.weight || '',
+      clientAddress: data.clientAddress || '',
+      comments: data.comments || '',
+      otherCharges: parseFloat(data.otherCharges) || 0,
+      shipmentDate: data.shipmentDate || '',
+      containerFrom: data.containerFrom || '',
+      containerTo: data.containerTo || '',
+      invoiceNumber: resolvedInvoiceNumber,
+      invoiceDate: data.invoiceDate || dateFormatted,
+      truckCount20: parseInt(data.truckCount20, 10) || 0,
+      truckCount40: parseInt(data.truckCount40, 10) || 0,
       billId: '',
       completedAt: '',
       active: true,
@@ -295,8 +362,8 @@ const EnquiryModule = {
         printOutTime: data.printOutTime || '',
         portInTime: data.portInTime || '',
         portOutTime: data.portOutTime || '',
-        movementStatus: 'NOT_MOVED',
-        shippingStatus: 'PENDING',
+        movementStatus: data.movementStatus || 'NOT_MOVED',
+        shippingStatus: data.shippingStatus || 'PENDING',
       };
       insertedMovement = SheetRepo.insertRow('movements', movementRecord, session.userId);
     } catch (err) {
@@ -788,5 +855,48 @@ const EnquiryModule = {
     if (typeof ExpensesModule !== 'undefined' && ExpensesModule.syncEnquiryExpenses) {
       ExpensesModule.syncEnquiryExpenses(enquiry, sessionUserId);
     }
+  },
+
+  /**
+   * Action: "enquiry.getNextNumbers"
+   * Preview next sequential numbers (invoice, year, etc.) without incrementing.
+   */
+  getNextNumbers(sessionToken) {
+    requireSession(sessionToken);
+    const currentYear = new Date().getFullYear();
+    const currentFy = getFinancialYear();
+    const invoiceKey = 'invoice_' + currentYear;
+    const allSequences = SheetRepo.getAllRows('number_sequences', true);
+
+    let invSeqRow = allSequences.find((s) => s.sequenceKey === invoiceKey);
+    let nextInvNum;
+
+    if (invSeqRow) {
+      nextInvNum = parseInt(invSeqRow.currentValue, 10) + 1;
+    } else {
+      let maxExisting = 0;
+      try {
+        const enqRows = SheetRepo.getAllRows('enquiries', false);
+        const prefix = 'INV-' + currentYear + '-';
+        enqRows.forEach((r) => {
+          if (r.invoiceNumber && String(r.invoiceNumber).startsWith(prefix)) {
+            const numPart = parseInt(String(r.invoiceNumber).replace(prefix, ''), 10);
+            if (!isNaN(numPart) && numPart > maxExisting) {
+              maxExisting = numPart;
+            }
+          }
+        });
+      } catch (e) {}
+      nextInvNum = maxExisting + 1;
+    }
+
+    const paddedInv = ('000' + nextInvNum).slice(-3);
+    const nextInvoiceNumber = 'INV-' + currentYear + '-' + paddedInv;
+
+    return {
+      nextInvoiceNumber,
+      year: currentYear,
+      financialYear: currentFy,
+    };
   },
 };

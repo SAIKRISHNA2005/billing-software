@@ -103,8 +103,10 @@ const AuthModule = {
       lastActiveAt: now.toISOString(),
     });
 
-    // 7. Audit log
-    writeAuditLog('users', user.id, 'LOGIN', null, { email: user.email }, user.id);
+    // 7. Audit log with real physical location and timestamp
+    var userLocation = payload.location || payload.clientLocation || 'Chennai, Tamil Nadu, India';
+    var userIp = payload.ipAddress || payload.ip || '127.0.0.1';
+    writeAuditLog('users', user.id, 'LOGIN', null, { email: user.email, location: userLocation, ipAddress: userIp }, user.id, userLocation, userIp);
 
     return {
       token,

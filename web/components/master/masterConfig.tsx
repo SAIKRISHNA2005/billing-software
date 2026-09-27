@@ -3,6 +3,7 @@ import { Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { FormFieldConfig, MasterRecord } from './GenericMasterManager';
 import { AsyncMasterSelect } from '../common/AsyncMasterSelect';
+import { VehicleStatusToggle } from '../common/VehicleStatusToggle';
 
 // --- 1. Companies ---
 export interface CompanyRecord extends MasterRecord {
@@ -172,6 +173,18 @@ export const vehicleColumns: ColumnsType<VehicleRecord> = [
   },
   { title: 'Vehicle Type', dataIndex: 'vehicleType', key: 'vehicleType' },
   { title: 'Vendor ID', dataIndex: 'vendorId', key: 'vendorId', width: 140 },
+  {
+    title: 'Vehicle Status',
+    key: 'vehicleStatus',
+    width: 140,
+    align: 'center' as const,
+    render: (_, rec) => (
+      <VehicleStatusToggle
+        vehicleNumber={rec.vehicleNumber}
+        vehicleId={rec.id}
+      />
+    ),
+  },
 ];
 
 export const vehicleFields: FormFieldConfig[] = [

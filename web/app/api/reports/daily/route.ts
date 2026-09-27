@@ -11,8 +11,9 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const date = searchParams.get('date') || '';
+    const all = searchParams.get('all') || '';
 
-    const result = await callAppsScript('reports.daily', { date }, sessionToken);
+    const result = await callAppsScript('reports.daily', { date, all }, sessionToken);
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json(

@@ -30,7 +30,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const action = body.status === 'PROCESSED' || body.isProcessed ? 'bill.updateProcessed' : 'bill.create';
     const payload = { ...body, id: params.id };
 
-    const result = await callAppsScript(action, payload, sessionToken);
+    const result = (await callAppsScript(action, payload, sessionToken)) as any;
+    if (result.success && result.data && (result.data.status === 'PROCESSED' || body.status === 'PROCESSED')) {
+      const { syncProcessedBillToReports } = await import('@/lib/server/reportSyncService');
+      syncProcessedBillToReports(result.data, sessionToken).catch((err) =>
+        console.error('[LiveSync] Bill update sync failed:', err)
+      );
+    }
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json(
@@ -48,6 +54,12 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }
 
     const result = await callAppsScript('bill.deleteDraft', { id: params.id }, sessionToken);
+    if (result.success) {
+      const { deleteProcessedBillFromReports } = await import('@/lib/server/reportSyncService');
+      deleteProcessedBillFromReports(params.id, undefined, sessionToken).catch((err) =>
+        console.error('[LiveSync] Bill delete sync failed:', err)
+      );
+    }
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json(
@@ -56,3 +68,4 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     );
   }
 }
+

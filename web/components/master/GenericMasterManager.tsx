@@ -29,6 +29,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ColumnsType } from 'antd/es/table';
 import { apiClient } from '@/lib/api/client';
 import { formatDate } from '@/lib/utils/format';
+import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 
 const { Text } = Typography;
 
@@ -233,13 +234,13 @@ export function GenericMasterManager<T extends MasterRecord = MasterRecord>({
             title="Edit"
           />
           {isActive ? (
-            <Popconfirm
+            <ActionConfirmPopover
               title={`Deactivate ${entitySingular}?`}
               description="Historical records will retain this reference, but it will be hidden from future dropdowns."
               onConfirm={() => deactivateMutation.mutate(record.id)}
-              okText="Deactivate"
-              cancelText="Cancel"
-              okButtonProps={{ danger: true }}
+              okText="Yes, Deactivate"
+              cancelText="No, Keep Active"
+              placement="topRight"
             >
               <Button
                 type="text"
@@ -249,14 +250,15 @@ export function GenericMasterManager<T extends MasterRecord = MasterRecord>({
                 title="Deactivate"
                 loading={deactivateMutation.isPending}
               />
-            </Popconfirm>
+            </ActionConfirmPopover>
           ) : (
-            <Popconfirm
+            <ActionConfirmPopover
               title={`Reactivate ${entitySingular}?`}
               description="This will restore the item to active dropdowns and lookups."
               onConfirm={() => reactivateMutation.mutate(record.id)}
-              okText="Reactivate"
-              cancelText="Cancel"
+              okText="Yes, Reactivate"
+              cancelText="No, Keep Inactive"
+              placement="topRight"
             >
               <Button
                 type="text"
@@ -265,7 +267,7 @@ export function GenericMasterManager<T extends MasterRecord = MasterRecord>({
                 title="Reactivate"
                 loading={reactivateMutation.isPending}
               />
-            </Popconfirm>
+            </ActionConfirmPopover>
           )}
         </Space>
       );
@@ -387,13 +389,26 @@ export function GenericMasterManager<T extends MasterRecord = MasterRecord>({
             >
               Cancel
             </Button>
-            <Button
-              type="primary"
-              onClick={handleFormSubmit}
+            <ActionConfirmPopover
+              title={editingRecord ? `Save Changes to ${entitySingular}?` : `Create New ${entitySingular}?`}
+              description={
+                editingRecord
+                  ? `Are you sure you want to save changes to this ${entitySingular.toLowerCase()} record?`
+                  : `Are you sure you want to create this new ${entitySingular.toLowerCase()} record?`
+              }
+              okText={editingRecord ? 'Yes, Save' : 'Yes, Create'}
+              cancelText="No, Cancel"
+              onConfirm={handleFormSubmit}
               loading={createMutation.isPending || updateMutation.isPending}
+              placement="bottomRight"
             >
-              {editingRecord ? 'Save Changes' : 'Create'}
-            </Button>
+              <Button
+                type="primary"
+                loading={createMutation.isPending || updateMutation.isPending}
+              >
+                {editingRecord ? 'Save Changes' : 'Create'}
+              </Button>
+            </ActionConfirmPopover>
           </Space>
         }
         destroyOnClose

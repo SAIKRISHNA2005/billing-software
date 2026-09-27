@@ -29,6 +29,9 @@ import {
   LogoutOutlined,
   KeyOutlined,
   CarOutlined,
+  CalendarOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/lib/auth/AuthContext';
 import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
@@ -46,6 +49,28 @@ export default function AppShell({ children }: AppShellProps) {
   const { user, isLoading, isAuthenticated, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Responsive screen size listener
+  React.useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setCollapsed(true);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Auto-close drawer on route change on mobile
+  React.useEffect(() => {
+    if (isMobile) {
+      setCollapsed(true);
+    }
+  }, [pathname, isMobile]);
 
   // Protected route check
   React.useEffect(() => {
@@ -107,6 +132,37 @@ export default function AppShell({ children }: AppShellProps) {
     },
   ];
 
+  const settingsMenuItems: MenuProps['items'] = [
+    {
+      key: '/settings/master',
+      icon: <SettingOutlined />,
+      label: <Link href="/settings/master">Master Data</Link>,
+    },
+    {
+      key: '/settings/profile',
+      icon: <UserOutlined />,
+      label: <Link href="/settings/profile">Company Profile</Link>,
+    },
+    {
+      key: '/settings/audit',
+      icon: <FileTextOutlined />,
+      label: <Link href="/settings/audit">Audit Log</Link>,
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: '/exports/excel',
+      icon: <ExportOutlined />,
+      label: <Link href="/exports/excel">Master Excel & Backups</Link>,
+    },
+    {
+      key: '/exports/pdf',
+      icon: <FileTextOutlined />,
+      label: <Link href="/exports/pdf">PDF & Reports Export</Link>,
+    },
+  ];
+
   const menuItems: MenuProps['items'] = [
     {
       key: '/dashboard',
@@ -114,227 +170,195 @@ export default function AppShell({ children }: AppShellProps) {
       label: <Link href="/dashboard">Dashboard</Link>,
     },
     {
-      key: 'enquiries',
+      key: '/enquiries/new',
       icon: <FileTextOutlined />,
-      label: 'Enquiries',
-      children: [
-        {
-          key: '/enquiries/new',
-          label: <Link href="/enquiries/new">Add Enquiry</Link>,
-        },
-        {
-          key: '/enquiries',
-          label: <Link href="/enquiries">View / Edit Enquiry</Link>,
-        },
-      ],
+      label: <Link href="/enquiries/new">Add Enquiry</Link>,
     },
     {
-      key: 'operations',
-      icon: <CompassOutlined />,
-      label: 'Operations',
-      children: [
-        {
-          key: '/operations/movement',
-          label: <Link href="/operations/movement">Vehicle Movement</Link>,
-        },
-        {
-          key: '/operations/pending',
-          label: <Link href="/operations/pending">Pending Jobs</Link>,
-        },
-        {
-          key: '/operations/completed',
-          label: <Link href="/operations/completed">Completed Jobs</Link>,
-        },
-      ],
+      key: '/enquiries',
+      icon: <FileTextOutlined />,
+      label: <Link href="/enquiries">View / Edit Enquiry</Link>,
+    },
+    {
+      key: '/reports/daily',
+      icon: <CalendarOutlined />,
+      label: <Link href="/reports/daily">Daily Report</Link>,
+    },
+    {
+      key: '/reports/vendor',
+      icon: <TeamOutlined />,
+      label: <Link href="/reports/vendor">Vendor Report</Link>,
+    },
+    {
+      key: '/reports/billing',
+      icon: <BarChartOutlined />,
+      label: <Link href="/reports/billing">Billing Report</Link>,
     },
     {
       key: 'expenses',
       icon: <DollarOutlined />,
-      label: 'Expenses',
+      label: 'Expense',
       children: [
+        {
+          key: '/expenses/general',
+          label: <Link href="/expenses/general">General Expense</Link>,
+        },
         {
           key: '/expenses/loading',
           label: <Link href="/expenses/loading">Loading Expenses</Link>,
         },
-        {
-          key: '/expenses/general',
-          label: <Link href="/expenses/general">General Expenses</Link>,
-        },
       ],
     },
     {
-      key: 'billing',
+      key: '/billing/pending',
       icon: <ContainerOutlined />,
-      label: 'Billing',
-      children: [
-        {
-          key: '/billing/pending',
-          label: <Link href="/billing/pending">Pending Bills</Link>,
-        },
-        {
-          key: '/billing/create',
-          label: <Link href="/billing/create">Create Bill</Link>,
-        },
-        {
-          key: '/billing/processed',
-          label: <Link href="/billing/processed">Processed Bills</Link>,
-        },
-        {
-          key: '/billing/payments',
-          label: <Link href="/billing/payments">Client Payments</Link>,
-        },
-        {
-          key: '/billing/ageing',
-          label: <Link href="/billing/ageing">Ageing Analysis</Link>,
-        },
-      ],
-    },
-
-    {
-      key: 'vendors',
-      icon: <TeamOutlined />,
-      label: 'Vendors',
-      children: [
-        {
-          key: '/vendors',
-          label: <Link href="/vendors">Vendor List</Link>,
-        },
-        {
-          key: '/vendors/payments',
-          label: <Link href="/vendors/payments">Vendor Payments</Link>,
-        },
-        {
-          key: '/vendors/report',
-          label: <Link href="/vendors/report">Vendor Report</Link>,
-        },
-      ],
+      label: <Link href="/billing/pending">Pending Bills</Link>,
     },
     {
-      key: 'reports',
-      icon: <BarChartOutlined />,
-      label: 'Reports',
-      children: [
-        {
-          key: '/reports/daily',
-          label: <Link href="/reports/daily">Daily Report</Link>,
-        },
-        {
-          key: '/reports/company',
-          label: <Link href="/reports/company">Company Report</Link>,
-        },
-        {
-          key: '/reports/vendor',
-          label: <Link href="/reports/vendor">Vendor Report</Link>,
-        },
-        {
-          key: '/reports/billing',
-          label: <Link href="/reports/billing">Billing Report</Link>,
-        },
-      ],
+      key: '/billing/processed',
+      icon: <FileTextOutlined />,
+      label: <Link href="/billing/processed">Processed Bills</Link>,
     },
     {
-      key: 'exports',
-      icon: <ExportOutlined />,
-      label: 'Exports',
-      children: [
-        {
-          key: '/exports/excel',
-          label: <Link href="/exports/excel">Excel</Link>,
-        },
-        {
-          key: '/exports/pdf',
-          label: <Link href="/exports/pdf">PDF</Link>,
-        },
-      ],
-    },
-    {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: 'Settings',
-      children: [
-        {
-          key: '/settings/master',
-          label: <Link href="/settings/master">Master Data</Link>,
-        },
-        {
-          key: '/settings/profile',
-          label: <Link href="/settings/profile">Company Profile</Link>,
-        },
-        {
-          key: '/settings/audit',
-          label: <Link href="/settings/audit">Audit Log</Link>,
-        },
-      ],
+      key: '/operations/movement',
+      icon: <CarOutlined />,
+      label: <Link href="/operations/movement">Vehicle Management</Link>,
     },
   ];
 
   // Helper to determine active/open keys in menu
-  const getSelectedKeys = () => [pathname];
+  const getSelectedKeys = () => {
+    if (pathname === '/dashboard') return ['/dashboard'];
+    if (pathname === '/enquiries/new') return ['/enquiries/new'];
+    if (pathname.startsWith('/enquiries')) return ['/enquiries'];
+    if (pathname.startsWith('/reports/daily')) return ['/reports/daily'];
+    if (pathname.startsWith('/reports/vendor') || pathname.startsWith('/vendors')) return ['/reports/vendor'];
+    if (pathname.startsWith('/reports/billing') || pathname.startsWith('/reports/company')) return ['/reports/billing'];
+    if (pathname === '/expenses/general') return ['/expenses/general'];
+    if (pathname === '/expenses/loading') return ['/expenses/loading'];
+    if (pathname.startsWith('/billing/pending')) return ['/billing/pending'];
+    if (pathname.startsWith('/billing/processed')) return ['/billing/processed'];
+    if (pathname.startsWith('/operations')) return ['/operations/movement'];
+    return [pathname];
+  };
+
   const getOpenKeys = () => {
-    if (pathname.startsWith('/enquiries')) return ['enquiries'];
-    if (pathname.startsWith('/operations')) return ['operations'];
     if (pathname.startsWith('/expenses')) return ['expenses'];
-    if (pathname.startsWith('/billing')) return ['billing'];
-    if (pathname.startsWith('/vendors')) return ['vendors'];
-    if (pathname.startsWith('/reports')) return ['reports'];
-    if (pathname.startsWith('/exports')) return ['exports'];
-    if (pathname.startsWith('/settings')) return ['settings'];
     return [];
   };
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
+      {/* Mobile Backdrop Overlay */}
+      {isMobile && !collapsed && (
+        <div
+          onClick={() => setCollapsed(true)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.45)',
+            zIndex: 999,
+            transition: 'opacity 0.25s ease',
+          }}
+        />
+      )}
+
       <Sider
+        trigger={null}
         collapsible
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
+        collapsed={isMobile ? false : collapsed}
         width={240}
         style={{
-          overflow: 'auto',
           height: '100vh',
           position: 'fixed',
-          left: 0,
+          left: isMobile ? (collapsed ? -240 : 0) : 0,
           top: 0,
           bottom: 0,
-          zIndex: 100,
+          zIndex: isMobile ? 1000 : 100,
           background: '#001529',
+          boxShadow: isMobile && !collapsed ? '4px 0 16px rgba(0, 0, 0, 0.35)' : 'none',
+          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
-        <div
-          style={{
-            height: 64,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '0 16px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          }}
-        >
-          <Space>
-            <CarOutlined style={{ fontSize: 24, color: '#1677ff' }} />
-            {!collapsed && (
-              <Title level={4} style={{ color: '#fff', margin: 0, fontWeight: 700 }}>
-                TMS Portal
-              </Title>
-            )}
-          </Space>
-        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          {/* Logo Brand Header */}
+          <div
+            style={{
+              height: 64,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0 16px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              flexShrink: 0,
+            }}
+          >
+            <Space>
+              <CarOutlined style={{ fontSize: 24, color: '#1677ff' }} />
+              {(!collapsed || isMobile) && (
+                <Title level={4} style={{ color: '#fff', margin: 0, fontWeight: 700 }}>
+                  TMS Portal
+                </Title>
+              )}
+            </Space>
+          </div>
 
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={getSelectedKeys()}
-          defaultOpenKeys={getOpenKeys()}
-          items={menuItems}
-          style={{ borderRight: 0 }}
-        />
+          {/* Scrollable Navigation Menu */}
+          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+            <Menu
+              theme="dark"
+              mode="inline"
+              selectedKeys={getSelectedKeys()}
+              defaultOpenKeys={getOpenKeys()}
+              items={menuItems}
+              style={{ borderRight: 0 }}
+            />
+          </div>
+
+          {/* Pinned Logout Button at Navbar Bottom */}
+          <div
+            style={{
+              padding: collapsed && !isMobile ? '12px 8px' : '16px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+              background: '#001529',
+              flexShrink: 0,
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
+            <Button
+              type="primary"
+              danger
+              icon={<LogoutOutlined />}
+              onClick={handleLogout}
+              block={!collapsed || isMobile}
+              style={{
+                height: '40px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '6px',
+                width: collapsed && !isMobile ? '40px' : '100%',
+              }}
+              title="Logout"
+            >
+              {(!collapsed || isMobile) && 'Logout'}
+            </Button>
+          </div>
+        </div>
       </Sider>
 
-      <Layout style={{ marginLeft: collapsed ? 80 : 240, transition: 'all 0.2s' }}>
+      <Layout
+        style={{
+          marginLeft: isMobile ? 0 : (collapsed ? 80 : 240),
+          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
         <Header
           style={{
             background: '#fff',
-            padding: '0 24px',
+            padding: isMobile ? '0 12px' : '0 24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -344,21 +368,41 @@ export default function AppShell({ children }: AppShellProps) {
             zIndex: 99,
           }}
         >
-          <Text strong style={{ fontSize: 16 }}>
-            Transport & Logistics Management System
-          </Text>
+          <Space align="center" size={isMobile ? 'small' : 'middle'}>
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed(!collapsed)}
+              style={{ fontSize: 18, width: 36, height: 36 }}
+              title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            />
+            <Text strong style={{ fontSize: isMobile ? 14 : 16 }}>
+              {isMobile ? 'TMS Portal' : 'Transport & Logistics Management System'}
+            </Text>
+          </Space>
 
-          <Space size="large">
+          <Space size={isMobile ? 'small' : 'middle'}>
+            <Dropdown menu={{ items: settingsMenuItems }} placement="bottomRight">
+              <Button type="text" icon={<SettingOutlined />} style={{ color: '#595959' }}>
+                {!isMobile && 'Settings & Tools'}
+              </Button>
+            </Dropdown>
+
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Space style={{ cursor: 'pointer' }}>
                 <Avatar style={{ backgroundColor: '#1677ff' }} icon={<UserOutlined />} />
-                <Text strong>{user.name || user.email}</Text>
+                {!isMobile && <Text strong>{user.name || user.email}</Text>}
               </Space>
             </Dropdown>
           </Space>
         </Header>
 
-        <Content style={{ margin: '24px 24px 0', overflow: 'initial' }}>
+        <Content
+          style={{
+            margin: isMobile ? '12px 12px 0' : '24px 24px 0',
+            overflow: 'initial',
+          }}
+        >
           {children}
         </Content>
 

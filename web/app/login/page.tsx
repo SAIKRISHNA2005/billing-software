@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, Form, Input, Button, Typography, Alert, Space } from 'antd';
-import { MailOutlined, LockOutlined, CarOutlined } from '@ant-design/icons';
+import { MailOutlined, LockOutlined, CarOutlined, EnvironmentOutlined, CheckCircleOutlined, CompassOutlined } from '@ant-design/icons';
 import { useAuth } from '@/lib/auth/AuthContext';
 
 const { Title, Text } = Typography;
@@ -20,6 +20,75 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [gpsStatus, setGpsStatus] = useState<'prompt' | 'requesting' | 'granted' | 'denied' | 'unsupported'>('prompt');
+  const [gpsData, setGpsData] = useState<{
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+    accuracy?: number;
+  } | null>(null);
+
+  const acquireLocation = useCallback(async (): Promise<{ address?: string; latitude?: number; longitude?: number; accuracy?: number } | null> => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setGpsStatus('unsupported');
+      return null;
+    }
+
+    setGpsStatus('requesting');
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
+
+          let address = `Lat ${lat.toFixed(6)}, Lon ${lng.toFixed(6)}`;
+
+          // Attempt OpenStreetMap reverse-geocoding for exact street / area address
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+              { signal: controller.signal }
+            );
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.display_name) {
+                const parts = [];
+                const addr = data.address || {};
+                if (addr.road || addr.pedestrian) parts.push(addr.road || addr.pedestrian);
+                if (addr.suburb || addr.neighbourhood) parts.push(addr.suburb || addr.neighbourhood);
+                if (addr.city || addr.town || addr.municipality) parts.push(addr.city || addr.town || addr.municipality);
+                if (addr.postcode) parts.push(addr.postcode);
+                if (addr.state) parts.push(addr.state);
+                address = parts.length > 0 ? parts.join(', ') : data.display_name;
+              }
+            }
+          } catch {
+            // Keep coordinates if reverse geocoding is rate-limited or fails
+          }
+
+          const resolved = { address, latitude: lat, longitude: lng, accuracy };
+          setGpsData(resolved);
+          setGpsStatus('granted');
+          resolve(resolved);
+        },
+        (error) => {
+          console.warn('[Geolocation] Permission denied or failed:', error.message);
+          setGpsStatus('denied');
+          resolve(null);
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
+    });
+  }, []);
+
+  useEffect(() => {
+    acquireLocation();
+  }, [acquireLocation]);
+
   useEffect(() => {
     if (isAuthenticated && user) {
       router.replace('/dashboard');
@@ -30,7 +99,17 @@ export default function LoginPage() {
     setLoading(true);
     setErrorMessage(null);
     try {
-      await login(values.email, values.password);
+      let loc = gpsData;
+      if (!loc && gpsStatus !== 'denied') {
+        loc = await acquireLocation();
+      }
+
+      await login(values.email, values.password, {
+        location: loc?.address,
+        latitude: loc?.latitude,
+        longitude: loc?.longitude,
+        accuracy: loc?.accuracy,
+      });
       router.replace('/dashboard');
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
@@ -98,6 +177,53 @@ export default function LoginPage() {
             style={{ marginBottom: 20, borderRadius: 6 }}
           />
         )}
+
+        {/* GPS Audit Location Verification Banner */}
+        <div
+          style={{
+            marginBottom: 20,
+            padding: '10px 14px',
+            borderRadius: 8,
+            background: gpsStatus === 'granted' ? '#f6ffed' : gpsStatus === 'denied' ? '#fffbe6' : '#f0f5ff',
+            border: `1px solid ${gpsStatus === 'granted' ? '#b7eb8f' : gpsStatus === 'denied' ? '#ffe58f' : '#adc6ff'}`,
+            fontSize: 12,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: '#1f1f1f' }}>
+              <EnvironmentOutlined style={{ color: gpsStatus === 'granted' ? '#52c41a' : '#1677ff', fontSize: 14 }} />
+              Audit Security Location
+            </span>
+            {gpsStatus === 'granted' && (
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#389e0d', background: '#d9f7be', padding: '1px 7px', borderRadius: 10 }}>
+                Verified
+              </span>
+            )}
+            {gpsStatus === 'requesting' && (
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#1677ff', background: '#bae0ff', padding: '1px 7px', borderRadius: 10 }}>
+                Acquiring GPS...
+              </span>
+            )}
+            {gpsStatus === 'denied' && (
+              <Button size="small" type="link" onClick={() => acquireLocation()} style={{ padding: 0, height: 'auto', fontSize: 11 }}>
+                Allow Access
+              </Button>
+            )}
+          </div>
+          <div style={{ color: '#595959', fontSize: 11.5, wordBreak: 'break-word', lineHeight: 1.4 }}>
+            {gpsStatus === 'granted' && gpsData?.address ? (
+              <span>
+                📍 {gpsData.address} <Text type="secondary" style={{ fontSize: 10.5 }}>(Accuracy: ±{Math.round(gpsData.accuracy || 0)}m)</Text>
+              </span>
+            ) : gpsStatus === 'requesting' ? (
+              <span>Acquiring exact GPS satellite coordinates for audit verification...</span>
+            ) : gpsStatus === 'denied' ? (
+              <span>GPS permission not granted. Please allow location access in your browser to record exact audit coordinates.</span>
+            ) : (
+              <span>Requesting browser location permission...</span>
+            )}
+          </div>
+        </div>
 
         <Form
           form={form}
