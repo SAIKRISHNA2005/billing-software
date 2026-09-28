@@ -20,8 +20,10 @@ interface RawEnquiry {
   enquiryNumber?: string | number;
   transactionNumber?: string;
   loadingType?: string;
+  vehicleId?: string;
   vehicleNo?: string;
   vehicleNumber?: string;
+  containerId?: string;
   containerNo?: string;
   containerNumber?: string;
   containerSize?: string;
@@ -30,12 +32,16 @@ interface RawEnquiry {
   truckCount40?: number;
   containerFrom?: string;
   containerTo?: string;
+  sealNumber?: string;
   freightAmount?: number;
+  haltingDays?: number;
   haltingAmount?: number;
   advanceAmount?: number;
   otherCharges?: number;
   clientAddress?: string;
   billId?: string;
+  product?: string;
+  cargo?: string;
 }
 
 /**
@@ -143,7 +149,29 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
     clientAddress = firstEnqWithAddr?.clientAddress || '#37/24, Narayana Sarang Garden Street,\n5th Floor, Seethakathi Centre,\nParrys, Chennai - 600 001.';
   }
 
-  // 4. Resolve Route & Container Sizes
+  // 4b. Pre-fetch vehicle and container masters for ID resolution if necessary
+  const vehicleMap = new Map<string, string>();
+  const containerMap = new Map<string, string>();
+
+  try {
+    const vRes = await callAppsScript<any>('vehicles.list', { limit: 100 }, sessionToken);
+    if (vRes.success && vRes.data?.items) {
+      vRes.data.items.forEach((v: any) => {
+        if (v.id && v.vehicleNumber) vehicleMap.set(v.id, v.vehicleNumber);
+      });
+    }
+  } catch {}
+
+  try {
+    const cRes = await callAppsScript<any>('containers.list', { limit: 100 }, sessionToken);
+    if (cRes.success && cRes.data?.items) {
+      cRes.data.items.forEach((c: any) => {
+        if (c.id && c.containerNumber) containerMap.set(c.id, c.containerNumber);
+      });
+    }
+  } catch {}
+
+  // 4c. Resolve Route & Container Sizes
   let loadType = 'Export';
   let containerFrom = 'ZIRCON';
   let containerTo = 'GODREJ AMBATTUR';
@@ -158,11 +186,11 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
     if (e.containerTo) containerTo = e.containerTo;
 
     // Vehicle numbers
-    const vNo = e.vehicleNo || e.vehicleNumber;
+    const vNo = e.vehicleNo || e.vehicleNumber || (e.vehicleId ? vehicleMap.get(e.vehicleId) : undefined);
     if (vNo && vNo !== '-') truckNumbersSet.add(vNo.trim());
 
     // Container numbers
-    const cNo = e.containerNo || e.containerNumber;
+    const cNo = e.containerNo || e.containerNumber || (e.containerId ? containerMap.get(e.containerId) : undefined);
     if (cNo && cNo !== '-') containerNumbersSet.add(cNo.trim());
 
     // 20 FT vs 40 FT counts
@@ -178,13 +206,17 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
       if (sizeStr.includes('20')) {
         truckCount20 += num;
       } else {
-        truckCount40 += num; // default to 40 FT as standard container size in logistics
+        truckCount40 += num;
       }
     }
   });
 
   const truckNumbers = Array.from(truckNumbersSet);
   const containerNumbers = Array.from(containerNumbersSet);
+
+  // Helper to format currency inside formulas
+  const formatINR = (val: number) =>
+    Number(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // 5. Build Dynamic Charges Table
   const rawItems: RawBillItem[] = Array.isArray(bill.items) ? bill.items : [];
@@ -198,138 +230,231 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
 
   let currentSNo = 1;
 
-  // Primary Freight Charges row
-  let freightAmt = 0;
-  rawItems.forEach((it) => {
-    const desc = (it.description || '').toLowerCase();
-    const amt = Number(it.amount) || 0;
-    if (desc.includes('freight') || desc.includes('transport') || desc.includes('container') || (!desc.includes('halting') && !desc.includes('other') && !desc.includes('advance'))) {
-      freightAmt += amt;
-    }
-  });
-
-  if (freightAmt === 0 && linkedEnquiries.length > 0) {
-    freightAmt = linkedEnquiries.reduce((sum, e) => sum + (Number(e.freightAmount) || 0), 0);
-  }
-  if (freightAmt === 0 && bill.totalAmount) {
-    freightAmt = Number(bill.subtotal || bill.totalAmount) || 0;
-  }
-
-  // Row 1: Freight Charges
-  charges.push({
-    sNo: currentSNo++,
-    description: 'Freight Charges',
-    freightCharges: freightAmt,
-    otherCharges: null,
-    haltingCharges: null,
-    advance: null,
-    rate: null,
-    amount: freightAmt,
-  });
-  freightTotal += freightAmt;
-  grandTotal += freightAmt;
-
-  // Row 2: Truck Number (Itemized multiline display)
-  if (truckNumbers.length > 0) {
-    charges.push({
-      sNo: currentSNo++,
-      description: `Truck Number\n${truckNumbers.join('\n')}`,
-      freightCharges: null,
-      otherCharges: null,
-      haltingCharges: null,
-      advance: null,
-      rate: null,
-      amount: 0,
-    });
-  }
-
-  // Row 3: Container Number (Itemized multiline display)
-  if (containerNumbers.length > 0) {
-    charges.push({
-      sNo: currentSNo++,
-      description: `Container Number\n${containerNumbers.join('\n')}`,
-      freightCharges: null,
-      otherCharges: null,
-      haltingCharges: null,
-      advance: null,
-      rate: null,
-      amount: 0,
-    });
-  }
-
-  // Row 4: Additional Charges / Other Charges
-  let otherAmt = 0;
-  rawItems.forEach((it) => {
-    const desc = (it.description || '').toLowerCase();
-    if (desc.includes('other') || desc.includes('additional') || desc.includes('diesel') || desc.includes('toll')) {
-      otherAmt += Number(it.amount) || 0;
-    }
-  });
-  if (otherAmt === 0 && linkedEnquiries.length > 0) {
-    otherAmt = linkedEnquiries.reduce((sum, e) => sum + (Number(e.otherCharges) || 0), 0);
-  }
-  if (otherAmt > 0) {
-    charges.push({
-      sNo: currentSNo++,
-      description: 'Additional Charges',
-      freightCharges: null,
-      otherCharges: otherAmt,
-      haltingCharges: null,
-      advance: null,
-      rate: null,
-      amount: otherAmt,
-    });
-    otherChargesTotal += otherAmt;
-    grandTotal += otherAmt;
-  }
-
-  // Row 5: Halting Charges
-  let haltingAmt = 0;
-  rawItems.forEach((it) => {
-    const desc = (it.description || '').toLowerCase();
-    if (desc.includes('halting')) {
-      haltingAmt += Number(it.amount) || 0;
-    }
-  });
-  if (haltingAmt === 0 && linkedEnquiries.length > 0) {
-    haltingAmt = linkedEnquiries.reduce((sum, e) => sum + (Number(e.haltingAmount) || 0), 0);
-  }
-  if (haltingAmt > 0) {
-    charges.push({
-      sNo: currentSNo++,
-      description: 'Halting Charges',
-      freightCharges: null,
-      otherCharges: null,
-      haltingCharges: haltingAmt,
-      advance: null,
-      rate: null,
-      amount: haltingAmt,
-    });
-    haltingTotal += haltingAmt;
-    grandTotal += haltingAmt;
-  }
-
-  // Row 6: Advance Amount
-  let advanceAmt = 0;
   if (linkedEnquiries.length > 0) {
-    advanceAmt = linkedEnquiries.reduce((sum, e) => sum + (Number(e.advanceAmount) || 0), 0);
-  }
-  if (advanceAmt > 0) {
+    linkedEnquiries.forEach((e) => {
+      // 1. Vehicle number
+      let vNum = e.vehicleNo || e.vehicleNumber || '';
+      if (!vNum && e.vehicleId) {
+        vNum = vehicleMap.get(e.vehicleId) || e.vehicleId;
+      }
+
+      // 2. Container number
+      let cNum = e.containerNo || e.containerNumber || '';
+      if (!cNum && e.containerId) {
+        cNum = containerMap.get(e.containerId) || e.containerId;
+      }
+      if (!cNum) {
+        const matchItem = rawItems.find((it) => it.enquiryId === e.id && it.description);
+        if (matchItem?.description) {
+          const match = matchItem.description.match(/([A-Z]{4}\d{6,7})/i);
+          if (match) cNum = match[1];
+        }
+      }
+
+      // 3. Count and size
+      const count20 = Number(e.truckCount20) || 0;
+      const count40 = Number(e.truckCount40) || 0;
+      const explicitCount = count20 + count40;
+      const count = explicitCount > 0 ? explicitCount : (Number(e.noOfContainers) || 1);
+
+      let sizeDesc = (e.containerSize || '').trim();
+      if (!sizeDesc) {
+        if (count20 > 0 && count40 === 0) sizeDesc = '20 FT';
+        else if (count40 > 0 && count20 === 0) sizeDesc = '40 FT';
+        else if (count20 > 0 && count40 > 0) sizeDesc = `${count20}x20FT, ${count40}x40FT`;
+        else sizeDesc = '40 FT';
+      }
+
+      // 4. Product / Service title
+      const prodType = (e.loadingType || loadType || 'Export').toUpperCase();
+      const productTitle = (e as any).product || (e as any).cargo || `${prodType} CONTAINER TRANSPORTATION (${sizeDesc})`;
+
+      const countLabel = `${count} Container${count > 1 ? 's' : ''}${sizeDesc ? ` (${sizeDesc})` : ''}`;
+
+      // 5. Freight formula: count X actual rate per count
+      const freightAmt = Number(e.freightAmount) || 0;
+      const unitRate = count > 0 && freightAmt > 0 ? Math.round(freightAmt / count) : freightAmt;
+
+      // Build Compact, Professional Multi-Line Description HTML
+      const descLines: string[] = [];
+      const sealText = e.sealNumber && e.sealNumber !== '-' ? ` &nbsp;|&nbsp; <strong>Seal No:</strong> ${e.sealNumber}` : '';
+      descLines.push(`<div><strong>Count:</strong> ${countLabel}${sealText}</div>`);
+
+      const hasVehicle = Boolean(vNum && vNum !== '-');
+      const hasContainer = Boolean(cNum && cNum !== '-');
+      if (hasVehicle || hasContainer) {
+        const vPart = hasVehicle ? `<strong>Vehicle No:</strong> ${vNum}` : '';
+        const sep = (hasVehicle && hasContainer) ? ' &nbsp;|&nbsp; ' : '';
+        const cPart = hasContainer ? `<strong>Container No:</strong> ${cNum}` : '';
+        descLines.push(`<div>${vPart}${sep}${cPart}</div>`);
+      }
+
+      const enqRoute = (e.containerFrom && e.containerTo) ? `${e.containerFrom} TO ${e.containerTo}` : '';
+      if (enqRoute) descLines.push(`<div><strong>Route:</strong> ${enqRoute}</div>`);
+
+      const descriptionHtml = `
+        <div style="font-weight: 700; font-size: 11.5px; text-transform: uppercase; color: #000; margin-bottom: 2px;">
+          ${productTitle}
+        </div>
+        <div style="font-size: 11px; line-height: 1.35; color: #222;">
+          ${descLines.join('')}
+        </div>
+      `.trim();
+
+      const plainDescription = [
+        productTitle,
+        `Count: ${countLabel}`,
+        vNum ? `Vehicle: ${vNum}` : null,
+        cNum ? `Container: ${cNum}` : null,
+        enqRoute ? `Route: ${enqRoute}` : null,
+      ].filter(Boolean).join('\n');
+
+      const freightFormula = freightAmt > 0 ? `${count} X ${formatINR(unitRate)}` : '-';
+
+      // Halting Formula
+      const haltingAmt = Number(e.haltingAmount) || 0;
+      const haltingDays = Number(e.haltingDays) || 0;
+      let haltingFormula: string | undefined = undefined;
+      if (haltingAmt > 0) {
+        if (haltingDays > 0) {
+          const perDay = Math.round(haltingAmt / haltingDays);
+          haltingFormula = `${haltingDays} Day${haltingDays > 1 ? 's' : ''} X ${formatINR(perDay)}`;
+        } else {
+          haltingFormula = formatINR(haltingAmt);
+        }
+      }
+
+      const otherAmt = Number(e.otherCharges) || 0;
+      const advAmt = Number(e.advanceAmount) || 0;
+      const rowTotal = freightAmt + otherAmt + haltingAmt;
+
+      charges.push({
+        sNo: currentSNo++,
+        description: plainDescription,
+        descriptionHtml,
+        freightFormula: freightAmt > 0 ? freightFormula : undefined,
+        freightCharges: freightAmt > 0 ? freightAmt : null,
+        otherCharges: otherAmt > 0 ? otherAmt : null,
+        haltingFormula,
+        haltingCharges: haltingAmt > 0 ? haltingAmt : null,
+        advance: advAmt > 0 ? advAmt : null,
+        rate: null,
+        amount: rowTotal > 0 ? rowTotal : freightAmt,
+      });
+
+      freightTotal += freightAmt;
+      otherChargesTotal += otherAmt;
+      haltingTotal += haltingAmt;
+      advanceTotal += advAmt;
+      grandTotal += rowTotal;
+    });
+
+    // Check for any standalone bill items that weren't tied to an enquiry
+    const linkedEnqIds = new Set(linkedEnquiries.map((e) => e.id));
+    const standaloneItems = rawItems.filter((it) => it.enquiryId && !linkedEnqIds.has(it.enquiryId));
+    standaloneItems.forEach((it) => {
+      const amt = Number(it.amount) || 0;
+      if (amt > 0) {
+        charges.push({
+          sNo: currentSNo++,
+          description: it.description || 'Additional Charges',
+          freightCharges: null,
+          otherCharges: amt,
+          haltingCharges: null,
+          advance: null,
+          rate: null,
+          amount: amt,
+        });
+        otherChargesTotal += amt;
+        grandTotal += amt;
+      }
+    });
+  } else if (rawItems.length > 0) {
+    // Non-enquiry items (e.g. manual items or test fixtures)
+    rawItems.forEach((it) => {
+      const amt = Number(it.amount) || 0;
+      const desc = it.description || 'Freight Charges';
+      const descLower = desc.toLowerCase();
+      const isFreight = descLower.includes('freight') || descLower.includes('transport');
+      const isOther = descLower.includes('other') || descLower.includes('additional') || descLower.includes('toll');
+      const isHalting = descLower.includes('halting');
+      const isAdv = descLower.includes('advance');
+
+      const itemFreight = (isFreight || (!isOther && !isHalting && !isAdv)) ? amt : null;
+      const itemOther = isOther ? amt : null;
+      const itemHalting = isHalting ? amt : null;
+      const itemAdv = isAdv ? amt : null;
+
+      charges.push({
+        sNo: currentSNo++,
+        description: desc,
+        freightCharges: itemFreight,
+        otherCharges: itemOther,
+        haltingCharges: itemHalting,
+        advance: itemAdv,
+        rate: null,
+        amount: amt,
+      });
+
+      if (itemFreight) freightTotal += itemFreight;
+      if (itemOther) otherChargesTotal += itemOther;
+      if (itemHalting) haltingTotal += itemHalting;
+      if (itemAdv) advanceTotal += itemAdv;
+      grandTotal += amt;
+    });
+  } else {
+    // Fallback single consignment row
+    const totalCount = (truckCount20 + truckCount40) || 1;
+    const freightAmt = Number(bill.subtotal || bill.totalAmount) || 0;
+    const unitRate = totalCount > 0 ? Math.round(freightAmt / totalCount) : freightAmt;
+    const sizeStr = (truckCount20 > 0 && truckCount40 === 0) ? '20 FT' : '40 FT';
+    const prodTitle = `${loadType.toUpperCase()} CONTAINER TRANSPORTATION (${sizeStr})`;
+    const countLabel = `${totalCount} Container${totalCount > 1 ? 's' : ''} (${sizeStr})`;
+
+    const descLines: string[] = [];
+    descLines.push(`<div><strong>Count:</strong> ${countLabel}</div>`);
+    const hasV = truckNumbers.length > 0;
+    const hasC = containerNumbers.length > 0;
+    if (hasV || hasC) {
+      const vText = hasV ? `<strong>Vehicle No:</strong> ${truckNumbers.join(', ')}` : '';
+      const sep = (hasV && hasC) ? ' &nbsp;|&nbsp; ' : '';
+      const cText = hasC ? `<strong>Container No:</strong> ${containerNumbers.join(', ')}` : '';
+      descLines.push(`<div>${vText}${sep}${cText}</div>`);
+    }
+    if (containerFrom && containerTo) descLines.push(`<div><strong>Route:</strong> ${containerFrom} TO ${containerTo}</div>`);
+
+    const descriptionHtml = `
+      <div style="font-weight: 700; font-size: 11.5px; text-transform: uppercase; color: #000; margin-bottom: 2px;">
+        ${prodTitle}
+      </div>
+      <div style="font-size: 11px; line-height: 1.35; color: #222;">
+        ${descLines.join('')}
+      </div>
+    `.trim();
+
     charges.push({
       sNo: currentSNo++,
-      description: 'Advance Amount',
-      freightCharges: null,
+      description: prodTitle,
+      descriptionHtml,
+      freightFormula: freightAmt > 0 ? `${totalCount} X ${formatINR(unitRate)}` : undefined,
+      freightCharges: freightAmt > 0 ? freightAmt : null,
       otherCharges: null,
       haltingCharges: null,
-      advance: advanceAmt,
+      advance: null,
       rate: null,
-      amount: advanceAmt,
+      amount: freightAmt,
     });
-    advanceTotal += advanceAmt;
+
+    freightTotal = freightAmt;
+    grandTotal = freightAmt;
   }
 
   // Preserve official bill total if specified in production record
   const officialTotal = Number(bill.totalAmount) || grandTotal;
+  if (grandTotal === 0 && officialTotal > 0) {
+    freightTotal = officialTotal;
+    grandTotal = officialTotal;
+  }
 
   // 6. Number to words
   const totalInWords = numberToWordsINR(officialTotal);

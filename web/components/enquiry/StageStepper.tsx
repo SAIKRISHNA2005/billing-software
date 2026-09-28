@@ -140,7 +140,7 @@ export const StageStepper: React.FC<StageStepperProps> = ({
     if (nextStageConfig.key === 'BILLING' || nextStageConfig.key === 'PROCESSED') {
       Modal.info({
         title: 'Billing Module Action Required',
-        icon: <InfoCircleOutlined style={{ color: '#1677ff' }} />,
+        icon: <InfoCircleOutlined style={{ color: '#17324D' }} />,
         content: (
           <div>
             <p>
@@ -247,21 +247,22 @@ export const StageStepper: React.FC<StageStepperProps> = ({
         }}
       >
         <Space>
-          <Text strong>Current Stage:</Text>
+          <Text strong style={{ fontSize: 13, color: '#34424C' }}>Current Stage:</Text>
           <Text
             style={{
               fontWeight: 600,
-              padding: '4px 12px',
-              backgroundColor: isBilledStage ? '#f6ffed' : '#e6f4ff',
-              color: isBilledStage ? '#389e0d' : '#0958d9',
-              borderRadius: 6,
-              border: `1px solid ${isBilledStage ? '#b7eb8f' : '#91caff'}`,
+              padding: '3px 10px',
+              backgroundColor: isBilledStage ? '#EBF4ED' : '#EEF3F6',
+              color: isBilledStage ? '#3F6F4A' : '#17324D',
+              borderRadius: 4,
+              border: `1px solid ${isBilledStage ? '#B7D9BF' : '#D4DAD9'}`,
+              fontSize: 12.5,
             }}
           >
             {STAGES_CONFIG[safeCurrentIndex]?.title || currentStage}
           </Text>
           {nextStageConfig && (
-            <Text type="secondary" style={{ fontSize: 13, marginLeft: 8 }}>
+            <Text type="secondary" style={{ fontSize: 12, marginLeft: 6 }}>
               (Next: {nextStageConfig.title})
             </Text>
           )}
@@ -294,7 +295,8 @@ export const StageStepper: React.FC<StageStepperProps> = ({
                 onClick={handleNextStage}
                 loading={loading}
                 style={{
-                  backgroundColor: nextStageConfig.key === 'COMPLETED' ? '#52c41a' : undefined,
+                  backgroundColor: nextStageConfig.key === 'COMPLETED' ? '#3F6F4A' : '#17324D',
+                  borderColor: nextStageConfig.key === 'COMPLETED' ? '#3F6F4A' : '#17324D',
                 }}
               >
                 {nextStageConfig.key === 'BILLING'
@@ -305,9 +307,9 @@ export const StageStepper: React.FC<StageStepperProps> = ({
           )}
 
           {currentStage === 'PROCESSED' && (
-            <Space style={{ color: '#52c41a' }}>
+            <Space style={{ color: '#3F6F4A' }}>
               <CheckCircleOutlined />
-              <Text strong style={{ color: '#52c41a' }}>
+              <Text strong style={{ color: '#3F6F4A' }}>
                 Job Fully Processed
               </Text>
             </Space>
@@ -359,7 +361,7 @@ export const StageStepper: React.FC<StageStepperProps> = ({
         cancelButtonProps={{ style: { display: 'none' } }}
       >
         <div style={{ textAlign: 'center', padding: '16px 0' }}>
-          <ExclamationCircleOutlined style={{ fontSize: 48, color: '#ff4d4f', marginBottom: 16 }} />
+          <ExclamationCircleOutlined style={{ fontSize: 48, color: '#A8473C', marginBottom: 16 }} />
           <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
             Prerequisite Not Met
           </div>

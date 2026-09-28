@@ -103,7 +103,7 @@ export default function ClientPaymentsPage() {
   const totalBillsPending = bills.reduce((sum, b) => sum + (Number(b.pendingAmount || 0)), 0);
 
   const columns = [
-    { title: 'Payment ID', dataIndex: 'id', key: 'id', render: (val: string) => <Text strong style={{ color: '#1677ff' }}>{val}</Text> },
+    { title: 'Payment ID', dataIndex: 'id', key: 'id', render: (val: string) => <Text strong style={{ color: '#17324D' }}>{val}</Text> },
     { title: 'Bill Number', dataIndex: 'billNumber', key: 'billNumber' },
     { title: 'Client Name', dataIndex: 'clientName', key: 'clientName', render: (val: string) => <strong>{val}</strong> },
     { title: 'Date', dataIndex: 'paymentDate', key: 'paymentDate', render: (val: string) => (val ? dayjs(val).format('DD-MM-YYYY') : '-') },
@@ -111,7 +111,7 @@ export default function ClientPaymentsPage() {
       title: 'Payment Mode',
       dataIndex: 'paymentMode',
       key: 'paymentMode',
-      render: (mode: string) => <Tag color="blue">{mode}</Tag>,
+      render: (mode: string) => <Tag color="default">{mode}</Tag>,
     },
     { title: 'Reference / UTR', dataIndex: 'referenceNo', key: 'referenceNo', render: (val: string) => val || '-' },
     {
@@ -119,7 +119,7 @@ export default function ClientPaymentsPage() {
       dataIndex: 'amount',
       key: 'amount',
       align: 'right' as const,
-      render: (amt: number) => <Text type="success" strong>{formatCurrencyINR(amt)}</Text>,
+      render: (amt: number) => <Text strong style={{ color: '#3F6F4A' }}>{formatCurrencyINR(amt)}</Text>,
     },
     {
       title: 'Actions',
@@ -128,45 +128,57 @@ export default function ClientPaymentsPage() {
         <Popconfirm title="Delete payment record?" onConfirm={() => handleDeletePayment(r.id)} okText="Delete" okButtonProps={{ danger: true }}>
           <Button type="text" danger icon={<DeleteOutlined />} />
         </Popconfirm>
-
       ),
     },
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+    <div style={{ padding: '4px 0 24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <Title level={2} style={{ margin: 0 }}>
-            <DollarOutlined style={{ marginRight: 8, color: '#52c41a' }} />
+          <Title level={2} style={{ margin: 0, color: '#1E2933', fontSize: 22, fontWeight: 600 }}>
+            <DollarOutlined style={{ marginRight: 8, color: '#3F6F4A' }} />
             Client Payments Control Room
           </Title>
-          <Text type="secondary">Record and manage payments received from clients against processed bills</Text>
+          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>Record and manage payments received from clients against processed bills</Text>
         </div>
-        <Button type="primary" style={{ backgroundColor: '#52c41a' }} icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
+        <Button type="primary" style={{ backgroundColor: '#3F6F4A', borderColor: '#3F6F4A' }} icon={<PlusOutlined />} onClick={() => setModalVisible(true)}>
           Record New Payment
         </Button>
       </div>
 
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={8}>
-          <Card>
-            <Statistic title="Total Payments Recorded" value={filteredPayments.length} prefix={<CreditCardOutlined />} valueStyle={{ color: '#1677ff' }} />
+      <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+        <Col xs={24} sm={8}>
+          <Card className="spt-kpi-card spt-kpi-steel">
+            <Statistic
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Total Payments Recorded</span>}
+              value={filteredPayments.length}
+              prefix={<CreditCardOutlined style={{ color: '#365A73' }} />}
+              valueStyle={{ color: '#17324D', fontWeight: 700 }}
+            />
           </Card>
         </Col>
-        <Col span={8}>
-          <Card>
-            <Statistic title="Total Collections (Filtered)" value={formatCurrencyINR(totalCollected)} valueStyle={{ color: '#3f8600' }} />
+        <Col xs={24} sm={8}>
+          <Card className="spt-kpi-card spt-kpi-green">
+            <Statistic
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Total Collections (Filtered)</span>}
+              value={formatCurrencyINR(totalCollected)}
+              valueStyle={{ color: '#3F6F4A', fontWeight: 700 }}
+            />
           </Card>
         </Col>
-        <Col span={8}>
-          <Card>
-            <Statistic title="Total Outstanding Receivables" value={formatCurrencyINR(totalBillsPending)} valueStyle={{ color: '#cf1322' }} />
+        <Col xs={24} sm={8}>
+          <Card className="spt-kpi-card spt-kpi-red">
+            <Statistic
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Total Outstanding Receivables</span>}
+              value={formatCurrencyINR(totalBillsPending)}
+              valueStyle={{ color: '#A8473C', fontWeight: 700 }}
+            />
           </Card>
         </Col>
       </Row>
 
-      <Card style={{ borderRadius: 8 }}>
+      <Card style={{ borderRadius: 4 }}>
         <Space style={{ marginBottom: 16 }} wrap>
           <Select
             placeholder="Filter by Payment Mode"

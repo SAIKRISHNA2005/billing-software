@@ -61,8 +61,9 @@ export const ActionConfirmPopover: React.FC<ActionConfirmPopoverProps> = ({
           style={{
             width: 32,
             height: 32,
-            borderRadius: '50%',
-            backgroundColor: '#e6f4ff',
+            borderRadius: 4,
+            backgroundColor: '#EEF3F6',
+            border: '1px solid #D4DAD9',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -70,14 +71,14 @@ export const ActionConfirmPopover: React.FC<ActionConfirmPopoverProps> = ({
             marginTop: 2,
           }}
         >
-          <QuestionCircleOutlined style={{ fontSize: 18, color: '#1677ff' }} />
+          <QuestionCircleOutlined style={{ fontSize: 16, color: '#365A73' }} />
         </div>
         <div>
-          <Text strong style={{ fontSize: 14, display: 'block', lineHeight: 1.35, color: '#111827' }}>
+          <Text strong style={{ fontSize: 13.5, display: 'block', lineHeight: 1.35, color: '#1E2933' }}>
             {title}
           </Text>
           {description && (
-            <div style={{ fontSize: 12.5, color: '#4b5563', marginTop: 4, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 12, color: '#5F6B73', marginTop: 4, lineHeight: 1.4 }}>
               {description}
             </div>
           )}

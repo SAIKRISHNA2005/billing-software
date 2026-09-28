@@ -251,7 +251,7 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       dataIndex: 'transactionNo',
       key: 'transactionNo',
       render: (tNo: string, record: any) => (
-        <Link href={`/enquiries/${record.id}`} style={{ fontWeight: 600, color: '#1677ff' }}>
+        <Link href={`/enquiries/${record.id}`} style={{ fontWeight: 600, color: '#17324D' }}>
           {tNo || record.id}
         </Link>
       ),
@@ -260,7 +260,11 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       title: 'Vehicle',
       dataIndex: 'vehicleNumber',
       key: 'vehicleNumber',
-      render: (v: string) => <Tag color="blue">{v || 'N/A'}</Tag>,
+      render: (v: string) => (
+        <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontFamily: 'monospace', fontWeight: 600 }}>
+          {v || 'N/A'}
+        </Tag>
+      ),
     },
     {
       title: 'Container',
@@ -309,7 +313,7 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       key: 'totalPayable',
       align: 'right',
       render: (amt: number) => (
-        <Text strong style={{ color: '#389e0d' }}>
+        <Text strong style={{ color: '#17324D', fontVariantNumeric: 'tabular-nums' }}>
           ₹{(amt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -319,7 +323,7 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       dataIndex: 'paid',
       key: 'paid',
       align: 'right',
-      render: (amt: number) => `₹${(amt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+      render: (amt: number) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>₹{(amt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>,
     },
     {
       title: 'Pending',
@@ -327,7 +331,7 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       key: 'pending',
       align: 'right',
       render: (amt: number) => (
-        <Text strong style={{ color: (amt || 0) > 0 ? '#cf1322' : '#389e0d' }}>
+        <Text strong style={{ color: (amt || 0) > 0 ? '#C58A2A' : '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
           ₹{(amt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -341,6 +345,7 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
           type="link"
           size="small"
           icon={<PlusOutlined />}
+          style={{ color: '#365A73' }}
           onClick={() => openAddPayment(record.id)}
         >
           Pay
@@ -355,7 +360,7 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       dataIndex: 'id',
       key: 'id',
       width: 120,
-      render: (id: string) => <Text strong>{id}</Text>,
+      render: (id: string) => <Text strong style={{ fontFamily: 'monospace' }}>{id}</Text>,
     },
     {
       title: 'Date',
@@ -368,9 +373,9 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       dataIndex: 'enquiryId',
       key: 'enquiryId',
       render: (eId: string, record: any) => {
-        if (!eId) return <Tag color="default">Unallocated Payment</Tag>;
+        if (!eId) return <Tag style={{ background: '#ECEFEE', color: '#5F6B73', border: '1px solid #D4DAD9' }}>Unallocated Payment</Tag>;
         return (
-          <Link href={`/enquiries/${eId}`} style={{ color: '#1677ff' }}>
+          <Link href={`/enquiries/${eId}`} style={{ color: '#17324D', fontFamily: 'monospace' }}>
             {record.enquiryTransactionNo || eId}
           </Link>
         );
@@ -382,7 +387,7 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       key: 'amount',
       align: 'right',
       render: (amt: number) => (
-        <Text strong style={{ color: '#0958d9' }}>
+        <Text strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
           ₹{Number(amt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -391,7 +396,7 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       title: 'Mode',
       dataIndex: 'mode',
       key: 'mode',
-      render: (m: string) => <Tag color="blue">{m}</Tag>,
+      render: (m: string) => <Tag style={{ background: '#ECEFEE', color: '#34424C', border: '1px solid #D4DAD9' }}>{m}</Tag>,
     },
     {
       title: 'Reference',
@@ -460,11 +465,11 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
               Vendors
             </Button>
             <div>
-              <Title level={3} style={{ margin: 0 }}>
-                <UserOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+              <Title level={3} style={{ margin: 0, color: '#17324D', letterSpacing: '-0.01em' }}>
+                <UserOutlined style={{ marginRight: 8, color: '#17324D' }} />
                 {vendor?.name || 'Vendor Details'}
               </Title>
-              <Text type="secondary">
+              <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
                 Financial summary, transport trips, and payment reconciliation ledger.
               </Text>
             </div>
@@ -485,53 +490,46 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       {/* Summary KPI Cards */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} md={6}>
-          <Card bordered={false} style={{ backgroundColor: '#f6ffed', borderColor: '#b7eb8f', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <Card className="spt-kpi-card spt-kpi-steel" size="small">
             <Statistic
-              title="Total Payable"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Payable</span>}
               value={totals.totalPayable}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#389e0d', fontWeight: 600 }}
+              valueStyle={{ color: '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card bordered={false} style={{ backgroundColor: '#e6f4ff', borderColor: '#91caff', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <Card className="spt-kpi-card spt-kpi-green" size="small">
             <Statistic
-              title="Total Paid"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Paid</span>}
               value={totals.totalPaid}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#0958d9', fontWeight: 600 }}
+              valueStyle={{ color: '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card
-            bordered={false}
-            style={{
-              backgroundColor: totals.netPending > 0 ? '#fffbe6' : '#f6ffed',
-              borderColor: totals.netPending > 0 ? '#ffe58f' : '#b7eb8f',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-            }}
-          >
+          <Card className={`spt-kpi-card ${totals.netPending > 0 ? 'spt-kpi-amber' : 'spt-kpi-green'}`} size="small">
             <Statistic
-              title="Pending Balance"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Pending Balance</span>}
               value={totals.netPending}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: totals.netPending > 0 ? '#cf1322' : '#389e0d', fontWeight: 600 }}
+              valueStyle={{ color: totals.netPending > 0 ? '#C58A2A' : '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card bordered={false} style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <Card className="spt-kpi-card spt-kpi-steel" size="small">
             <Statistic
-              title="Unallocated Payments"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Unallocated Payments</span>}
               value={totals.unallocatedPaid}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#595959' }}
+              valueStyle={{ color: '#5F6B73', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
@@ -611,9 +609,9 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
         }
       >
         <Form form={form} layout="vertical">
-          <div style={{ marginBottom: 16, padding: '8px 12px', background: '#f0f5ff', borderRadius: 6 }}>
+          <div style={{ marginBottom: 16, padding: '8px 12px', background: '#ECEFEE', border: '1px solid #D4DAD9', borderRadius: 4 }}>
             <Text>
-              Vendor Net Pending: <Text strong style={{ color: totals.netPending > 0 ? '#cf1322' : '#389e0d' }}>₹{totals.netPending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</Text>
+              Vendor Net Pending: <Text strong style={{ color: totals.netPending > 0 ? '#A8473C' : '#3F6F4A', fontFamily: 'monospace' }}>₹{totals.netPending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</Text>
             </Text>
           </div>
 
@@ -642,9 +640,9 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
           </Form.Item>
 
           {selectedEnquiryPending !== null && (
-            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#fffbe6', borderRadius: 6 }}>
+            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#FDF6E8', border: '1px solid #F0D59E', borderRadius: 4 }}>
               <Text type="secondary">Selected Trip Pending: </Text>
-              <Text strong style={{ color: '#d46b08' }}>
+              <Text strong style={{ color: '#9E6B1D', fontFamily: 'monospace' }}>
                 ₹{selectedEnquiryPending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </Text>
             </div>

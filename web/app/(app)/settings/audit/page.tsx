@@ -92,7 +92,7 @@ export default function AuditLogPage() {
       width: 175,
       render: (ts: string) => (
         <Space size={6}>
-          <ClockCircleOutlined style={{ color: '#1677ff' }} />
+          <ClockCircleOutlined style={{ color: '#365A73' }} />
           <Text style={{ whiteSpace: 'nowrap', fontWeight: 500 }}>
             {ts ? dayjs(ts).format('DD-MM-YYYY HH:mm:ss') : '-'}
           </Text>
@@ -105,7 +105,7 @@ export default function AuditLogPage() {
       key: 'userId',
       width: 130,
       render: (userId: string) => (
-        <Tag color="purple" style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <UserOutlined />
           {userId || 'USR-001'}
         </Tag>
@@ -128,7 +128,7 @@ export default function AuditLogPage() {
         return (
           <div>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-              <EnvironmentOutlined style={{ color: '#1677ff', marginTop: 3, flexShrink: 0 }} />
+              <EnvironmentOutlined style={{ color: '#365A73', marginTop: 3, flexShrink: 0 }} />
               <div style={{ fontSize: 12, lineHeight: 1.35, color: '#1f1f1f', wordBreak: 'break-word' }}>
                 {locationText}
               </div>
@@ -139,7 +139,7 @@ export default function AuditLogPage() {
                   href={mapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ fontSize: 11, color: '#1677ff', fontWeight: 500 }}
+                  style={{ fontSize: 11, color: '#17324D', fontWeight: 600 }}
                 >
                   📍 Open in Google Maps
                 </a>
@@ -207,8 +207,8 @@ export default function AuditLogPage() {
     <div style={{ padding: 24, maxWidth: 1400, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <Title level={2} style={{ margin: 0 }}>
-            <AuditOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+          <Title level={2} style={{ margin: 0, color: '#1E2933' }}>
+            <AuditOutlined style={{ marginRight: 8, color: '#17324D' }} />
             System Audit &amp; Security Logs
           </Title>
           <Text type="secondary">
@@ -263,7 +263,7 @@ export default function AuditLogPage() {
       <Modal
         title={
           <Space>
-            <AuditOutlined style={{ color: '#1677ff' }} />
+            <AuditOutlined style={{ color: '#17324D' }} />
             <span>Audit Log Session Details ({selectedRecord?.action || ''})</span>
           </Space>
         }

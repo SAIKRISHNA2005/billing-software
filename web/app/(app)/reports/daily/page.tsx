@@ -378,7 +378,7 @@ export default function DailyReportPage() {
       key: 'id',
       render: (id: string, record: any) => (
         <RecordDetailPopover record={record} title={`Enquiry ${id}`}>
-          <Text strong style={{ cursor: 'pointer', color: '#1677ff' }}>
+          <Text strong style={{ cursor: 'pointer', color: '#17324D' }}>
             {id}
           </Text>
         </RecordDetailPopover>
@@ -390,7 +390,7 @@ export default function DailyReportPage() {
       key: 'transactionNo',
       render: (txn: string, record: any) => (
         <RecordDetailPopover record={record} title={`Transaction ${txn}`}>
-          <Text code style={{ cursor: 'pointer' }}>
+          <Text code style={{ cursor: 'pointer', color: '#17324D' }}>
             {txn}
           </Text>
         </RecordDetailPopover>
@@ -399,13 +399,13 @@ export default function DailyReportPage() {
     { title: 'Company', dataIndex: 'companyName', key: 'companyName' },
     { title: 'Client', dataIndex: 'clientName', key: 'clientName' },
     { title: 'Vehicle No', dataIndex: 'vehicleNo', key: 'vehicleNo' },
-    { title: 'Stage', dataIndex: 'stage', key: 'stage', render: (st: string) => <Tag color="blue">{st}</Tag> },
+    { title: 'Stage', dataIndex: 'stage', key: 'stage', render: (st: string) => <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9' }}>{st}</Tag> },
     {
       title: 'Freight Amount',
       dataIndex: 'freightAmount',
       key: 'freightAmount',
       align: 'right' as const,
-      render: (amt: number) => formatCurrencyINR(amt),
+      render: (amt: number) => <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatCurrencyINR(amt)}</span>,
     },
   ];
 
@@ -416,7 +416,7 @@ export default function DailyReportPage() {
       key: 'billNumber',
       render: (num: string, record: any) => (
         <RecordDetailPopover record={record} title={`Invoice ${num}`} type="bill">
-          <Text strong style={{ color: '#1677ff', cursor: 'pointer' }}>
+          <Text strong style={{ color: '#17324D', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>
             {num}
           </Text>
         </RecordDetailPopover>
@@ -430,7 +430,7 @@ export default function DailyReportPage() {
       key: 'totalAmount',
       align: 'right' as const,
       render: (amt: number) => (
-        <Text strong style={{ color: '#3f8600' }}>
+        <Text strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
           {formatCurrencyINR(amt)}
         </Text>
       ),
@@ -452,16 +452,16 @@ export default function DailyReportPage() {
               <Button
                 type="text"
                 size="small"
-                icon={<EyeOutlined style={{ color: '#1677ff' }} />}
+                icon={<EyeOutlined style={{ color: '#365A73' }} />}
               />
             </Tooltip>
           </RecordDetailPopover>
           <Tooltip title="Edit Consignment">
             <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined style={{ color: '#52c41a' }} />}
-              onClick={() => {
+                type="text"
+                size="small"
+                icon={<EditOutlined style={{ color: '#17324D' }} />}
+                onClick={() => {
                 setSelectedRow(record);
                 setIsEditMode(true);
                 initEditForm(record);
@@ -501,7 +501,11 @@ export default function DailyReportPage() {
       key: 'loadingType',
       width: 90,
       align: 'center',
-      render: (val: string) => <Tag color={val === 'Import' ? 'blue' : 'green'}>{val || 'Import'}</Tag>,
+      render: (val: string) => (
+        <Tag style={val === 'Export' ? { background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #D4DAD9' } : { background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9' }}>
+          {val || 'Import'}
+        </Tag>
+      ),
     },
     {
       title: 'Client Name',
@@ -518,11 +522,11 @@ export default function DailyReportPage() {
       width: 130,
       render: (val: string) =>
         val && val !== '-' ? (
-          <Text strong style={{ color: '#1677ff' }}>
+          <Text strong style={{ color: '#17324D', fontVariantNumeric: 'tabular-nums' }}>
             {val}
           </Text>
         ) : (
-          <Tag color="default">Unbilled</Tag>
+          <Tag style={{ background: '#ECEFEE', color: '#5F6B73', border: '1px solid #D4DAD9' }}>Unbilled</Tag>
         ),
     },
     {
@@ -532,7 +536,7 @@ export default function DailyReportPage() {
       width: 140,
       render: (val: string, record) => (
         <RecordDetailPopover record={record} title={`Consignment ${val || record.id}`}>
-          <Text code style={{ cursor: 'pointer', color: '#1677ff', fontWeight: 600 }}>
+          <Text code style={{ cursor: 'pointer', color: '#17324D', fontWeight: 600 }}>
             {val || '-'}
           </Text>
         </RecordDetailPopover>
@@ -544,7 +548,7 @@ export default function DailyReportPage() {
       key: 'feet',
       width: 90,
       align: 'center',
-      render: (val: string) => <Tag color="purple">{val || '40 FT'}</Tag>,
+      render: (val: string) => <Tag style={{ background: '#ECEFEE', color: '#34424C', border: '1px solid #D4DAD9' }}>{val || '40 FT'}</Tag>,
     },
     {
       title: 'Container Number',
@@ -553,7 +557,7 @@ export default function DailyReportPage() {
       width: 140,
       render: (val: string, record) => (
         <RecordDetailPopover record={record} title={`Container ${val || record.id}`}>
-          <Text strong style={{ cursor: 'pointer' }}>
+          <Text strong style={{ cursor: 'pointer', fontFamily: 'monospace' }}>
             {val || '-'}
           </Text>
         </RecordDetailPopover>
@@ -572,7 +576,7 @@ export default function DailyReportPage() {
       key: 'vehicleNumber',
       width: 130,
       render: (val: string) => (
-        <Tag color="cyan" style={{ fontWeight: 600 }}>
+        <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontWeight: 600, fontFamily: 'monospace' }}>
           {val || '-'}
         </Tag>
       ),
@@ -602,7 +606,7 @@ export default function DailyReportPage() {
       key: 'diesel',
       width: 110,
       align: 'right',
-      render: (val: number) => formatCurrencyINR(val || 0),
+      render: (val: number) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCurrencyINR(val || 0)}</span>,
     },
     {
       title: 'Advance',
@@ -610,7 +614,7 @@ export default function DailyReportPage() {
       key: 'advance',
       width: 110,
       align: 'right',
-      render: (val: number) => formatCurrencyINR(val || 0),
+      render: (val: number) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCurrencyINR(val || 0)}</span>,
     },
     {
       title: 'Company In',
@@ -661,7 +665,9 @@ export default function DailyReportPage() {
       width: 130,
       align: 'center',
       render: (val: string) => (
-        <Tag color={val === 'MOVED' ? 'green' : 'orange'}>{val || 'NOT_MOVED'}</Tag>
+        <Tag style={val === 'MOVED' ? { background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #D4DAD9' } : { background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #D4DAD9' }}>
+          {val || 'NOT_MOVED'}
+        </Tag>
       ),
     },
     {
@@ -671,8 +677,12 @@ export default function DailyReportPage() {
       width: 130,
       align: 'center',
       render: (val: string) => {
-        const color = val === 'COMPLETED' ? 'green' : val === 'IN_PROGRESS' ? 'blue' : 'default';
-        return <Tag color={color}>{val || 'PENDING'}</Tag>;
+        const style = val === 'COMPLETED'
+          ? { background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #D4DAD9' }
+          : val === 'IN_PROGRESS'
+          ? { background: '#EEF3F6', color: '#365A73', border: '1px solid #D4DAD9' }
+          : { background: '#ECEFEE', color: '#5F6B73', border: '1px solid #D4DAD9' };
+        return <Tag style={style}>{val || 'PENDING'}</Tag>;
       },
     },
     {
@@ -690,11 +700,11 @@ export default function DailyReportPage() {
       {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <Title level={2} style={{ margin: 0 }}>
-            <CalendarOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+          <Title level={2} style={{ margin: 0, color: '#17324D', letterSpacing: '-0.01em' }}>
+            <CalendarOutlined style={{ marginRight: 8, color: '#17324D' }} />
             Daily Operational &amp; Financial Summary
           </Title>
-          <Text type="secondary">
+          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
             {viewMode === 'all'
               ? 'Showing all active consignment operations and synchronized live reporting records'
               : `Consolidated operational records, gate movements, and financials for ${selectedDate.format('DD MMMM YYYY')}`}
@@ -740,7 +750,7 @@ export default function DailyReportPage() {
               type="primary"
               icon={<CloudSyncOutlined />}
               loading={syncingLiveWorkbooks}
-              style={{ backgroundColor: '#1F4E78', borderColor: '#1F4E78' }}
+              style={{ backgroundColor: '#17324D', borderColor: '#17324D' }}
             >
               Sync Live Workbooks
             </Button>
@@ -758,58 +768,74 @@ export default function DailyReportPage() {
         <Alert
           message={
             <span>
-              <InfoCircleOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+              <InfoCircleOutlined style={{ marginRight: 8, color: '#365A73' }} />
               No new bookings were recorded on <strong>{selectedDate.format('DD-MM-YYYY')}</strong>. Automatically displaying all <strong>{report.enquiriesDetail?.length || 0} active operations</strong> so the operational console remains fully populated.
             </span>
           }
           type="info"
           showIcon={false}
           closable
-          style={{ marginBottom: 20, borderRadius: 8 }}
+          style={{ marginBottom: 20, borderRadius: 4, background: '#EEF3F6', borderColor: '#D4DAD9' }}
         />
       )}
 
       {/* Existing KPI Summary Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} md={8} lg={4}>
-          <Card loading={loading} style={{ borderRadius: 8 }}>
-            <Statistic title="Total Enquiries" value={report?.totalEnquiries || 0} valueStyle={{ color: '#1677ff' }} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
-          <Card loading={loading} style={{ borderRadius: 8 }}>
-            <Statistic title="Completed Jobs" value={report?.completedJobs || 0} valueStyle={{ color: '#52c41a' }} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
-          <Card loading={loading} style={{ borderRadius: 8 }}>
-            <Statistic title="Pending Pipeline" value={report?.pendingJobs || 0} valueStyle={{ color: '#fa8c16' }} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
-          <Card loading={loading} style={{ borderRadius: 8 }}>
-            <Statistic title="Bills Processed" value={report?.billsGenerated || 0} valueStyle={{ color: '#722ed1' }} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
-          <Card loading={loading} style={{ borderRadius: 8, backgroundColor: '#f6ffed' }}>
+          <Card loading={loading} className="spt-kpi-card spt-kpi-steel" size="small">
             <Statistic
-              title="Total Billing"
-              value={report?.totalBilling || 0}
-              precision={2}
-              prefix="₹"
-              valueStyle={{ color: '#389e0d' }}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Enquiries</span>}
+              value={report?.totalEnquiries || 0}
+              valueStyle={{ color: '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={4}>
-          <Card loading={loading} style={{ borderRadius: 8, backgroundColor: '#fff2f0' }}>
+          <Card loading={loading} className="spt-kpi-card spt-kpi-green" size="small">
             <Statistic
-              title="Total Expenses"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Completed Jobs</span>}
+              value={report?.completedJobs || 0}
+              valueStyle={{ color: '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={4}>
+          <Card loading={loading} className="spt-kpi-card spt-kpi-amber" size="small">
+            <Statistic
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Pending Pipeline</span>}
+              value={report?.pendingJobs || 0}
+              valueStyle={{ color: '#C58A2A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={4}>
+          <Card loading={loading} className="spt-kpi-card spt-kpi-teal" size="small">
+            <Statistic
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Bills Processed</span>}
+              value={report?.billsGenerated || 0}
+              valueStyle={{ color: '#2F6F73', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={4}>
+          <Card loading={loading} className="spt-kpi-card spt-kpi-green" size="small">
+            <Statistic
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Billing</span>}
+              value={report?.totalBilling || 0}
+              precision={2}
+              prefix="₹"
+              valueStyle={{ color: '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={4}>
+          <Card loading={loading} className="spt-kpi-card spt-kpi-red" size="small">
+            <Statistic
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Expenses</span>}
               value={report?.totalExpenses || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#cf1322' }}
+              valueStyle={{ color: '#A8473C', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
@@ -940,7 +966,7 @@ export default function DailyReportPage() {
             <Descriptions.Item label="Booking Date">{selectedRow.bookingDate || '-'}</Descriptions.Item>
             <Descriptions.Item label="Company Name">{selectedRow.companyName || '-'}</Descriptions.Item>
             <Descriptions.Item label="Type">
-              <Tag color={selectedRow.loadingType === 'Import' ? 'blue' : 'green'}>
+              <Tag style={{ background: selectedRow.loadingType === 'Import' ? '#EEF3F6' : '#FDF6E8', color: selectedRow.loadingType === 'Import' ? '#17324D' : '#9E6B1D', border: '1px solid #D4DAD9' }}>
                 {selectedRow.loadingType || 'Import'}
               </Tag>
             </Descriptions.Item>
@@ -949,7 +975,7 @@ export default function DailyReportPage() {
             </Descriptions.Item>
             <Descriptions.Item label="Billing Number">
               {selectedRow.billingNumber && selectedRow.billingNumber !== '-' ? (
-                <Text strong style={{ color: '#1677ff' }}>
+                <Text strong style={{ color: '#17324D', fontFamily: 'monospace' }}>
                   {selectedRow.billingNumber}
                 </Text>
               ) : (
@@ -958,7 +984,7 @@ export default function DailyReportPage() {
             </Descriptions.Item>
             <Descriptions.Item label="Booking Number">{selectedRow.bookingNumber || '-'}</Descriptions.Item>
             <Descriptions.Item label="Feet (Size)">
-              <Tag color="purple">{selectedRow.feet || '40 FT'}</Tag>
+              <Tag style={{ background: '#ECEFEE', color: '#1E2933', border: '1px solid #D4DAD9' }}>{selectedRow.feet || '40 FT'}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Container Number">{selectedRow.containerNumber || '-'}</Descriptions.Item>
             <Descriptions.Item label="Seal Number">{selectedRow.sealNumber || '-'}</Descriptions.Item>

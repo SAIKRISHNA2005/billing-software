@@ -1,8 +1,12 @@
 export interface BillChargeItem {
   sNo?: number;
   description: string;
+  descriptionHtml?: string;
+  freightFormula?: string;
   freightCharges?: number | null;
+  otherFormula?: string;
   otherCharges?: number | null;
+  haltingFormula?: string;
   haltingCharges?: number | null;
   advance?: number | null;
   rate?: number | null;

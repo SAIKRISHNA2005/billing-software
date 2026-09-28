@@ -65,15 +65,15 @@ export interface ExpenseTotals {
 export function getLoadingCategoryColor(category: string): string {
   switch (category) {
     case 'Diesel':
-      return 'gold';
+      return '#C58A2A';
     case 'Loading Charges':
-      return 'blue';
+      return '#365A73';
     case 'Unloading Charges':
-      return 'cyan';
+      return '#2F6F73';
     case 'Parking':
-      return 'purple';
+      return '#5F6B73';
     case 'Halting':
-      return 'orange';
+      return '#9E6B1D';
     case 'Other Trip Expenses':
     default:
       return 'default';
@@ -86,19 +86,19 @@ export function getLoadingCategoryColor(category: string): string {
 export function getGeneralCategoryColor(category: string): string {
   switch (category) {
     case 'Office Stationery':
-      return 'blue';
+      return '#365A73';
     case 'Internet':
-      return 'geekblue';
+      return '#2F6F73';
     case 'Electricity':
-      return 'gold';
+      return '#C58A2A';
     case 'Tea/Coffee':
-      return 'orange';
+      return '#89939A';
     case 'Maintenance':
-      return 'magenta';
+      return '#17324D';
     case 'Salary-Related':
-      return 'green';
+      return '#3F6F4A';
     case 'Office Repairs':
-      return 'volcano';
+      return '#5F6B73';
     case 'Other':
     default:
       return 'default';

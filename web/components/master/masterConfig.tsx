@@ -124,7 +124,7 @@ export const vendorColumns: ColumnsType<VendorRecord> = [
     dataIndex: 'name',
     key: 'name',
     render: (name: string, record: VendorRecord) => (
-      <a href={`/vendors/${record.id}`} style={{ fontWeight: 600, color: '#1677ff' }}>
+      <a href={`/vendors/${record.id}`} style={{ fontWeight: 600, color: '#17324D' }}>
         {name}
       </a>
     ),
@@ -169,7 +169,11 @@ export const vehicleColumns: ColumnsType<VehicleRecord> = [
     title: 'Vehicle Number',
     dataIndex: 'vehicleNumber',
     key: 'vehicleNumber',
-    render: (num: string) => <Tag color="blue" style={{ fontSize: 13, fontWeight: 'bold' }}>{num}</Tag>,
+    render: (num: string) => (
+      <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontSize: 12, fontWeight: 600, fontFamily: 'monospace' }}>
+        {num}
+      </Tag>
+    ),
   },
   { title: 'Vehicle Type', dataIndex: 'vehicleType', key: 'vehicleType' },
   { title: 'Vendor ID', dataIndex: 'vendorId', key: 'vendorId', width: 140 },
@@ -241,7 +245,11 @@ export const driverColumns: ColumnsType<DriverRecord> = [
     dataIndex: 'phone',
     key: 'phone',
     width: 150,
-    render: (phone: string) => <Tag color="geekblue">{phone}</Tag>,
+    render: (phone: string) => (
+      <Tag style={{ background: '#ECEFEE', color: '#34424C', border: '1px solid #D4DAD9', fontFamily: 'monospace' }}>
+        {phone}
+      </Tag>
+    ),
   },
   { title: 'Driving License', dataIndex: 'licenseNumber', key: 'licenseNumber' },
 ];

@@ -219,9 +219,9 @@ export default function GeneralExpensesPage() {
       width: 140,
       align: 'right',
       render: (amt: number) => (
-        <Text strong style={{ color: '#0958d9', fontSize: 14 }}>
+        <span style={{ color: '#1E2933', fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
           {formatINR(amt)}
-        </Text>
+        </span>
       ),
     },
     {
@@ -270,10 +270,10 @@ export default function GeneralExpensesPage() {
         }}
       >
         <div>
-          <Title level={3} style={{ margin: 0 }}>
+          <Title level={3} style={{ margin: 0, color: '#17324D', letterSpacing: '-0.01em' }}>
             General Expenses
           </Title>
-          <Text type="secondary">
+          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
             Office, administrative, and overhead expenses tracking and itemized categorization.
           </Text>
         </div>
@@ -290,48 +290,48 @@ export default function GeneralExpensesPage() {
       {/* KPI Stats Row */}
       <Row gutter={16} style={{ marginBottom: 20 }}>
         <Col xs={24} sm={12} md={6}>
-          <Card size="small" bordered={false} style={{ background: '#e6f4ff', borderColor: '#91caff' }}>
+          <Card size="small" className="spt-kpi-card spt-kpi-steel">
             <Statistic
-              title="Total General Expenses"
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total General Expenses</span>}
               value={summaryTotals.totalAmount}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#0958d9', fontWeight: 700 }}
+              valueStyle={{ color: '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card size="small" bordered={false} style={{ background: '#fafafa' }}>
+          <Card size="small" className="spt-kpi-card spt-kpi-steel">
             <Statistic
-              title="Recorded Entries"
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Recorded Entries</span>}
               value={summaryTotals.count}
-              prefix={<FileDoneOutlined />}
-              valueStyle={{ color: '#262626', fontWeight: 600 }}
+              prefix={<FileDoneOutlined style={{ color: '#365A73' }} />}
+              valueStyle={{ color: '#1E2933', fontWeight: 600 }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card size="small" bordered={false} style={{ background: '#f6ffed', borderColor: '#b7eb8f' }}>
+          <Card size="small" className="spt-kpi-card spt-kpi-green">
             <Statistic
-              title="Salary-Related"
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Salary-Related</span>}
               value={summaryTotals.categoryBreakdown['Salary-Related'] || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#389e0d', fontWeight: 600 }}
+              valueStyle={{ color: '#3F6F4A', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card size="small" bordered={false} style={{ background: '#fff7e6', borderColor: '#ffd591' }}>
+          <Card size="small" className="spt-kpi-card spt-kpi-teal">
             <Statistic
-              title="Electricity & Internet"
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Electricity & Internet</span>}
               value={
                 (summaryTotals.categoryBreakdown['Electricity'] || 0) +
                 (summaryTotals.categoryBreakdown['Internet'] || 0)
               }
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#d46b08', fontWeight: 600 }}
+              valueStyle={{ color: '#2F6F73', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
@@ -411,12 +411,12 @@ export default function GeneralExpensesPage() {
             });
             return (
               <Table.Summary fixed>
-                <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 600 }}>
+                <Table.Summary.Row style={{ background: '#E5E9E8', fontWeight: 600 }}>
                   <Table.Summary.Cell index={0} colSpan={2}>
                     Page Total
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={1} align="right">
-                    <Text strong style={{ color: '#0958d9' }}>
+                    <Text strong style={{ color: '#17324D', fontFamily: 'monospace' }}>
                       {formatINR(pageTotal)}
                     </Text>
                   </Table.Summary.Cell>

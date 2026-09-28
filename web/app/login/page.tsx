@@ -132,7 +132,8 @@ export default function LoginPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #0b192c 0%, #1e3e62 50%, #000000 100%)',
+        backgroundColor: '#172A3A',
+        backgroundImage: 'radial-gradient(circle at 50% 30%, #1D354A 0%, #172A3A 70%)',
         padding: '24px',
       }}
     >
@@ -140,33 +141,38 @@ export default function LoginPage() {
         style={{
           width: '100%',
           maxWidth: 420,
-          borderRadius: 12,
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: 6,
+          boxShadow: '0 12px 32px rgba(10, 20, 30, 0.45)',
+          border: '1px solid #365A73',
+          background: '#FFFFFF',
         }}
         bodyStyle={{ padding: '36px 32px' }}
       >
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        <div style={{ textAlign: 'center', marginBottom: 26 }}>
           <div
             style={{
-              width: 56,
-              height: 56,
-              borderRadius: 28,
-              background: '#e6f4ff',
+              width: 52,
+              height: 52,
+              borderRadius: 6,
+              background: '#ECEFEE',
+              border: '1px solid #D4DAD9',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: 16,
+              marginBottom: 14,
             }}
           >
-            <CarOutlined style={{ fontSize: 28, color: '#1677ff' }} />
+            <CarOutlined style={{ fontSize: 26, color: '#17324D' }} />
           </div>
-          <Title level={3} style={{ margin: 0, fontWeight: 700 }}>
-            TMS Portal
-          </Title>
-          <Text type="secondary" style={{ fontSize: 14 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '0.6px', color: '#17324D', lineHeight: 1.2 }}>
+            SRI PONNIAMMAN TRANS
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#5F6B73', letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: 4 }}>
             Transport & Logistics Management System
-          </Text>
+          </div>
+          <div style={{ fontSize: 12, color: '#89939A', marginTop: 4 }}>
+            Single-Operator Operational Dispatch Console
+          </div>
         </div>
 
         {errorMessage && (
@@ -174,7 +180,7 @@ export default function LoginPage() {
             type="error"
             message={errorMessage}
             showIcon
-            style={{ marginBottom: 20, borderRadius: 6 }}
+            style={{ marginBottom: 18, borderRadius: 4, border: '1px solid #E5BDB9', background: '#FBEFEF' }}
           />
         )}
 
@@ -183,34 +189,34 @@ export default function LoginPage() {
           style={{
             marginBottom: 20,
             padding: '10px 14px',
-            borderRadius: 8,
-            background: gpsStatus === 'granted' ? '#f6ffed' : gpsStatus === 'denied' ? '#fffbe6' : '#f0f5ff',
-            border: `1px solid ${gpsStatus === 'granted' ? '#b7eb8f' : gpsStatus === 'denied' ? '#ffe58f' : '#adc6ff'}`,
+            borderRadius: 4,
+            background: gpsStatus === 'granted' ? '#EBF4ED' : gpsStatus === 'denied' ? '#FDF6E8' : '#EEF3F6',
+            border: `1px solid ${gpsStatus === 'granted' ? '#B7D9BF' : gpsStatus === 'denied' ? '#E8CCA1' : '#D4DAD9'}`,
             fontSize: 12,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: '#1f1f1f' }}>
-              <EnvironmentOutlined style={{ color: gpsStatus === 'granted' ? '#52c41a' : '#1677ff', fontSize: 14 }} />
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: '#1E2933' }}>
+              <EnvironmentOutlined style={{ color: gpsStatus === 'granted' ? '#3F6F4A' : '#365A73', fontSize: 13 }} />
               Audit Security Location
             </span>
             {gpsStatus === 'granted' && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#389e0d', background: '#d9f7be', padding: '1px 7px', borderRadius: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#2F5938', background: '#D2E8D6', padding: '1px 6px', borderRadius: 3 }}>
                 Verified
               </span>
             )}
             {gpsStatus === 'requesting' && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#1677ff', background: '#bae0ff', padding: '1px 7px', borderRadius: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#365A73', background: '#DCE8EF', padding: '1px 6px', borderRadius: 3 }}>
                 Acquiring GPS...
               </span>
             )}
             {gpsStatus === 'denied' && (
-              <Button size="small" type="link" onClick={() => acquireLocation()} style={{ padding: 0, height: 'auto', fontSize: 11 }}>
+              <Button size="small" type="link" onClick={() => acquireLocation()} style={{ padding: 0, height: 'auto', fontSize: 11, color: '#C58A2A' }}>
                 Allow Access
               </Button>
             )}
           </div>
-          <div style={{ color: '#595959', fontSize: 11.5, wordBreak: 'break-word', lineHeight: 1.4 }}>
+          <div style={{ color: '#5F6B73', fontSize: 11.5, wordBreak: 'break-word', lineHeight: 1.4 }}>
             {gpsStatus === 'granted' && gpsData?.address ? (
               <span>
                 📍 {gpsData.address} <Text type="secondary" style={{ fontSize: 10.5 }}>(Accuracy: ±{Math.round(gpsData.accuracy || 0)}m)</Text>
@@ -234,56 +240,65 @@ export default function LoginPage() {
         >
           <Form.Item
             name="email"
-            label="Email Address"
+            label={<span style={{ fontSize: 12.5, fontWeight: 600, color: '#34424C' }}>Email Address</span>}
             rules={[
               { required: true, message: 'Please enter your email' },
               { type: 'email', message: 'Please enter a valid email' },
             ]}
           >
             <Input
-              prefix={<MailOutlined style={{ color: '#bfbfbf' }} />}
+              prefix={<MailOutlined style={{ color: '#89939A' }} />}
               placeholder="e.g. admin@tms.local"
               size="large"
               autoComplete="email"
               disabled={loading}
+              style={{ borderRadius: 4 }}
             />
           </Form.Item>
 
           <Form.Item
             name="password"
-            label="Password"
+            label={<span style={{ fontSize: 12.5, fontWeight: 600, color: '#34424C' }}>Password</span>}
             rules={[{ required: true, message: 'Please enter your password' }]}
           >
             <Input.Password
-              prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
+              prefix={<LockOutlined style={{ color: '#89939A' }} />}
               placeholder="Enter your password"
               size="large"
               autoComplete="current-password"
               disabled={loading}
+              style={{ borderRadius: 4 }}
             />
           </Form.Item>
 
-          <Form.Item style={{ marginTop: 28, marginBottom: 12 }}>
+          <Form.Item style={{ marginTop: 24, marginBottom: 10 }}>
             <Button
               type="primary"
               htmlType="submit"
               size="large"
               block
               loading={loading}
-              style={{ height: 44, fontSize: 16, fontWeight: 600 }}
+              style={{
+                height: 42,
+                fontSize: 14.5,
+                fontWeight: 600,
+                borderRadius: 4,
+                backgroundColor: '#17324D',
+                borderColor: '#17324D',
+              }}
             >
-              Sign In
+              Sign In to Console
             </Button>
           </Form.Item>
         </Form>
 
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <Space direction="vertical" size={4}>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              Single-Operator Secure Access
+        <div style={{ textAlign: 'center', marginTop: 14 }}>
+          <Space direction="vertical" size={2}>
+            <Text type="secondary" style={{ fontSize: 11.5, color: '#5F6B73' }}>
+              Sri Ponniamman Trans Secure Transport Portal
             </Text>
-            <Text type="secondary" style={{ fontSize: 11, color: '#8c8c8c' }}>
-              Protected by server-side session authentication
+            <Text type="secondary" style={{ fontSize: 11, color: '#89939A' }}>
+              Protected by server-side session authentication & audit tracking
             </Text>
           </Space>
         </div>

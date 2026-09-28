@@ -125,31 +125,31 @@ export default function ProcessedBillDetailPage() {
       key: 'enquiryId',
       render: (enqId: string) =>
         enqId ? (
-          <Button type="link" onClick={() => router.push(`/enquiries/${enqId}`)}>
+          <Button type="link" style={{ padding: 0, color: '#17324D', fontWeight: 600 }} onClick={() => router.push(`/enquiries/${enqId}`)}>
             {enqId}
           </Button>
         ) : (
           '-'
-        )
+        ),
     },
     {
       title: 'Amount (₹)',
       dataIndex: 'amount',
       key: 'amount',
       align: 'right' as const,
-      render: (amt: number) => <Text strong>{formatCurrencyINR(amt)}</Text>
-    }
+      render: (amt: number) => <Text strong style={{ color: '#17324D' }}>{formatCurrencyINR(amt)}</Text>,
+    },
   ];
 
   return (
-    <div style={{ padding: 24, maxWidth: 1050, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+    <div style={{ padding: '4px 0 24px', maxWidth: 1050, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <Space>
           <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
             Back to Directory
           </Button>
-          <Title level={2} style={{ margin: 0 }}>
-            <FileTextOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+          <Title level={2} style={{ margin: 0, color: '#1E2933', fontSize: 22, fontWeight: 600 }}>
+            <FileTextOutlined style={{ marginRight: 8, color: '#17324D' }} />
             Invoice ({bill.billNumber})
           </Title>
         </Space>
@@ -171,7 +171,7 @@ export default function ProcessedBillDetailPage() {
           </Button>
           <Button
             type="primary"
-            style={{ backgroundColor: '#52c41a' }}
+            style={{ backgroundColor: '#3F6F4A', borderColor: '#3F6F4A' }}
             icon={<DollarOutlined />}
             onClick={() => {
               form.setFieldsValue({
@@ -194,18 +194,26 @@ export default function ProcessedBillDetailPage() {
         </Space>
       </div>
 
-      <Card style={{ borderRadius: 8, marginBottom: 24 }}>
+      <Card style={{ borderRadius: 4, marginBottom: 20 }}>
         <Row gutter={[16, 16]}>
           <Col span={24}>
             <Descriptions title="Invoice Overview" bordered column={{ xs: 1, sm: 2, md: 3 }}>
               <Descriptions.Item label="Bill Number">
-                <Text strong style={{ color: '#1677ff', fontSize: 16 }}>{bill.billNumber}</Text>
+                <Text strong style={{ color: '#17324D', fontSize: 15 }}>{bill.billNumber}</Text>
               </Descriptions.Item>
               <Descriptions.Item label="Financial Year">
-                <Tag color="purple">{bill.financialYear || bill.fy}</Tag>
+                <Tag color="default">{bill.financialYear || bill.fy}</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Payment Status">
-                <Tag color={bill.paymentStatus === 'PAID' ? 'green' : bill.paymentStatus === 'PARTIAL' ? 'orange' : 'red'}>
+                <Tag
+                  style={{
+                    fontWeight: 600,
+                    borderRadius: 3,
+                    background: bill.paymentStatus === 'PAID' ? '#EBF4ED' : bill.paymentStatus === 'PARTIAL' ? '#FDF6E8' : '#FBEFEF',
+                    color: bill.paymentStatus === 'PAID' ? '#3F6F4A' : bill.paymentStatus === 'PARTIAL' ? '#C58A2A' : '#A8473C',
+                    border: `1px solid ${bill.paymentStatus === 'PAID' ? '#B7D9BF' : bill.paymentStatus === 'PARTIAL' ? '#E8CCA1' : '#E5BDB9'}`,
+                  }}
+                >
                   {bill.paymentStatus || 'UNPAID'}
                 </Tag>
               </Descriptions.Item>
@@ -219,13 +227,13 @@ export default function ProcessedBillDetailPage() {
                 <strong>{bill.clientName}</strong>
               </Descriptions.Item>
               <Descriptions.Item label="Total Amount">
-                <Text strong style={{ color: '#1677ff' }}>{formatCurrencyINR(bill.totalAmount)}</Text>
+                <Text strong style={{ color: '#17324D' }}>{formatCurrencyINR(bill.totalAmount)}</Text>
               </Descriptions.Item>
               <Descriptions.Item label="Paid Amount">
-                <Text type="success" strong>{formatCurrencyINR(bill.paidAmount || 0)}</Text>
+                <Text strong style={{ color: '#3F6F4A' }}>{formatCurrencyINR(bill.paidAmount || 0)}</Text>
               </Descriptions.Item>
               <Descriptions.Item label="Pending Amount">
-                <Text type="danger" strong>{formatCurrencyINR(bill.pendingAmount !== undefined ? bill.pendingAmount : (bill.totalAmount - (bill.paidAmount || 0)))}</Text>
+                <Text strong style={{ color: '#A8473C' }}>{formatCurrencyINR(bill.pendingAmount !== undefined ? bill.pendingAmount : (bill.totalAmount - (bill.paidAmount || 0)))}</Text>
               </Descriptions.Item>
               <Descriptions.Item label="Remarks" span={3}>
                 {bill.remarks || 'No remarks provided.'}
@@ -235,7 +243,7 @@ export default function ProcessedBillDetailPage() {
         </Row>
       </Card>
 
-      <Card title="Itemized Invoice Charges" style={{ borderRadius: 8, marginBottom: 24 }}>
+      <Card title="Itemized Invoice Charges" style={{ borderRadius: 4, marginBottom: 20 }}>
         <Table
           columns={itemColumns}
           dataSource={bill.items || []}
@@ -243,8 +251,8 @@ export default function ProcessedBillDetailPage() {
           pagination={false}
           footer={() => (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text strong style={{ fontSize: 16 }}>Total Billed Amount:</Text>
-              <Title level={3} style={{ margin: 0, color: '#3f8600' }}>
+              <Text strong style={{ fontSize: 14, color: '#34424C' }}>Total Billed Amount:</Text>
+              <Title level={3} style={{ margin: 0, color: '#17324D', fontWeight: 700 }}>
                 {formatCurrencyINR(bill.totalAmount)}
               </Title>
             </div>

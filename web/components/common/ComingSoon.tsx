@@ -18,7 +18,7 @@ export default function ComingSoon({ title, phase, phaseName, description }: Com
   return (
     <Card style={{ borderRadius: 8, minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <Result
-        icon={<CompassOutlined style={{ color: '#1677ff', fontSize: 64 }} />}
+        icon={<CompassOutlined style={{ color: '#17324D', fontSize: 64 }} />}
         title={title}
         subTitle={
           <div style={{ maxWidth: 500, margin: '16px auto 0' }}>

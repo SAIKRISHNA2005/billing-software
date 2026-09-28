@@ -91,14 +91,14 @@ export const RecordDetailPopover: React.FC<RecordDetailPopoverProps> = ({
       {/* Parties */}
       <div style={{ marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-          <UserOutlined style={{ color: '#1677ff', fontSize: 13 }} />
-          <Text strong style={{ fontSize: 12.5, color: '#1e293b' }}>Client & Consignor</Text>
+          <UserOutlined style={{ color: '#365A73', fontSize: 13 }} />
+          <Text strong style={{ fontSize: 12.5, color: '#1E2933' }}>Client & Consignor</Text>
         </div>
         <div style={{ paddingLeft: 18, fontSize: 12 }}>
           <div><Text type="secondary">Client:</Text> <Text strong>{client}</Text></div>
           <div><Text type="secondary">Company:</Text> <Text>{company}</Text></div>
           {record.billingNumber && record.billingNumber !== '-' && (
-            <div><Text type="secondary">Bill No:</Text> <Text strong style={{ color: '#1677ff' }}>{record.billingNumber}</Text></div>
+            <div><Text type="secondary">Bill No:</Text> <Text strong style={{ color: '#17324D' }}>{record.billingNumber}</Text></div>
           )}
         </div>
       </div>
@@ -107,8 +107,8 @@ export const RecordDetailPopover: React.FC<RecordDetailPopoverProps> = ({
       {(vehicle !== '-' || container !== '-') && (
         <div style={{ marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            <CarOutlined style={{ color: '#52c41a', fontSize: 13 }} />
-            <Text strong style={{ fontSize: 12.5, color: '#1e293b' }}>Transport & Assets</Text>
+            <CarOutlined style={{ color: '#2F6F73', fontSize: 13 }} />
+            <Text strong style={{ fontSize: 12.5, color: '#1E2933' }}>Transport & Assets</Text>
           </div>
           <div style={{ paddingLeft: 18, fontSize: 12 }}>
             <div><Text type="secondary">Container:</Text> <Text strong>{container}</Text> {record.feet && <Tag style={{ fontSize: 10 }}>{record.feet}</Tag>}</div>
@@ -123,11 +123,11 @@ export const RecordDetailPopover: React.FC<RecordDetailPopoverProps> = ({
       {(route || record.companyIn || record.portIn) && (
         <div style={{ marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            <CompassOutlined style={{ color: '#fa8c16', fontSize: 13 }} />
-            <Text strong style={{ fontSize: 12.5, color: '#1e293b' }}>Route & Gate Times</Text>
+            <CompassOutlined style={{ color: '#C58A2A', fontSize: 13 }} />
+            <Text strong style={{ fontSize: 12.5, color: '#1E2933' }}>Route & Gate Times</Text>
           </div>
           <div style={{ paddingLeft: 18, fontSize: 12 }}>
-            {route && <div style={{ marginBottom: 4, fontWeight: 500, color: '#334155' }}>{route}</div>}
+            {route && <div style={{ marginBottom: 4, fontWeight: 500, color: '#34424C' }}>{route}</div>}
             {record.companyIn && record.companyIn !== '-' && (
               <div><Text type="secondary">Company In/Out:</Text> {record.companyIn} / {record.companyOut || '-'}</div>
             )}
@@ -142,8 +142,8 @@ export const RecordDetailPopover: React.FC<RecordDetailPopoverProps> = ({
       {freight !== undefined && (
         <div style={{ marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            <DollarOutlined style={{ color: '#722ed1', fontSize: 13 }} />
-            <Text strong style={{ fontSize: 12.5, color: '#1e293b' }}>Financial Breakdown</Text>
+            <DollarOutlined style={{ color: '#17324D', fontSize: 13 }} />
+            <Text strong style={{ fontSize: 12.5, color: '#1E2933' }}>Financial Breakdown</Text>
           </div>
           <div style={{ paddingLeft: 18, fontSize: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -153,13 +153,13 @@ export const RecordDetailPopover: React.FC<RecordDetailPopoverProps> = ({
             {halting > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Text type="secondary">Halting ({haltingDays}d):</Text>
-                <Text style={{ color: '#d46b08' }}>{formatCurrencyINR(halting)}</Text>
+                <Text style={{ color: '#C58A2A', fontWeight: 600 }}>{formatCurrencyINR(halting)}</Text>
               </div>
             )}
             {advance > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Text type="secondary">Advance Disbursed:</Text>
-                <Text style={{ color: '#0958d9' }}>{formatCurrencyINR(advance)}</Text>
+                <Text style={{ color: '#365A73', fontWeight: 600 }}>{formatCurrencyINR(advance)}</Text>
               </div>
             )}
             {diesel > 0 && (
@@ -169,11 +169,11 @@ export const RecordDetailPopover: React.FC<RecordDetailPopoverProps> = ({
               </div>
             )}
             {record.paidAmount !== undefined && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #e2e8f0', paddingTop: 3, marginTop: 3 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #D4DAD9', paddingTop: 3, marginTop: 3 }}>
                 <Text type="secondary">Paid / Pending:</Text>
                 <Text>
-                  <span style={{ color: '#389e0d' }}>{formatCurrencyINR(record.paidAmount)}</span> /{' '}
-                  <span style={{ color: '#cf1322' }}>{formatCurrencyINR(record.pendingAmount || 0)}</span>
+                  <span style={{ color: '#3F6F4A', fontWeight: 600 }}>{formatCurrencyINR(record.paidAmount)}</span> /{' '}
+                  <span style={{ color: '#A8473C', fontWeight: 600 }}>{formatCurrencyINR(record.pendingAmount || 0)}</span>
                 </Text>
               </div>
             )}
@@ -183,15 +183,15 @@ export const RecordDetailPopover: React.FC<RecordDetailPopoverProps> = ({
 
       {/* Comments */}
       {comments && (
-        <div style={{ padding: '6px 10px', background: '#f8fafc', borderRadius: 6, fontSize: 11.5, color: '#475569', marginBottom: 8 }}>
-          <Text strong style={{ fontSize: 11, color: '#64748b' }}>Remarks: </Text>
+        <div style={{ padding: '6px 10px', background: '#ECEFEE', borderRadius: 4, fontSize: 11.5, color: '#5F6B73', marginBottom: 8 }}>
+          <Text strong style={{ fontSize: 11, color: '#1E2933' }}>Remarks: </Text>
           {comments}
         </div>
       )}
 
       {onViewFull && (
         <div style={{ textAlign: 'right', marginTop: 8 }}>
-          <Button type="link" size="small" icon={<EyeOutlined />} onClick={onViewFull} style={{ padding: 0 }}>
+          <Button type="link" size="small" icon={<EyeOutlined />} onClick={onViewFull} style={{ padding: 0, color: '#17324D' }}>
             Open Complete Details ➔
           </Button>
         </div>
@@ -203,7 +203,7 @@ export const RecordDetailPopover: React.FC<RecordDetailPopoverProps> = ({
     <Button
       type="text"
       size="small"
-      icon={<EyeOutlined style={{ color: '#1677ff' }} />}
+      icon={<EyeOutlined style={{ color: '#365A73' }} />}
       style={{ display: 'inline-flex', alignItems: 'center' }}
     />
   );

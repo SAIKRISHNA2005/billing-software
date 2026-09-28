@@ -122,7 +122,7 @@ export default function EnquiryDetailPage({ params }: PageProps) {
               <Text strong>{enquiry.id}</Text>
             </Descriptions.Item>
             <Descriptions.Item label="Transaction No">
-              <Text copyable strong style={{ color: '#1677ff' }}>
+              <Text copyable strong style={{ color: '#17324D', fontFamily: 'monospace' }}>
                 {enquiry.transactionNumber}
               </Text>
             </Descriptions.Item>
@@ -139,7 +139,7 @@ export default function EnquiryDetailPage({ params }: PageProps) {
             </Descriptions.Item>
 
             <Descriptions.Item label="Loading Type">
-              <Tag color={enquiry.loadingType === 'Import' ? 'blue' : 'orange'}>
+              <Tag style={{ background: enquiry.loadingType === 'Import' ? '#EEF3F6' : '#FDF6E8', color: enquiry.loadingType === 'Import' ? '#17324D' : '#9E6B1D', border: '1px solid #D4DAD9' }}>
                 {enquiry.loadingType}
               </Tag>
             </Descriptions.Item>
@@ -150,7 +150,7 @@ export default function EnquiryDetailPage({ params }: PageProps) {
 
             <Descriptions.Item label="Bill Association">
               {enquiry.billId ? (
-                <Tag color="green">Billed ({enquiry.billId})</Tag>
+                <Tag style={{ background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #B8DCBE' }}>Billed ({enquiry.billId})</Tag>
               ) : (
                 <Tag color="default">Unbilled</Tag>
               )}
@@ -282,44 +282,46 @@ export default function EnquiryDetailPage({ params }: PageProps) {
         <Card bordered={false}>
           <Row gutter={24} style={{ marginBottom: 24 }}>
             <Col xs={24} sm={12} md={6}>
-              <Card size="small" style={{ backgroundColor: '#fafafa' }}>
+              <Card size="small" className="spt-kpi-card spt-kpi-steel">
                 <Statistic
                   title="Freight Amount"
                   value={enquiry.freightAmount || 0}
                   precision={2}
                   prefix="₹"
+                  valueStyle={{ color: '#365A73', fontFamily: 'monospace', fontWeight: 600 }}
                 />
               </Card>
             </Col>
             <Col xs={24} sm={12} md={6}>
-              <Card size="small" style={{ backgroundColor: '#f6ffed', borderColor: '#b7eb8f' }}>
+              <Card size="small" className="spt-kpi-card spt-kpi-green">
                 <Statistic
                   title="Vendor Total Payable"
                   value={vendorFinance?.totalPayable || 0}
                   precision={2}
                   prefix="₹"
-                  valueStyle={{ color: '#389e0d' }}
+                  valueStyle={{ color: '#3F6F4A', fontFamily: 'monospace', fontWeight: 600 }}
                 />
               </Card>
             </Col>
             <Col xs={24} sm={12} md={6}>
-              <Card size="small" style={{ backgroundColor: '#fafafa' }}>
+              <Card size="small" className="spt-kpi-card spt-kpi-teal">
                 <Statistic
                   title="Vendor Total Paid"
                   value={vendorFinance?.totalPaid || 0}
                   precision={2}
                   prefix="₹"
+                  valueStyle={{ color: '#2F6F73', fontFamily: 'monospace', fontWeight: 600 }}
                 />
               </Card>
             </Col>
             <Col xs={24} sm={12} md={6}>
-              <Card size="small" style={{ backgroundColor: '#fffbe6', borderColor: '#ffe58f' }}>
+              <Card size="small" className="spt-kpi-card spt-kpi-amber">
                 <Statistic
                   title="Vendor Balance Pending"
                   value={vendorFinance?.balance || 0}
                   precision={2}
                   prefix="₹"
-                  valueStyle={{ color: '#d46b08' }}
+                  valueStyle={{ color: '#C58A2A', fontFamily: 'monospace', fontWeight: 600 }}
                 />
               </Card>
             </Col>
@@ -430,41 +432,38 @@ export default function EnquiryDetailPage({ params }: PageProps) {
             <>
               <Row gutter={16} style={{ marginBottom: 20 }}>
                 <Col xs={24} sm={8}>
-                  <Card size="small" style={{ backgroundColor: '#f6ffed', borderColor: '#b7eb8f' }}>
+                  <Card size="small" className="spt-kpi-card spt-kpi-green">
                     <Statistic
                       title="Vendor Total Payable"
                       value={vendorFinance?.totalPayable || 0}
                       precision={2}
                       prefix="₹"
-                      valueStyle={{ color: '#389e0d' }}
+                      valueStyle={{ color: '#3F6F4A', fontFamily: 'monospace', fontWeight: 600 }}
                     />
                   </Card>
                 </Col>
                 <Col xs={24} sm={8}>
-                  <Card size="small" style={{ backgroundColor: '#e6f4ff', borderColor: '#91caff' }}>
+                  <Card size="small" className="spt-kpi-card spt-kpi-steel">
                     <Statistic
                       title="Vendor Total Paid"
                       value={vendorFinance?.totalPaid || 0}
                       precision={2}
                       prefix="₹"
-                      valueStyle={{ color: '#0958d9' }}
+                      valueStyle={{ color: '#365A73', fontFamily: 'monospace', fontWeight: 600 }}
                     />
                   </Card>
                 </Col>
                 <Col xs={24} sm={8}>
                   <Card
                     size="small"
-                    style={{
-                      backgroundColor: (vendorFinance?.balance || 0) > 0 ? '#fffbe6' : '#f6ffed',
-                      borderColor: (vendorFinance?.balance || 0) > 0 ? '#ffe58f' : '#b7eb8f',
-                    }}
+                    className={`spt-kpi-card ${(vendorFinance?.balance || 0) > 0 ? 'spt-kpi-amber' : 'spt-kpi-green'}`}
                   >
                     <Statistic
                       title="Vendor Balance Pending"
                       value={vendorFinance?.balance || 0}
                       precision={2}
                       prefix="₹"
-                      valueStyle={{ color: (vendorFinance?.balance || 0) > 0 ? '#d46b08' : '#389e0d' }}
+                      valueStyle={{ color: (vendorFinance?.balance || 0) > 0 ? '#C58A2A' : '#3F6F4A', fontFamily: 'monospace', fontWeight: 600 }}
                     />
                   </Card>
                 </Col>
@@ -472,7 +471,7 @@ export default function EnquiryDetailPage({ params }: PageProps) {
 
               <Descriptions bordered column={{ xs: 1, sm: 2, md: 2 }}>
                 <Descriptions.Item label="Vendor Name">
-                  <a href={`/vendors/${vendor.id}`} style={{ fontWeight: 600, color: '#1677ff' }}>
+                  <a href={`/vendors/${vendor.id}`} style={{ fontWeight: 600, color: '#17324D' }}>
                     {vendor.name}
                   </a>
                 </Descriptions.Item>

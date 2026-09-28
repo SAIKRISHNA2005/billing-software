@@ -439,7 +439,7 @@ export default function ConsolidatedVendorReportPage() {
       fixed: 'left',
       width: 200,
       render: (name: string, record: VendorReportRow) => (
-        <Link href={`/vendors/${record.vendorId}`} style={{ fontWeight: 600, color: '#1677ff' }}>
+        <Link href={`/vendors/${record.vendorId}`} style={{ fontWeight: 600, color: '#17324D' }}>
           {name || record.vendorId}
         </Link>
       ),
@@ -450,7 +450,7 @@ export default function ConsolidatedVendorReportPage() {
       key: 'vehiclesCount',
       align: 'center',
       width: 90,
-      render: (count: number) => <Tag color="blue">{count || 0}</Tag>,
+      render: (count: number) => <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontVariantNumeric: 'tabular-nums' }}>{count || 0}</Tag>,
     },
     {
       title: 'Trips',
@@ -458,7 +458,7 @@ export default function ConsolidatedVendorReportPage() {
       key: 'tripsCount',
       align: 'center',
       width: 80,
-      render: (trips: number) => <Text strong>{trips || 0}</Text>,
+      render: (trips: number) => <Text strong style={{ fontVariantNumeric: 'tabular-nums' }}>{trips || 0}</Text>,
     },
     {
       title: 'Advance',
@@ -466,7 +466,7 @@ export default function ConsolidatedVendorReportPage() {
       key: 'advance',
       align: 'right',
       width: 120,
-      render: (v: number) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+      render: (v: number) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>₹{Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>,
     },
     {
       title: 'Diesel',
@@ -474,7 +474,7 @@ export default function ConsolidatedVendorReportPage() {
       key: 'diesel',
       align: 'right',
       width: 120,
-      render: (v: number) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+      render: (v: number) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>₹{Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>,
     },
     {
       title: 'Halting',
@@ -482,7 +482,7 @@ export default function ConsolidatedVendorReportPage() {
       key: 'halting',
       align: 'right',
       width: 110,
-      render: (v: number) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+      render: (v: number) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>₹{Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>,
     },
     {
       title: 'Extra Adv',
@@ -490,7 +490,7 @@ export default function ConsolidatedVendorReportPage() {
       key: 'extraAdvance',
       align: 'right',
       width: 110,
-      render: (v: number) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+      render: (v: number) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>₹{Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>,
     },
     {
       title: 'Bonus',
@@ -498,7 +498,7 @@ export default function ConsolidatedVendorReportPage() {
       key: 'bonus',
       align: 'right',
       width: 110,
-      render: (v: number) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+      render: (v: number) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>₹{Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>,
     },
     {
       title: 'Total Payable',
@@ -507,7 +507,7 @@ export default function ConsolidatedVendorReportPage() {
       align: 'right',
       width: 140,
       render: (v: number) => (
-        <Text strong style={{ color: '#389e0d' }}>
+        <Text strong style={{ color: '#17324D', fontVariantNumeric: 'tabular-nums' }}>
           ₹{Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -519,7 +519,7 @@ export default function ConsolidatedVendorReportPage() {
       align: 'right',
       width: 140,
       render: (v: number) => (
-        <Text strong style={{ color: '#0958d9' }}>
+        <Text strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
           ₹{Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -531,7 +531,7 @@ export default function ConsolidatedVendorReportPage() {
       align: 'right',
       width: 140,
       render: (v: number) => (
-        <Text strong style={{ color: Number(v || 0) > 0 ? '#cf1322' : '#389e0d' }}>
+        <Text strong style={{ color: Number(v || 0) > 0 ? '#C58A2A' : '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
           ₹{Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -546,14 +546,14 @@ export default function ConsolidatedVendorReportPage() {
         <Space size="small">
           <Tooltip title="View Trips & Ledger">
             <Link href={`/vendors/${record.vendorId}`}>
-              <Button type="text" size="small" icon={<EyeOutlined />} />
+              <Button type="text" size="small" icon={<EyeOutlined style={{ color: '#365A73' }} />} />
             </Link>
           </Tooltip>
           <Tooltip title="Record Payment">
             <Button
               type="text"
               size="small"
-              icon={<DollarOutlined style={{ color: '#389e0d' }} />}
+              icon={<DollarOutlined style={{ color: '#3F6F4A' }} />}
               onClick={() => {
                 openAddPaymentDrawer();
                 paymentForm.setFieldsValue({ vendorId: record.vendorId });
@@ -562,7 +562,7 @@ export default function ConsolidatedVendorReportPage() {
           </Tooltip>
           <Tooltip title="View / Edit Vendor">
             <Link href={`/vendors/${record.vendorId}`}>
-              <Button type="text" size="small" icon={<EditOutlined style={{ color: '#1677ff' }} />} />
+              <Button type="text" size="small" icon={<EditOutlined style={{ color: '#17324D' }} />} />
             </Link>
           </Tooltip>
         </Space>
@@ -591,7 +591,7 @@ export default function ConsolidatedVendorReportPage() {
       dataIndex: 'vendorName',
       key: 'vendorName',
       render: (name: string, record: VendorPaymentItem) => (
-        <Link href={`/vendors/${record.vendorId}`} style={{ fontWeight: 600, color: '#1677ff' }}>
+        <Link href={`/vendors/${record.vendorId}`} style={{ fontWeight: 600, color: '#17324D' }}>
           {name || record.vendorId}
         </Link>
       ),
@@ -601,14 +601,14 @@ export default function ConsolidatedVendorReportPage() {
       dataIndex: 'enquiryId',
       key: 'enquiryId',
       render: (enquiryId: string, record: VendorPaymentItem) => {
-        if (!enquiryId) return <Tag color="default">Unallocated</Tag>;
+        if (!enquiryId) return <Tag style={{ background: '#ECEFEE', color: '#5F6B73', border: '1px solid #D4DAD9' }}>Unallocated</Tag>;
         return (
           <Space direction="vertical" size={2}>
-            <Link href={`/enquiries/${enquiryId}`} style={{ color: '#1677ff' }}>
+            <Link href={`/enquiries/${enquiryId}`} style={{ color: '#17324D', fontFamily: 'monospace' }}>
               {record.enquiryTransactionNo || enquiryId}
             </Link>
             {record.vehicleNumber && (
-              <Text type="secondary" style={{ fontSize: 12 }}>
+              <Text type="secondary" style={{ fontSize: 12, fontFamily: 'monospace' }}>
                 {record.vehicleNumber}
               </Text>
             )}
@@ -623,7 +623,7 @@ export default function ConsolidatedVendorReportPage() {
       align: 'right',
       width: 130,
       render: (amt: number) => (
-        <Text strong style={{ color: '#0958d9' }}>
+        <Text strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
           ₹{Number(amt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -633,19 +633,9 @@ export default function ConsolidatedVendorReportPage() {
       dataIndex: 'mode',
       key: 'mode',
       width: 120,
-      render: (mode: string) => {
-        const color =
-          mode === 'Cash'
-            ? 'green'
-            : mode === 'Bank Transfer'
-            ? 'blue'
-            : mode === 'UPI'
-            ? 'purple'
-            : mode === 'Cheque'
-            ? 'orange'
-            : 'default';
-        return <Tag color={color}>{mode}</Tag>;
-      },
+      render: (mode: string) => (
+        <Tag style={{ background: '#ECEFEE', color: '#34424C', border: '1px solid #D4DAD9' }}>{mode}</Tag>
+      ),
     },
     {
       title: 'Reference',
@@ -698,11 +688,11 @@ export default function ConsolidatedVendorReportPage() {
       {/* Top Header */}
       <Row justify="space-between" align="middle" style={{ marginBottom: 24, gap: 12 }}>
         <Col>
-          <Title level={2} style={{ margin: 0 }}>
-            <TeamOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+          <Title level={2} style={{ margin: 0, color: '#17324D', letterSpacing: '-0.01em' }}>
+            <TeamOutlined style={{ marginRight: 8, color: '#17324D' }} />
             Vendor Financial &amp; Operations Report
           </Title>
-          <Text type="secondary">
+          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
             Consolidated vendor financial statements, ledger balances, disbursement tracking, and master directory
           </Text>
         </Col>
@@ -731,51 +721,44 @@ export default function ConsolidatedVendorReportPage() {
       {/* KPI Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} md={6}>
-          <Card bordered={false} style={{ backgroundColor: '#f6ffed', borderColor: '#b7eb8f', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <Card className="spt-kpi-card spt-kpi-steel" size="small">
             <Statistic
-              title="Grand Total Payable"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Grand Total Payable</span>}
               value={grandTotals?.totalAmount || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#389e0d', fontWeight: 600 }}
+              valueStyle={{ color: '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card bordered={false} style={{ backgroundColor: '#e6f4ff', borderColor: '#91caff', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <Card className="spt-kpi-card spt-kpi-green" size="small">
             <Statistic
-              title="Grand Total Paid"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Grand Total Paid</span>}
               value={grandTotals?.paid || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#0958d9', fontWeight: 600 }}
+              valueStyle={{ color: '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card
-            bordered={false}
-            style={{
-              backgroundColor: (grandTotals?.pending || 0) > 0 ? '#fffbe6' : '#f6ffed',
-              borderColor: (grandTotals?.pending || 0) > 0 ? '#ffe58f' : '#b7eb8f',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-            }}
-          >
+          <Card className={`spt-kpi-card ${(grandTotals?.pending || 0) > 0 ? 'spt-kpi-amber' : 'spt-kpi-green'}`} size="small">
             <Statistic
-              title="Grand Total Pending"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Grand Total Pending</span>}
               value={grandTotals?.pending || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: (grandTotals?.pending || 0) > 0 ? '#cf1322' : '#389e0d', fontWeight: 600 }}
+              valueStyle={{ color: (grandTotals?.pending || 0) > 0 ? '#C58A2A' : '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card bordered={false} style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <Card className="spt-kpi-card spt-kpi-teal" size="small">
             <Statistic
-              title="Total Trips / Vendors"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Trips / Vendors</span>}
               value={`${grandTotals?.tripsCount || 0} trips / ${rows.length} vendors`}
-              valueStyle={{ fontSize: 18, fontWeight: 600 }}
+              valueStyle={{ fontSize: 16, fontWeight: 700, color: '#2F6F73', fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
@@ -907,17 +890,17 @@ export default function ConsolidatedVendorReportPage() {
                               <Text strong>₹{grandTotals.bonus.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</Text>
                             </Table.Summary.Cell>
                             <Table.Summary.Cell index={8} align="right">
-                              <Text strong style={{ color: '#389e0d' }}>
+                              <Text strong style={{ color: '#3F6F4A', fontFamily: 'monospace' }}>
                                 ₹{grandTotals.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                               </Text>
                             </Table.Summary.Cell>
                             <Table.Summary.Cell index={9} align="right">
-                              <Text strong style={{ color: '#0958d9' }}>
+                              <Text strong style={{ color: '#365A73', fontFamily: 'monospace' }}>
                                 ₹{grandTotals.paid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                               </Text>
                             </Table.Summary.Cell>
                             <Table.Summary.Cell index={10} align="right">
-                              <Text strong style={{ color: grandTotals.pending > 0 ? '#cf1322' : '#389e0d' }}>
+                              <Text strong style={{ color: grandTotals.pending > 0 ? '#A8473C' : '#3F6F4A', fontFamily: 'monospace' }}>
                                 ₹{grandTotals.pending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                               </Text>
                             </Table.Summary.Cell>
@@ -1003,7 +986,7 @@ export default function ConsolidatedVendorReportPage() {
                 <Card bordered={false} style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
                     <Text strong>
-                      Total Disbursements Filtered: <span style={{ color: '#0958d9' }}>₹{paymentsSummaryTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      Total Disbursements Filtered: <span style={{ color: '#17324D', fontFamily: 'monospace' }}>₹{paymentsSummaryTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </Text>
                     <Button type="primary" icon={<PlusOutlined />} onClick={openAddPaymentDrawer}>
                       Record Payment
@@ -1093,9 +1076,9 @@ export default function ConsolidatedVendorReportPage() {
           </Form.Item>
 
           {selectedVendorId && vendorNetPending !== null && (
-            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#f0f5ff', borderRadius: 6 }}>
+            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#ECEFEE', border: '1px solid #D4DAD9', borderRadius: 4 }}>
               <Text type="secondary">Vendor Net Pending Balance: </Text>
-              <Text strong style={{ color: vendorNetPending > 0 ? '#cf1322' : '#389e0d' }}>
+              <Text strong style={{ color: vendorNetPending > 0 ? '#A8473C' : '#3F6F4A', fontFamily: 'monospace' }}>
                 ₹{vendorNetPending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </Text>
             </div>
@@ -1126,9 +1109,9 @@ export default function ConsolidatedVendorReportPage() {
           </Form.Item>
 
           {selectedEnquiryPending !== null && (
-            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#fffbe6', borderRadius: 6 }}>
+            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#FDF6E8', border: '1px solid #F0D59E', borderRadius: 4 }}>
               <Text type="secondary">Selected Trip Pending: </Text>
-              <Text strong style={{ color: '#d46b08' }}>
+              <Text strong style={{ color: '#9E6B1D', fontFamily: 'monospace' }}>
                 ₹{selectedEnquiryPending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </Text>
             </div>

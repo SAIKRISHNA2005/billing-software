@@ -186,12 +186,12 @@ export default function CompletedJobsPage() {
       render: (_, rec) => {
         if (rec.billId) {
           return (
-            <Tag color="green" icon={<FileDoneOutlined />}>
+            <Tag style={{ background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #B8DCBE', fontWeight: 500 }} icon={<FileDoneOutlined />}>
               Billed: {rec.billId}
             </Tag>
           );
         }
-        return <Tag color="gold">Ready for Billing</Tag>;
+        return <Tag style={{ background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #F0D59E', fontWeight: 500 }}>Ready for Billing</Tag>;
       },
     },
     {
@@ -200,7 +200,7 @@ export default function CompletedJobsPage() {
       width: 130,
       align: 'right',
       render: (_, rec) => (
-        <Text strong>{formatCurrencyINR(rec.vendorFinance?.totalPayable ?? 0)}</Text>
+        <Text strong style={{ fontFamily: 'monospace' }}>{formatCurrencyINR(rec.vendorFinance?.totalPayable ?? 0)}</Text>
       ),
     },
     {
@@ -258,8 +258,8 @@ export default function CompletedJobsPage() {
         }}
       >
         <div>
-          <Title level={2} style={{ margin: 0 }}>
-            <CheckCircleOutlined style={{ marginRight: 10, color: '#52c41a' }} />
+          <Title level={2} style={{ margin: 0, color: '#1E2933' }}>
+            <CheckCircleOutlined style={{ marginRight: 10, color: '#3F6F4A' }} />
             Completed Transport Jobs
           </Title>
           <Paragraph type="secondary" style={{ margin: 0 }}>

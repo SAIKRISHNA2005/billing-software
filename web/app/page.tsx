@@ -28,7 +28,7 @@ export default function RootIndexPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#f5f7fa',
+        background: '#F3F4F2',
       }}
     >
       <Space direction="vertical" align="center" size="middle">

@@ -59,8 +59,8 @@ export default function ExcelExportPage() {
 
   return (
     <div style={{ padding: 24, maxWidth: 1000, margin: '0 auto' }}>
-      <Title level={2} style={{ marginBottom: 24 }}>
-        <FileExcelOutlined style={{ marginRight: 8, color: '#52c41a' }} />
+      <Title level={2} style={{ marginBottom: 24, color: '#1E2933' }}>
+        <FileExcelOutlined style={{ marginRight: 8, color: '#3F6F4A' }} />
         Live Spreadsheet Access &amp; Excel Exports
       </Title>
 

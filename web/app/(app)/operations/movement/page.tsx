@@ -313,7 +313,7 @@ function VehicleManagementContent() {
     if (hasPortOut && record.stage === 'PORT_MOVEMENT') {
       Modal.confirm({
         title: `Mark Job Completed: ${record.transactionNumber}?`,
-        icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
+        icon: <CheckCircleOutlined style={{ color: '#3F6F4A' }} />,
         content: `Port Gate-Out recorded at ${record.movement?.portOutTime}. Completing will auto-sync expenses and mark ready for billing.`,
         okText: 'Yes, Complete Job',
         okType: 'primary',
@@ -551,7 +551,7 @@ function VehicleManagementContent() {
           <Tooltip title="Update Gate Times">
             <Button
               type="text"
-              icon={<EditOutlined style={{ color: '#1677ff' }} />}
+              icon={<EditOutlined style={{ color: '#365A73' }} />}
               onClick={() => handleOpenEdit(record)}
             />
           </Tooltip>
@@ -666,7 +666,7 @@ function VehicleManagementContent() {
           </Tooltip>
           <Tooltip title="Edit Consignment">
             <Link href={`/enquiries/${record.id}`}>
-              <Button type="text" size="small" icon={<EditOutlined style={{ color: '#1677ff' }} />} />
+              <Button type="text" size="small" icon={<EditOutlined style={{ color: '#365A73' }} />} />
             </Link>
           </Tooltip>
         </Space>
@@ -716,7 +716,11 @@ function VehicleManagementContent() {
       dataIndex: 'vehicleNumber',
       key: 'vehicleNumber',
       width: 130,
-      render: (v) => <Tag color="blue">{v || 'N/A'}</Tag>,
+      render: (v) => (
+        <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontFamily: 'monospace', fontWeight: 600 }}>
+          {v || 'N/A'}
+        </Tag>
+      ),
     },
     {
       title: 'Container',
@@ -732,9 +736,9 @@ function VehicleManagementContent() {
       align: 'center',
       render: (_, rec) =>
         rec.billId ? (
-          <Tag color="green">Billed</Tag>
+          <Tag style={{ background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #B8DCBE', fontWeight: 500 }}>Billed</Tag>
         ) : (
-          <Tag color="orange">Pending Bill</Tag>
+          <Tag style={{ background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #F0D59E', fontWeight: 500 }}>Pending Bill</Tag>
         ),
     },
     {
@@ -751,7 +755,7 @@ function VehicleManagementContent() {
           </Tooltip>
           <Tooltip title="Edit Consignment">
             <Link href={`/enquiries/${record.id}`}>
-              <Button type="text" size="small" icon={<EditOutlined style={{ color: '#1677ff' }} />} />
+              <Button type="text" size="small" icon={<EditOutlined style={{ color: '#365A73' }} />} />
             </Link>
           </Tooltip>
         </Space>
@@ -764,8 +768,8 @@ function VehicleManagementContent() {
       {/* Top Header */}
       <Row justify="space-between" align="middle" style={{ marginBottom: 24, gap: 12 }}>
         <Col>
-          <Title level={2} style={{ margin: 0 }}>
-            <CarOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+          <Title level={2} style={{ margin: 0, color: '#1E2933' }}>
+            <CarOutlined style={{ marginRight: 8, color: '#17324D' }} />
             Vehicle Management
           </Title>
           <Text type="secondary">

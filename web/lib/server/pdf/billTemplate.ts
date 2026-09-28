@@ -33,41 +33,29 @@ export function generateBillHtml(data: BillData): string {
     { label: 'Flatrack', key: 'FLATRACK' },
   ];
 
-  // Render dynamic charge rows and pad with empty rows for uniform authentic invoice height
+  // Render dynamic charge rows strictly for content present (no empty filler rows)
   const rawCharges = data.charges || [];
-  const minRows = 10;
   const chargeRows = rawCharges.map((row, idx) => {
-    const sNo = row.sNo !== undefined ? row.sNo : idx + 1;
+    const sNo = row.sNo !== undefined && row.sNo !== null ? row.sNo : idx + 1;
     const isSpecialText = sNo === null || sNo === undefined || String(sNo).trim() === '';
 
-    return `
-      <tr>
-        <td style="text-align: center; font-weight: bold; width: 44px; height: 25px;">${isSpecialText ? '' : sNo}</td>
-        <td style="font-weight: 500; white-space: pre-line; word-break: break-word;">${row.description || '-'}</td>
-        <td style="text-align: right; width: 85px;">${formatAmount(row.freightCharges)}</td>
-        <td style="text-align: right; width: 75px;">${formatAmount(row.otherCharges)}</td>
-        <td style="text-align: right; width: 75px;">${formatAmount(row.haltingCharges)}</td>
-        <td style="text-align: right; width: 75px;">${formatAmount(row.advance)}</td>
-        <td style="text-align: right; width: 60px;">${formatAmount(row.rate)}</td>
-        <td style="text-align: right; font-weight: 600; width: 95px;">${formatAmount(row.amount)}</td>
-      </tr>
-    `;
-  }).join('');
+    const freightContent = row.freightFormula ? row.freightFormula : formatAmount(row.freightCharges);
+    const otherContent = row.otherFormula ? row.otherFormula : formatAmount(row.otherCharges);
+    const haltingContent = row.haltingFormula ? row.haltingFormula : formatAmount(row.haltingCharges);
+    const advanceContent = formatAmount(row.advance);
+    const amountContent = formatAmount(row.amount);
 
-  // Pad empty rows to match the reference image's uniform spacing
-  const emptyRowsNeeded = Math.max(0, minRows - rawCharges.length);
-  const emptyRowsHtml = Array.from({ length: emptyRowsNeeded }, (_, i) => {
-    const rowNum = rawCharges.length + i + 1;
     return `
       <tr>
-        <td style="text-align: center; height: 24px; color: #555;">${rowNum <= 6 ? rowNum : ''}</td>
-        <td>&nbsp;</td>
-        <td style="text-align: center;">-</td>
-        <td style="text-align: center;">-</td>
-        <td style="text-align: center;">-</td>
-        <td style="text-align: center;">-</td>
-        <td style="text-align: center;">-</td>
-        <td style="text-align: center;">-</td>
+        <td style="text-align: center; font-weight: bold; width: 44px; vertical-align: top; padding-top: 5px;">${isSpecialText ? '' : sNo}</td>
+        <td style="vertical-align: top; padding: 5.5px 7px; word-break: break-word;">
+          ${row.descriptionHtml ? row.descriptionHtml : `<div style="font-weight: 600; font-size: 11px; white-space: pre-line;">${row.description || '-'}</div>`}
+        </td>
+        <td style="text-align: right; width: 125px; vertical-align: top; padding-top: 5px; font-weight: 600; font-size: 11px; white-space: nowrap;">${freightContent}</td>
+        <td style="text-align: right; width: 85px; vertical-align: top; padding-top: 5px; font-size: 11px; white-space: nowrap;">${otherContent}</td>
+        <td style="text-align: right; width: 100px; vertical-align: top; padding-top: 5px; font-size: 11px; white-space: nowrap;">${haltingContent}</td>
+        <td style="text-align: right; width: 85px; vertical-align: top; padding-top: 5px; font-size: 11px; white-space: nowrap;">${advanceContent}</td>
+        <td style="text-align: right; font-weight: bold; width: 100px; vertical-align: top; padding-top: 5px; font-size: 11.5px; white-space: nowrap;">${amountContent}</td>
       </tr>
     `;
   }).join('');
@@ -106,7 +94,7 @@ export function generateBillHtml(data: BillData): string {
       background: #fff;
       margin: 0;
       padding: 0;
-      font-size: 12px;
+      font-size: 11.5px;
       line-height: 1.35;
     }
     .invoice-wrapper {
@@ -117,14 +105,14 @@ export function generateBillHtml(data: BillData): string {
     /* FULL-WIDTH TOP STATIC HEADER */
     .top-header-full {
       width: 100%;
-      padding: 0 0 6px 0;
+      padding: 0 0 5px 0;
       position: relative;
       text-align: center;
     }
     .header-image-container {
       width: 100%;
       text-align: center;
-      margin: 0 0 4px 0;
+      margin: 0 0 3px 0;
       padding: 0;
     }
     .header-image-container img {
@@ -136,7 +124,7 @@ export function generateBillHtml(data: BillData): string {
       margin: 0 auto !important;
     }
     .brand-title {
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 900;
       letter-spacing: 0.5px;
       color: #000;
@@ -145,32 +133,32 @@ export function generateBillHtml(data: BillData): string {
       font-family: "Arial Black", Arial, sans-serif;
     }
     .brand-subtitle {
-      font-size: 13.5px;
+      font-size: 13px;
       font-style: italic;
       font-weight: bold;
       text-align: center;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
     .brand-address {
-      font-size: 11px;
+      font-size: 10.5px;
       text-align: center;
-      line-height: 1.4;
+      line-height: 1.35;
       color: #111;
     }
     .icon-vinayagar {
       position: absolute;
       left: 6px;
       top: 4px;
-      width: 65px;
-      height: 75px;
+      width: 60px;
+      height: 70px;
       text-align: center;
     }
     .icon-truck {
       position: absolute;
       right: 6px;
       top: 6px;
-      width: 90px;
-      height: 70px;
+      width: 85px;
+      height: 65px;
       text-align: center;
     }
 
@@ -180,7 +168,7 @@ export function generateBillHtml(data: BillData): string {
       border: none !important;
       background: #fff;
       position: relative;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
     .header-image-container {
       width: 100%;
@@ -201,26 +189,10 @@ export function generateBillHtml(data: BillData): string {
       outline: none !important;
     }
     .header-fallback-container {
-      padding: 6px 12px 4px 12px;
+      padding: 5px 10px 3px 10px;
       position: relative;
       text-align: center;
       border: none !important;
-    }
-    .icon-vinayagar {
-      position: absolute;
-      left: 12px;
-      top: 6px;
-      width: 65px;
-      height: 75px;
-      text-align: center;
-    }
-    .icon-truck {
-      position: absolute;
-      right: 12px;
-      top: 8px;
-      width: 90px;
-      height: 70px;
-      text-align: center;
     }
     .brand-title {
       font-size: 24px;
@@ -236,7 +208,7 @@ export function generateBillHtml(data: BillData): string {
       font-style: italic;
       font-weight: bold;
       text-align: center;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
     .brand-address {
       font-size: 10.5px;
@@ -262,24 +234,26 @@ export function generateBillHtml(data: BillData): string {
       width: 50%;
       border-right: 1.5px solid #000;
       padding: 8px 12px;
-      font-size: 11.5px;
+      font-size: 11px;
       display: flex;
       flex-direction: column;
     }
     .info-right-details {
       width: 50%;
       padding: 8px 12px;
-      font-size: 11.5px;
+      font-size: 11px;
     }
     .detail-line {
       display: flex;
       margin-bottom: 3px;
       align-items: flex-start;
+      font-size: 11px;
     }
     .detail-label {
       width: 95px;
       font-weight: bold;
       flex-shrink: 0;
+      font-size: 11px;
     }
     .route-box {
       border: 1px solid #000;
@@ -287,7 +261,7 @@ export function generateBillHtml(data: BillData): string {
       text-align: center;
       font-weight: bold;
       font-size: 11px;
-      margin: 3px 0 5px 0;
+      margin: 3px 0 4px 0;
       text-transform: uppercase;
       background: #fafafa;
     }
@@ -296,14 +270,16 @@ export function generateBillHtml(data: BillData): string {
       align-items: center;
       gap: 12px;
       margin-top: 3px;
+      font-size: 11px;
     }
     .count-box {
       border: 1px solid #000;
       display: inline-block;
-      min-width: 24px;
-      padding: 1px 6px;
+      min-width: 22px;
+      padding: 1px 5px;
       text-align: center;
       font-weight: bold;
+      font-size: 11px;
       background: #fff;
     }
 
@@ -316,8 +292,8 @@ export function generateBillHtml(data: BillData): string {
     table.charges-table thead th {
       border-bottom: 1.5px solid #000;
       border-right: 1px solid #000;
-      padding: 5px 4px;
-      font-size: 10.5px;
+      padding: 5.5px 4px;
+      font-size: 11px;
       font-weight: bold;
       text-align: center;
       background-color: #fff;
@@ -328,9 +304,9 @@ export function generateBillHtml(data: BillData): string {
     table.charges-table tbody td {
       border-bottom: 1px solid #000;
       border-right: 1px solid #000;
-      padding: 3.5px 6px;
+      padding: 5.5px 6px;
       font-size: 11px;
-      vertical-align: middle;
+      vertical-align: top;
     }
     table.charges-table tbody td:last-child {
       border-right: none;
@@ -339,7 +315,7 @@ export function generateBillHtml(data: BillData): string {
       border-top: 1.5px solid #000;
       border-bottom: 1.5px solid #000;
       border-right: 1px solid #000;
-      padding: 5px 6px;
+      padding: 5.5px 6px;
       font-size: 11.5px;
       font-weight: bold;
     }
@@ -350,7 +326,7 @@ export function generateBillHtml(data: BillData): string {
     /* SECTION 4: WORDS ROW */
     .words-row {
       border-bottom: 1.5px solid #000;
-      padding: 6px 10px;
+      padding: 6px 12px;
       font-size: 11.5px;
       font-weight: bold;
       background: #fff;
@@ -365,7 +341,7 @@ export function generateBillHtml(data: BillData): string {
       width: 65%;
       border-right: 1.5px solid #000;
       padding: 8px 12px;
-      font-size: 11.5px;
+      font-size: 11px;
     }
     .seal-sign-box {
       width: 35%;
@@ -392,7 +368,7 @@ export function generateBillHtml(data: BillData): string {
       border-top: 1px dotted #000;
       margin-top: 10px;
       padding-top: 3px;
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: bold;
     }
   </style>
@@ -452,11 +428,11 @@ export function generateBillHtml(data: BillData): string {
       <div class="info-split-row">
         <!-- LEFT: TO SECTION (STRICTLY NO GST/PAN) -->
         <div class="info-left-to">
-          <div style="font-weight: bold; margin-bottom: 4px; font-size: 12.5px;">To :</div>
-          <div style="font-size: 13.5px; font-weight: 900; letter-spacing: 0.3px; margin-bottom: 4px; text-transform: uppercase;">
+          <div style="font-weight: bold; margin-bottom: 2px; font-size: 12px;">To :</div>
+          <div style="font-size: 13.5px; font-weight: 800; letter-spacing: 0.2px; margin-bottom: 3px; text-transform: uppercase;">
             ${data.client.name || 'CLIENT NAME'}
           </div>
-          <div style="white-space: pre-line; line-height: 1.4; color: #222;">
+          <div style="white-space: pre-line; line-height: 1.35; font-size: 11px; color: #111;">
             ${data.client.address || 'Address on file'}
           </div>
         </div>
@@ -471,14 +447,14 @@ export function generateBillHtml(data: BillData): string {
             <div class="detail-label">Bill Date :</div>
             <div style="font-weight: bold;">${data.billDate || '-'}</div>
           </div>
-          <div class="detail-line" style="margin-top: 3px;">
+          <div class="detail-line" style="margin-top: 2px;">
             <div class="detail-label">Load Type :</div>
             <div style="display: flex; flex-wrap: wrap; gap: 4px;">
               ${loadTypes.map(lt => renderCheckbox(lt.label, lt.key)).join('')}
             </div>
           </div>
 
-          <div style="font-weight: bold; margin-top: 4px; font-size: 11px;">Container From & To :</div>
+          <div style="font-weight: bold; margin-top: 3px; font-size: 11px;">Container From & To :</div>
           <div class="route-box">
             ${data.routeText || (data.containerFrom && data.containerTo ? `${data.containerFrom} TO ${data.containerTo}` : 'LOCAL TRANSPORT')}
           </div>
@@ -487,43 +463,40 @@ export function generateBillHtml(data: BillData): string {
             <span style="font-weight: bold;">Truck Type :</span>
             <span>
               <span class="count-box">${data.truckCount20 || 0}</span>
-              <span style="font-weight: bold; margin-left: 4px;">X 20 FEET</span>
+              <span style="font-weight: bold; margin-left: 3px;">X 20 FEET</span>
             </span>
             <span>
               <span class="count-box">${data.truckCount40 || 0}</span>
-              <span style="font-weight: bold; margin-left: 4px;">X 40 FEET</span>
+              <span style="font-weight: bold; margin-left: 3px;">X 40 FEET</span>
             </span>
           </div>
         </div>
       </div>
 
-      <!-- 3. MAIN CHARGES TABLE -->
+      <!-- 3. MAIN CHARGES TABLE (Dynamic rows only, no filler rows, no Rate column) -->
       <table class="charges-table">
         <thead>
           <tr>
             <th style="width: 44px;">S.No.</th>
             <th>Description</th>
-            <th style="width: 85px;">Freight Charges<br>(INR)</th>
-            <th style="width: 75px;">Other Charges<br>(INR)</th>
-            <th style="width: 75px;">Halting Charges<br>(INR)</th>
-            <th style="width: 75px;">Advance<br>(INR)</th>
-            <th style="width: 60px;">Rate<br>(INR)</th>
-            <th style="width: 95px;">Amount<br>(INR)</th>
+            <th style="width: 125px;">Freight Charges<br>(INR)</th>
+            <th style="width: 85px;">Other Charges<br>(INR)</th>
+            <th style="width: 100px;">Halting Charges<br>(INR)</th>
+            <th style="width: 85px;">Advance<br>(INR)</th>
+            <th style="width: 100px;">Amount<br>(INR)</th>
           </tr>
         </thead>
         <tbody>
           ${chargeRows}
-          ${emptyRowsHtml}
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="2" style="text-align: right; font-weight: bold; padding-right: 14px;">Total</td>
-            <td style="text-align: right; font-weight: bold;">${formatTotal(data.totals.freightTotal)}</td>
-            <td style="text-align: right; font-weight: bold;">${formatTotal(data.totals.otherChargesTotal)}</td>
-            <td style="text-align: right; font-weight: bold;">${formatTotal(data.totals.haltingTotal)}</td>
-            <td style="text-align: right; font-weight: bold;">${formatTotal(data.totals.advanceTotal)}</td>
-            <td style="text-align: right;">-</td>
-            <td style="text-align: right; font-weight: 800; font-size: 12px;">${formatTotal(data.totals.grandTotal)}</td>
+            <td colspan="2" style="text-align: right; font-weight: bold; padding-right: 12px;">Total</td>
+            <td style="text-align: right; font-weight: bold; white-space: nowrap;">${formatTotal(data.totals.freightTotal)}</td>
+            <td style="text-align: right; font-weight: bold; white-space: nowrap;">${formatTotal(data.totals.otherChargesTotal)}</td>
+            <td style="text-align: right; font-weight: bold; white-space: nowrap;">${formatTotal(data.totals.haltingTotal)}</td>
+            <td style="text-align: right; font-weight: bold; white-space: nowrap;">${formatTotal(data.totals.advanceTotal)}</td>
+            <td style="text-align: right; font-weight: 800; font-size: 12.5px; white-space: nowrap;">${formatTotal(data.totals.grandTotal)}</td>
           </tr>
         </tfoot>
       </table>

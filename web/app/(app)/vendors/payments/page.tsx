@@ -321,7 +321,7 @@ export default function VendorPaymentsPage() {
       dataIndex: 'vendorName',
       key: 'vendorName',
       render: (name: string, record: VendorPaymentItem) => (
-        <Link href={`/vendors/${record.vendorId}`} style={{ fontWeight: 600, color: '#1677ff' }}>
+        <Link href={`/vendors/${record.vendorId}`} style={{ fontWeight: 600, color: '#17324D' }}>
           {name || record.vendorId}
         </Link>
       ),
@@ -336,7 +336,7 @@ export default function VendorPaymentsPage() {
         }
         return (
           <Space direction="vertical" size={2}>
-            <Link href={`/enquiries/${enquiryId}`} style={{ color: '#1677ff' }}>
+            <Link href={`/enquiries/${enquiryId}`} style={{ color: '#17324D', fontWeight: 500 }}>
               {record.enquiryTransactionNo || enquiryId}
             </Link>
             {record.vehicleNumber && (
@@ -355,7 +355,7 @@ export default function VendorPaymentsPage() {
       align: 'right',
       width: 130,
       render: (amt: number) => (
-        <Text strong style={{ color: '#0958d9' }}>
+        <Text strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
           ₹{Number(amt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </Text>
       ),
@@ -365,19 +365,9 @@ export default function VendorPaymentsPage() {
       dataIndex: 'mode',
       key: 'mode',
       width: 120,
-      render: (mode: string) => {
-        const color =
-          mode === 'Cash'
-            ? 'green'
-            : mode === 'Bank Transfer'
-            ? 'blue'
-            : mode === 'UPI'
-            ? 'purple'
-            : mode === 'Cheque'
-            ? 'orange'
-            : 'default';
-        return <Tag color={color}>{mode}</Tag>;
-      },
+      render: (mode: string) => (
+        <Tag style={{ background: '#ECEFEE', color: '#34424C', border: '1px solid #D4DAD9' }}>{mode}</Tag>
+      ),
     },
     {
       title: 'Reference',
@@ -404,7 +394,7 @@ export default function VendorPaymentsPage() {
             <Button
               type="text"
               size="small"
-              icon={<EditOutlined />}
+              icon={<EditOutlined style={{ color: '#17324D' }} />}
               onClick={() => openEditDrawer(record)}
             />
           </Tooltip>
@@ -430,11 +420,11 @@ export default function VendorPaymentsPage() {
       {/* Header */}
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
         <Col>
-          <Title level={3} style={{ margin: 0 }}>
-            <WalletOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+          <Title level={3} style={{ margin: 0, color: '#17324D', letterSpacing: '-0.01em' }}>
+            <WalletOutlined style={{ marginRight: 8, color: '#17324D' }} />
             Vendor Payments
           </Title>
-          <Text type="secondary">
+          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
             Manage vendor payments, reconcile against transport trips, and track unallocated payouts.
           </Text>
         </Col>
@@ -453,32 +443,32 @@ export default function VendorPaymentsPage() {
       {/* Summary KPI Cards */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} md={8}>
-          <Card bordered={false} style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <Card className="spt-kpi-card spt-kpi-green" size="small">
             <Statistic
-              title="Total Payments Recorded"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Payments Recorded</span>}
               value={summaryTotal}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#0958d9', fontWeight: 600 }}
+              valueStyle={{ color: '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8}>
-          <Card bordered={false} style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <Card className="spt-kpi-card spt-kpi-steel" size="small">
             <Statistic
-              title="Number of Transactions"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Number of Transactions</span>}
               value={total}
-              valueStyle={{ fontWeight: 600 }}
+              valueStyle={{ color: '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8}>
-          <Card bordered={false} style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <Card className="spt-kpi-card spt-kpi-teal" size="small">
             <Statistic
-              title="Vendor Balances"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Vendor Balances</span>}
               value="Live Ledger"
               formatter={() => (
-                <Link href="/vendors/report" style={{ fontSize: 16, color: '#1677ff' }}>
+                <Link href="/vendors/report" style={{ fontSize: 14, fontWeight: 600, color: '#17324D' }}>
                   View Vendor Report &rarr;
                 </Link>
               )}
@@ -600,9 +590,9 @@ export default function VendorPaymentsPage() {
           </Form.Item>
 
           {selectedVendorId && vendorNetPending !== null && (
-            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#f0f5ff', borderRadius: 6 }}>
+            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#ECEFEE', border: '1px solid #D4DAD9', borderRadius: 4 }}>
               <Text type="secondary">Vendor Net Pending Balance: </Text>
-              <Text strong style={{ color: vendorNetPending > 0 ? '#cf1322' : '#389e0d' }}>
+              <Text strong style={{ color: vendorNetPending > 0 ? '#A8473C' : '#3F6F4A', fontFamily: 'monospace' }}>
                 ₹{vendorNetPending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </Text>
             </div>
@@ -633,9 +623,9 @@ export default function VendorPaymentsPage() {
           </Form.Item>
 
           {selectedEnquiryPending !== null && (
-            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#fffbe6', borderRadius: 6 }}>
+            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#FDF6E8', border: '1px solid #F0D59E', borderRadius: 4 }}>
               <Text type="secondary">Selected Trip Pending: </Text>
-              <Text strong style={{ color: '#d46b08' }}>
+              <Text strong style={{ color: '#9E6B1D', fontFamily: 'monospace' }}>
                 ₹{selectedEnquiryPending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </Text>
             </div>

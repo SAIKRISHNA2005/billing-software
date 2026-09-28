@@ -387,7 +387,7 @@ export default function ConsolidatedBillingReportPage() {
       key: 'billNumber',
       width: 140,
       render: (num: string, record: any) => (
-        <Link href={`/billing/processed/${record.id}`} style={{ fontWeight: 600, color: '#1677ff' }}>
+        <Link href={`/billing/processed/${record.id}`} style={{ fontWeight: 600, color: '#17324D', fontVariantNumeric: 'tabular-nums' }}>
           {num || 'DRAFT'}
         </Link>
       ),
@@ -398,7 +398,7 @@ export default function ConsolidatedBillingReportPage() {
       key: 'financialYear',
       width: 90,
       align: 'center',
-      render: (fy: string) => <Tag color="purple">{fy || '-'}</Tag>,
+      render: (fy: string) => <Tag style={{ background: '#ECEFEE', color: '#17324D', border: '1px solid #D4DAD9' }}>{fy || '-'}</Tag>,
     },
     {
       title: 'Billing Date',
@@ -415,7 +415,11 @@ export default function ConsolidatedBillingReportPage() {
       key: 'status',
       width: 110,
       align: 'center',
-      render: (st: string) => <Tag color={st === 'PROCESSED' ? 'green' : 'orange'}>{st || 'DRAFT'}</Tag>,
+      render: (st: string) => (
+        <Tag style={st === 'PROCESSED' ? { background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #D4DAD9' } : { background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #D4DAD9' }}>
+          {st || 'DRAFT'}
+        </Tag>
+      ),
     },
     {
       title: 'Total Billed',
@@ -424,7 +428,7 @@ export default function ConsolidatedBillingReportPage() {
       align: 'right',
       width: 140,
       render: (amt: number) => (
-        <Text strong style={{ color: '#3f8600' }}>
+        <Text strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
           {formatCurrencyINR(amt)}
         </Text>
       ),
@@ -438,14 +442,14 @@ export default function ConsolidatedBillingReportPage() {
         <Space size="small">
           <Tooltip title="View Invoice">
             <Link href={`/billing/processed/${record.id}`}>
-              <Button type="text" size="small" icon={<EyeOutlined />} />
+              <Button type="text" size="small" icon={<EyeOutlined style={{ color: '#365A73' }} />} />
             </Link>
           </Tooltip>
           <Tooltip title="Edit Invoice Details">
             <Button
               type="text"
               size="small"
-              icon={<EditOutlined style={{ color: '#1677ff' }} />}
+              icon={<EditOutlined style={{ color: '#17324D' }} />}
               onClick={() => handleOpenEditInvoice(record)}
             />
           </Tooltip>
@@ -461,7 +465,7 @@ export default function ConsolidatedBillingReportPage() {
       dataIndex: 'id',
       key: 'id',
       width: 120,
-      render: (id: string) => <Text strong>{id}</Text>,
+      render: (id: string) => <Text strong style={{ fontFamily: 'monospace' }}>{id}</Text>,
     },
     {
       title: 'Bill Number',
@@ -469,7 +473,7 @@ export default function ConsolidatedBillingReportPage() {
       key: 'billNumber',
       width: 130,
       render: (num: string, record: any) => (
-        <Link href={`/billing/processed/${record.billId}`} style={{ color: '#1677ff', fontWeight: 600 }}>
+        <Link href={`/billing/processed/${record.billId}`} style={{ color: '#17324D', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
           {num || record.billId}
         </Link>
       ),
@@ -494,7 +498,7 @@ export default function ConsolidatedBillingReportPage() {
       align: 'right',
       width: 130,
       render: (amt: number) => (
-        <Text strong style={{ color: '#0958d9' }}>
+        <Text strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
           {formatCurrencyINR(amt)}
         </Text>
       ),
@@ -543,7 +547,7 @@ export default function ConsolidatedBillingReportPage() {
             <Button
               type="text"
               size="small"
-              icon={<EditOutlined style={{ color: '#1677ff' }} />}
+              icon={<EditOutlined style={{ color: '#365A73' }} />}
               onClick={() => handleOpenEditPayment(record)}
             />
           </Tooltip>
@@ -584,28 +588,28 @@ export default function ConsolidatedBillingReportPage() {
       dataIndex: 'bucket_0_30',
       key: 'bucket_0_30',
       align: 'right',
-      render: (amt: number) => <Text style={{ color: '#52c41a' }}>{formatCurrencyINR(amt)}</Text>,
+      render: (amt: number) => <Text style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>{formatCurrencyINR(amt)}</Text>,
     },
     {
       title: '31 - 60 Days',
       dataIndex: 'bucket_31_60',
       key: 'bucket_31_60',
       align: 'right',
-      render: (amt: number) => <Text style={{ color: '#fa8c16' }}>{formatCurrencyINR(amt)}</Text>,
+      render: (amt: number) => <Text style={{ color: '#C58A2A', fontVariantNumeric: 'tabular-nums' }}>{formatCurrencyINR(amt)}</Text>,
     },
     {
       title: '61 - 90 Days',
       dataIndex: 'bucket_61_90',
       key: 'bucket_61_90',
       align: 'right',
-      render: (amt: number) => <Text style={{ color: '#f5222d' }}>{formatCurrencyINR(amt)}</Text>,
+      render: (amt: number) => <Text style={{ color: '#C58A2A', fontVariantNumeric: 'tabular-nums' }}>{formatCurrencyINR(amt)}</Text>,
     },
     {
       title: '90+ Days (Critical)',
       dataIndex: 'bucket_90_plus',
       key: 'bucket_90_plus',
       align: 'right',
-      render: (amt: number) => <Text strong style={{ color: '#cf1322' }}>{formatCurrencyINR(amt)}</Text>,
+      render: (amt: number) => <Text strong style={{ color: '#A8473C', fontVariantNumeric: 'tabular-nums' }}>{formatCurrencyINR(amt)}</Text>,
     },
     {
       title: 'Total Outstanding',
@@ -613,7 +617,7 @@ export default function ConsolidatedBillingReportPage() {
       key: 'totalPending',
       align: 'right',
       render: (amt: number) => (
-        <Text strong style={{ fontSize: 14, color: '#1677ff' }}>
+        <Text strong style={{ fontSize: 13, color: '#17324D', fontVariantNumeric: 'tabular-nums' }}>
           {formatCurrencyINR(amt)}
         </Text>
       ),
@@ -627,11 +631,11 @@ export default function ConsolidatedBillingReportPage() {
       {/* Top Header */}
       <Row justify="space-between" align="middle" style={{ marginBottom: 24, gap: 12 }}>
         <Col>
-          <Title level={2} style={{ margin: 0 }}>
-            <BarChartOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+          <Title level={2} style={{ margin: 0, color: '#17324D', letterSpacing: '-0.01em' }}>
+            <BarChartOutlined style={{ marginRight: 8, color: '#17324D' }} />
             Billing Revenue &amp; Accounts Receivable Report
           </Title>
-          <Text type="secondary">
+          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
             Consolidated invoices analysis, customer receipts reconciliation, and overdue ageing buckets
           </Text>
         </Col>
@@ -662,56 +666,53 @@ export default function ConsolidatedBillingReportPage() {
       {/* Top KPI Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} md={8} lg={4}>
-          <Card loading={reportLoading} style={{ borderRadius: 8 }}>
-            <Statistic title="Total Invoices Count" value={totals.totalBills || 0} valueStyle={{ color: '#1677ff' }} />
+          <Card loading={reportLoading} className="spt-kpi-card spt-kpi-steel" size="small">
+            <Statistic
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Invoices</span>}
+              value={totals.totalBills || 0}
+              valueStyle={{ color: '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+            />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={5}>
-          <Card loading={reportLoading} style={{ borderRadius: 8, backgroundColor: '#f6ffed' }}>
+          <Card loading={reportLoading} className="spt-kpi-card spt-kpi-green" size="small">
             <Statistic
-              title="Total Billed Revenue"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Billed Revenue</span>}
               value={totals.totalBilled || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#389e0d', fontWeight: 600 }}
+              valueStyle={{ color: '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={5}>
-          <Card loading={reportLoading} style={{ borderRadius: 8 }}>
+          <Card loading={reportLoading} className="spt-kpi-card spt-kpi-teal" size="small">
             <Statistic
-              title="Processed Invoices Count"
-              value={`${totals.processedCount || 0} (${totals.draftCount || 0} Drafts)`}
-              valueStyle={{ fontSize: 18 }}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Processed / Draft</span>}
+              value={`${totals.processedCount || 0} / ${totals.draftCount || 0}`}
+              valueStyle={{ color: '#2F6F73', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={5}>
-          <Card loading={paymentsLoading} style={{ borderRadius: 8, backgroundColor: '#e6f4ff' }}>
+          <Card loading={paymentsLoading} className="spt-kpi-card spt-kpi-green" size="small">
             <Statistic
-              title="Total Payments Received"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Payments Received</span>}
               value={totalPaymentsReceived}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#0958d9', fontWeight: 600 }}
+              valueStyle={{ color: '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={5}>
-          <Card
-            loading={reportLoading}
-            style={{
-              borderRadius: 8,
-              backgroundColor: totalOutstandingReceivable > 0 ? '#fffbe6' : '#f6ffed',
-              borderColor: totalOutstandingReceivable > 0 ? '#ffe58f' : '#b7eb8f',
-            }}
-          >
+          <Card loading={reportLoading} className={`spt-kpi-card ${totalOutstandingReceivable > 0 ? 'spt-kpi-amber' : 'spt-kpi-green'}`} size="small">
             <Statistic
-              title="Total Outstanding Balance"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Outstanding Balance</span>}
               value={totalOutstandingReceivable}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: totalOutstandingReceivable > 0 ? '#cf1322' : '#389e0d', fontWeight: 600 }}
+              valueStyle={{ color: totalOutstandingReceivable > 0 ? '#C58A2A' : '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
@@ -931,46 +932,46 @@ export default function ConsolidatedBillingReportPage() {
                 {ageingReport?.summary && (
                   <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
                     <Col xs={24} sm={12} md={6}>
-                      <Card style={{ borderRadius: 8, backgroundColor: '#f6ffed' }}>
+                      <Card className="spt-kpi-card spt-kpi-green">
                         <Statistic
                           title="Current (0 - 30 Days)"
                           value={ageingReport.summary.bucket_0_30 || 0}
                           precision={2}
                           prefix="₹"
-                          valueStyle={{ color: '#52c41a' }}
+                          valueStyle={{ color: '#3F6F4A', fontFamily: 'monospace', fontWeight: 600 }}
                         />
                       </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                      <Card style={{ borderRadius: 8, backgroundColor: '#fffbe6' }}>
+                      <Card className="spt-kpi-card spt-kpi-amber">
                         <Statistic
                           title="Due (31 - 60 Days)"
                           value={ageingReport.summary.bucket_31_60 || 0}
                           precision={2}
                           prefix="₹"
-                          valueStyle={{ color: '#fa8c16' }}
+                          valueStyle={{ color: '#C58A2A', fontFamily: 'monospace', fontWeight: 600 }}
                         />
                       </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                      <Card style={{ borderRadius: 8, backgroundColor: '#fff2e8' }}>
+                      <Card className="spt-kpi-card spt-kpi-steel">
                         <Statistic
                           title="Overdue (61 - 90 Days)"
                           value={ageingReport.summary.bucket_61_90 || 0}
                           precision={2}
                           prefix="₹"
-                          valueStyle={{ color: '#f5222d' }}
+                          valueStyle={{ color: '#365A73', fontFamily: 'monospace', fontWeight: 600 }}
                         />
                       </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                      <Card style={{ borderRadius: 8, backgroundColor: '#fff1f0', borderColor: '#ffa39e' }}>
+                      <Card className="spt-kpi-card spt-kpi-red">
                         <Statistic
                           title="Critical (90+ Days)"
                           value={ageingReport.summary.bucket_90_plus || 0}
                           precision={2}
                           prefix="₹"
-                          valueStyle={{ color: '#cf1322', fontWeight: 700 }}
+                          valueStyle={{ color: '#A8473C', fontFamily: 'monospace', fontWeight: 700 }}
                         />
                       </Card>
                     </Col>

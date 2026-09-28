@@ -166,7 +166,7 @@ export default function PendingJobsPage() {
     if (hasPortOut && record.stage === 'PORT_MOVEMENT') {
       Modal.confirm({
         title: `Mark Job Completed: ${record.transactionNumber}?`,
-        icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
+        icon: <CheckCircleOutlined style={{ color: '#3F6F4A' }} />,
         content: `Port Gate-Out was recorded at ${record.movement?.portOutTime}. Completing this job will auto-sync diesel & halting expenses and make it ready for billing.`,
         okText: 'Yes, Complete Job',
         okType: 'primary',
@@ -321,7 +321,7 @@ export default function PendingJobsPage() {
                 fontSize: 10,
                 fontWeight: 700,
                 letterSpacing: 0.3,
-                color: isToggled ? '#1677ff' : '#8c8c8c',
+                color: isToggled ? '#17324D' : '#5F6B73',
               }}
             >
               {isToggled ? 'SENT FOR WORK' : 'NOT ASSIGNED'}
@@ -371,7 +371,7 @@ export default function PendingJobsPage() {
               type="primary"
               size="small"
               icon={<CheckCircleOutlined />}
-              style={{ backgroundColor: '#52c41a' }}
+              style={{ backgroundColor: '#3F6F4A', borderColor: '#3F6F4A' }}
             >
               Complete
             </Button>
@@ -379,7 +379,7 @@ export default function PendingJobsPage() {
 
           <RecordDetailPopover record={rec} title={`Job #${rec.enquiryNumber || rec.id}`}>
             <Tooltip title="View Job Popover">
-              <Button size="small" icon={<EyeOutlined style={{ color: '#1677ff' }} />} />
+              <Button size="small" icon={<EyeOutlined style={{ color: '#365A73' }} />} />
             </Tooltip>
           </RecordDetailPopover>
         </Space>
@@ -411,8 +411,8 @@ export default function PendingJobsPage() {
         }}
       >
         <div>
-          <Title level={2} style={{ margin: 0 }}>
-            <FieldTimeOutlined style={{ marginRight: 10, color: '#1677ff' }} />
+          <Title level={2} style={{ margin: 0, color: '#1E2933' }}>
+            <FieldTimeOutlined style={{ marginRight: 10, color: '#17324D' }} />
             Pending Transport Jobs
           </Title>
           <Paragraph type="secondary" style={{ margin: 0 }}>
@@ -519,7 +519,7 @@ export default function PendingJobsPage() {
       <Modal
         title={
           <Space>
-            <CheckCircleOutlined style={{ color: '#52c41a' }} />
+            <CheckCircleOutlined style={{ color: '#3F6F4A' }} />
             <span>Mark Completed: {selectedRecord?.transactionNumber}</span>
           </Space>
         }

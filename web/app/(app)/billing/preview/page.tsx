@@ -45,11 +45,11 @@ export default function BillTemplatePreviewPage() {
             </Title>
           </Space>
           <div>
-            <Text type="secondary">
+            <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
               A4 Print-Ready Transport Invoice matching official visual reference
             </Text>
-            <Tag color="green" style={{ marginLeft: 8 }}>A4 Portrait</Tag>
-            <Tag color="blue">Dynamic Calculations</Tag>
+            <Tag style={{ marginLeft: 8, background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #B7D9BF', fontWeight: 600 }}>A4 Portrait</Tag>
+            <Tag style={{ background: '#EEF3F6', color: '#365A73', border: '1px solid #D4DAD9', fontWeight: 600 }}>Official Format</Tag>
           </div>
         </div>
 
@@ -73,13 +73,13 @@ export default function BillTemplatePreviewPage() {
         </Space>
       </div>
 
-      <Card style={{ borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+      <Card style={{ borderRadius: 4, border: '1px solid #D4DAD9', overflow: 'hidden' }}>
         <div style={{ textAlign: 'center', marginBottom: 12 }}>
-          <Text type="secondary" italic>
+          <Text type="secondary" italic style={{ fontSize: 12.5, color: '#5F6B73' }}>
             Interactive live preview rendered from real HTML/CSS template engine:
           </Text>
         </div>
-        <div style={{ border: '1px solid #d9d9d9', borderRadius: 4, overflow: 'auto', background: '#e9ecef', padding: '20px 0' }}>
+        <div style={{ border: '1px solid #D4DAD9', borderRadius: 4, overflow: 'auto', background: '#ECEFEE', padding: '20px 0' }}>
           <iframe
             src="/api/billing/preview?format=html"
             style={{

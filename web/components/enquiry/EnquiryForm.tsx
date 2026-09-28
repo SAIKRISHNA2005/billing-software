@@ -602,7 +602,7 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
   const handleRequestUnlock = () => {
     Modal.confirm({
       title: 'Override Billing Lock?',
-      icon: <WarningOutlined style={{ color: '#faad14' }} />,
+      icon: <WarningOutlined style={{ color: '#C58A2A' }} />,
       content: (
         <div>
           <p>
@@ -681,8 +681,9 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
       <Card
         style={{
           marginBottom: 24,
-          borderRadius: 8,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          borderRadius: 4,
+          borderColor: '#D4DAD9',
+          boxShadow: '0 1px 3px rgba(23, 42, 58, 0.06)',
           backgroundColor: '#ffffff',
         }}
         bodyStyle={{ padding: isMobile ? '16px' : '20px 24px' }}
@@ -690,10 +691,10 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
         {isMobile ? (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text strong style={{ fontSize: 15, color: '#1677ff' }}>
+              <Text strong style={{ fontSize: 14, color: '#17324D', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Step {currentStep + 1} of {STEPS.length}: {STEPS[currentStep].title}
               </Text>
-              <Tag color="blue">{STEPS[currentStep].description}</Tag>
+              <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9' }}>{STEPS[currentStep].description}</Tag>
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
               {STEPS.map((s, idx) => (
@@ -702,10 +703,10 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
                   onClick={() => handleStepClick(idx)}
                   style={{
                     flex: 1,
-                    height: 6,
-                    borderRadius: 3,
+                    height: 4,
+                    borderRadius: 2,
                     backgroundColor:
-                      idx === currentStep ? '#1677ff' : idx < currentStep ? '#52c41a' : '#e8e8e8',
+                      idx === currentStep ? '#17324D' : idx < currentStep ? '#3F6F4A' : '#D4DAD9',
                     cursor: idx <= currentStep ? 'pointer' : 'default',
                     transition: 'all 0.3s',
                   }}
@@ -736,11 +737,11 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
         <Card
           title={
             <Space>
-              <InfoCircleOutlined style={{ color: '#1677ff' }} />
-              <span>Section 1: Basic Enquiry Details</span>
+              <InfoCircleOutlined style={{ color: '#365A73' }} />
+              <span style={{ textTransform: 'uppercase', fontSize: 13, letterSpacing: '0.04em', fontWeight: 700, color: '#17324D' }}>BASIC CONSIGNMENT DETAILS</span>
             </Space>
           }
-          style={{ marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+          style={{ marginBottom: 24, borderRadius: 4, borderColor: '#D4DAD9', boxShadow: '0 1px 3px rgba(23, 42, 58, 0.06)' }}
         >
           <Paragraph type="secondary" style={{ marginBottom: 20 }}>
             Capture the fundamental parameters to initialize the transport job.
@@ -849,11 +850,11 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
         <Card
           title={
             <Space>
-              <UserOutlined style={{ color: '#1677ff' }} />
-              <span>Section 2: Client & Booking Details</span>
+              <UserOutlined style={{ color: '#365A73' }} />
+              <span style={{ textTransform: 'uppercase', fontSize: 13, letterSpacing: '0.04em', fontWeight: 700, color: '#17324D' }}>CLIENT & BOOKING</span>
             </Space>
           }
-          style={{ marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+          style={{ marginBottom: 24, borderRadius: 4, borderColor: '#D4DAD9', boxShadow: '0 1px 3px rgba(23, 42, 58, 0.06)' }}
         >
           <Paragraph type="secondary" style={{ marginBottom: 20 }}>
             Specify the client, booking reference number, delivery address, and tax information.
@@ -968,13 +969,13 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
           title={
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Space>
-                <CarOutlined style={{ color: '#1677ff' }} />
-                <span>Section 3: Container & Vehicle Details</span>
+                <CarOutlined style={{ color: '#365A73' }} />
+                <span style={{ textTransform: 'uppercase', fontSize: 13, letterSpacing: '0.04em', fontWeight: 700, color: '#17324D' }}>CONTAINER & VEHICLE</span>
               </Space>
-              <Tag color="blue">{noOfContainers} Container{noOfContainers > 1 ? 's' : ''} Configured</Tag>
+              <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9' }}>{noOfContainers} Container{noOfContainers > 1 ? 's' : ''} Configured</Tag>
             </div>
           }
-          style={{ marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+          style={{ marginBottom: 24, borderRadius: 4, borderColor: '#D4DAD9', boxShadow: '0 1px 3px rgba(23, 42, 58, 0.06)' }}
         >
           <Paragraph type="secondary" style={{ marginBottom: 20 }}>
             Assign containers, transport vehicles, and drivers for this consignment.
@@ -985,11 +986,11 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
             type="inner"
             title={
               <Space>
-                <Badge count={1} style={{ backgroundColor: '#1677ff' }} />
+                <Badge count={1} style={{ backgroundColor: '#17324D' }} />
                 <span style={{ fontWeight: 600 }}>Container 1 (Primary Job Record)</span>
               </Space>
             }
-            style={{ marginBottom: 16, borderColor: '#d9d9d9', backgroundColor: '#fafafa' }}
+            style={{ marginBottom: 16, borderColor: '#D4DAD9', backgroundColor: '#fafafa', borderRadius: 4 }}
           >
             <Row gutter={24}>
               <Col xs={24} sm={12} md={6}>
@@ -1096,12 +1097,12 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
                     label: (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                         <Space>
-                          <Badge count={num} style={{ backgroundColor: '#52c41a' }} />
+                          <Badge count={num} style={{ backgroundColor: '#3F6F4A' }} />
                           <span style={{ fontWeight: 600 }}>Container {num}</span>
-                          {c.containerNumber && <Tag color="blue">{c.containerNumber}</Tag>}
-                          {c.vehicleNumber && <Tag color="geekblue">{c.vehicleNumber}</Tag>}
+                          {c.containerNumber && <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontFamily: 'monospace' }}>{c.containerNumber}</Tag>}
+                          {c.vehicleNumber && <Tag style={{ background: '#ECEFEE', color: '#1E2933', border: '1px solid #D4DAD9', fontFamily: 'monospace' }}>{c.vehicleNumber}</Tag>}
                         </Space>
-                        <Tag color={isFilled ? 'green' : 'default'}>{isFilled ? '✓ Configured' : '○ Pending'}</Tag>
+                        <Tag style={isFilled ? { background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #D4DAD9' } : { background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #D4DAD9' }}>{isFilled ? '✓ Configured' : '○ Pending'}</Tag>
                       </div>
                     ),
                     children: (
@@ -1213,11 +1214,11 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
         <Card
           title={
             <Space>
-              <ClockCircleOutlined style={{ color: '#1677ff' }} />
-              <span>Section 4: Movement & Gate Times</span>
+              <ClockCircleOutlined style={{ color: '#365A73' }} />
+              <span style={{ textTransform: 'uppercase', fontSize: 13, letterSpacing: '0.04em', fontWeight: 700, color: '#17324D' }}>MOVEMENT & GATE TIMES</span>
             </Space>
           }
-          style={{ marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+          style={{ marginBottom: 24, borderRadius: 4, borderColor: '#D4DAD9', boxShadow: '0 1px 3px rgba(23, 42, 58, 0.06)' }}
         >
           <Paragraph type="secondary" style={{ marginBottom: 20 }}>
             Track checkpoint timestamps across factory, print/customs, and port terminals.
@@ -1346,11 +1347,11 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
         <Card
           title={
             <Space>
-              <DollarOutlined style={{ color: '#1677ff' }} />
-              <span>Section 5: Freight, Advances & Charges</span>
+              <DollarOutlined style={{ color: '#365A73' }} />
+              <span style={{ textTransform: 'uppercase', fontSize: 13, letterSpacing: '0.04em', fontWeight: 700, color: '#17324D' }}>CHARGES & FINANCIALS</span>
             </Space>
           }
-          style={{ marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+          style={{ marginBottom: 24, borderRadius: 4, borderColor: '#D4DAD9', boxShadow: '0 1px 3px rgba(23, 42, 58, 0.06)' }}
         >
           <Paragraph type="secondary" style={{ marginBottom: 20 }}>
             Record billing freight charges to client and advances/fuel given for transport operations.
@@ -1443,39 +1444,39 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
           <div
             style={{
               marginTop: 16,
-              padding: '20px 24px',
-              backgroundColor: '#f6ffed',
-              border: '1px solid #b7eb8f',
-              borderRadius: 8,
+              padding: '16px 20px',
+              backgroundColor: '#ECEFEE',
+              border: '1px solid #D4DAD9',
+              borderRadius: 4,
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 12 }}>
               <div>
-                <Text type="secondary" style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600, color: '#5F6B73' }}>
                   Live Charge Summary
                 </Text>
                 <div style={{ display: 'flex', gap: 24, marginTop: 4, flexWrap: 'wrap' }}>
                   <div>
                     <Text type="secondary" style={{ fontSize: 12 }}>Client Bill Total</Text>
-                    <Title level={4} style={{ margin: 0, color: '#1677ff' }}>
+                    <Title level={4} style={{ margin: 0, color: '#17324D', fontVariantNumeric: 'tabular-nums' }}>
                       {formatCurrencyINR(clientTotalCharges)}
                     </Title>
                   </div>
                   <div>
                     <Text type="secondary" style={{ fontSize: 12 }}>Vendor Total Payable</Text>
-                    <Title level={4} style={{ margin: 0, color: '#389e0d' }}>
+                    <Title level={4} style={{ margin: 0, color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
                       {formatCurrencyINR(vendorFinance.totalPayable)}
                     </Title>
                   </div>
                 </div>
               </div>
 
-              <Space size="middle" wrap>
-                <Tag color="blue">Freight: {formatCurrencyINR(freightAmount)}</Tag>
-                <Tag color="cyan">Advance: {formatCurrencyINR(advanceAmount + extraAdvance)}</Tag>
-                <Tag color="orange">Diesel: {formatCurrencyINR(dieselAmount)}</Tag>
-                <Tag color="purple">Halting: {formatCurrencyINR(haltingAmount)}</Tag>
-                {otherCharges > 0 && <Tag color="gold">Other: {formatCurrencyINR(otherCharges)}</Tag>}
+              <Space size="small" wrap>
+                <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontVariantNumeric: 'tabular-nums' }}>Freight: {formatCurrencyINR(freightAmount)}</Tag>
+                <Tag style={{ background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #D4DAD9', fontVariantNumeric: 'tabular-nums' }}>Advance: {formatCurrencyINR(advanceAmount + extraAdvance)}</Tag>
+                <Tag style={{ background: '#FDF6E8', color: '#C58A2A', border: '1px solid #D4DAD9', fontVariantNumeric: 'tabular-nums' }}>Diesel: {formatCurrencyINR(dieselAmount)}</Tag>
+                <Tag style={{ background: '#ECEFEE', color: '#34424C', border: '1px solid #D4DAD9', fontVariantNumeric: 'tabular-nums' }}>Halting: {formatCurrencyINR(haltingAmount)}</Tag>
+                {otherCharges > 0 && <Tag style={{ background: '#ECEFEE', color: '#5F6B73', border: '1px solid #D4DAD9', fontVariantNumeric: 'tabular-nums' }}>Other: {formatCurrencyINR(otherCharges)}</Tag>}
               </Space>
             </div>
             <Text type="secondary" style={{ fontSize: 12 }}>
@@ -1492,11 +1493,11 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
         <Card
           title={
             <Space>
-              <WalletOutlined style={{ color: '#1677ff' }} />
-              <span>Section 6: Vendor & Fleet Disbursement</span>
+              <WalletOutlined style={{ color: '#365A73' }} />
+              <span style={{ textTransform: 'uppercase', fontSize: 13, letterSpacing: '0.04em', fontWeight: 700, color: '#17324D' }}>VENDOR & PAYMENT</span>
             </Space>
           }
-          style={{ marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+          style={{ marginBottom: 24, borderRadius: 4, borderColor: '#D4DAD9', boxShadow: '0 1px 3px rgba(23, 42, 58, 0.06)' }}
         >
           <Paragraph type="secondary" style={{ marginBottom: 20 }}>
             Associate an external transport vendor and manage fleet disbursement records.
@@ -1558,7 +1559,7 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
                     <Space size="large" wrap>
                       <div>
                         <Text type="secondary" style={{ fontSize: 12 }}>Vendor Total Payable</Text>
-                        <div style={{ fontWeight: 600, color: '#389e0d' }}>{formatCurrencyINR(vendorFinance.totalPayable)}</div>
+                        <div style={{ fontWeight: 600, color: '#3F6F4A' }}>{formatCurrencyINR(vendorFinance.totalPayable)}</div>
                       </div>
                       <div>
                         <Text type="secondary" style={{ fontSize: 12 }}>Halting ({form.getFieldValue('haltingDays') || 0} days)</Text>
@@ -1593,11 +1594,11 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
         <Card
           title={
             <Space>
-              <CompassOutlined style={{ color: '#1677ff' }} />
-              <span>Section 7: Route & Document Tracking</span>
+              <CompassOutlined style={{ color: '#365A73' }} />
+              <span style={{ textTransform: 'uppercase', fontSize: 13, letterSpacing: '0.04em', fontWeight: 700, color: '#17324D' }}>ROUTE & DOCUMENTS</span>
             </Space>
           }
-          style={{ marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+          style={{ marginBottom: 24, borderRadius: 4, borderColor: '#D4DAD9', boxShadow: '0 1px 3px rgba(23, 42, 58, 0.06)' }}
         >
           <Paragraph type="secondary" style={{ marginBottom: 20 }}>
             Specify shipment route and cross-reference invoice and truck metrics.
@@ -1669,11 +1670,11 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
           <Card
             title={
               <Space>
-                <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                <span>Section 8: Review & Confirm Enquiry</span>
+                <CheckCircleOutlined style={{ color: '#3F6F4A' }} />
+                <span style={{ textTransform: 'uppercase', fontSize: 13, letterSpacing: '0.04em', fontWeight: 700, color: '#17324D' }}>REVIEW & SUBMIT</span>
               </Space>
             }
-            style={{ marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+            style={{ marginBottom: 24, borderRadius: 4, borderColor: '#D4DAD9', boxShadow: '0 1px 3px rgba(23, 42, 58, 0.06)' }}
           >
             <Paragraph type="secondary" style={{ marginBottom: 20 }}>
               Review all entered information across the 7 sections before saving to the database.
@@ -1694,7 +1695,7 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
                 <Descriptions column={{ xs: 1, sm: 2, md: 4 }} size="small">
                   <Descriptions.Item label="Date">{formatDate(form.getFieldValue('date'))}</Descriptions.Item>
                   <Descriptions.Item label="Type">
-                    <Tag color="blue">{loadingType}</Tag>
+                    <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9' }}>{loadingType}</Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Size">{containerSize}</Descriptions.Item>
                   <Descriptions.Item label="Containers">{noOfContainers}</Descriptions.Item>
@@ -1742,7 +1743,7 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
                   <Descriptions.Item label="Seal No">{form.getFieldValue('sealNumber') || '-'}</Descriptions.Item>
                   <Descriptions.Item label="Vehicle No">
                     {form.getFieldValue('vehicleNumber') ? (
-                      <Tag color="geekblue">{form.getFieldValue('vehicleNumber')}</Tag>
+                      <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontFamily: 'monospace' }}>{form.getFieldValue('vehicleNumber')}</Tag>
                     ) : (
                       '-'
                     )}
@@ -1786,10 +1787,10 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
                     {form.getFieldValue('portInTime') ? dayjs(form.getFieldValue('portInTime')).format('DD-MM-YYYY hh:mm A') : '-'}
                   </Descriptions.Item>
                   <Descriptions.Item label="Shipping Status">
-                    <Tag color="cyan">{form.getFieldValue('shippingStatus') || 'PENDING'}</Tag>
+                    <Tag style={{ background: '#EEF3F6', color: '#365A73', border: '1px solid #D4DAD9' }}>{form.getFieldValue('shippingStatus') || 'PENDING'}</Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Movement Status">
-                    <Tag>{form.getFieldValue('movementStatus') || 'NOT_MOVED'}</Tag>
+                    <Tag style={{ background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #D4DAD9' }}>{form.getFieldValue('movementStatus') || 'NOT_MOVED'}</Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Bonus">{formatCurrencyINR(bonus)}</Descriptions.Item>
                 </Descriptions>
@@ -1816,10 +1817,10 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
                   </Descriptions.Item>
                   <Descriptions.Item label="Other Charges">{formatCurrencyINR(otherCharges)}</Descriptions.Item>
                   <Descriptions.Item label="Client Total">
-                    <strong style={{ color: '#1677ff' }}>{formatCurrencyINR(clientTotalCharges)}</strong>
+                    <strong style={{ color: '#17324D', fontVariantNumeric: 'tabular-nums' }}>{formatCurrencyINR(clientTotalCharges)}</strong>
                   </Descriptions.Item>
                   <Descriptions.Item label="Vendor Payable">
-                    <strong style={{ color: '#389e0d' }}>{formatCurrencyINR(vendorFinance.totalPayable)}</strong>
+                    <strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>{formatCurrencyINR(vendorFinance.totalPayable)}</strong>
                   </Descriptions.Item>
                 </Descriptions>
               </Card>
@@ -1928,7 +1929,7 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
                   icon={<SaveOutlined />}
                   loading={loading}
                   size="large"
-                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', fontWeight: 600 }}
+                  style={{ backgroundColor: '#3F6F4A', borderColor: '#3F6F4A', fontWeight: 600, borderRadius: 4 }}
                 >
                   {isEdit ? '✓ Save Changes' : '✓ Create Enquiry'}
                 </Button>

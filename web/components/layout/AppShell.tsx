@@ -87,7 +87,7 @@ export default function AppShell({ children }: AppShellProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#f5f7fa',
+          background: '#F3F4F2',
         }}
       >
         <Space direction="vertical" align="center" size="middle">
@@ -268,6 +268,7 @@ export default function AppShell({ children }: AppShellProps) {
         collapsible
         collapsed={isMobile ? false : collapsed}
         width={240}
+        className="spt-sidebar"
         style={{
           height: '100vh',
           position: 'fixed',
@@ -275,32 +276,54 @@ export default function AppShell({ children }: AppShellProps) {
           top: 0,
           bottom: 0,
           zIndex: isMobile ? 1000 : 100,
-          background: '#001529',
-          boxShadow: isMobile && !collapsed ? '4px 0 16px rgba(0, 0, 0, 0.35)' : 'none',
+          background: '#172A3A',
+          boxShadow: isMobile && !collapsed ? '4px 0 16px rgba(23, 42, 58, 0.4)' : 'none',
           transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          {/* Logo Brand Header */}
+          {/* Official Sri Ponniamman Trans Typographic Brand Header */}
           <div
             style={{
-              height: 64,
+              height: 60,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 16px',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
+              padding: collapsed && !isMobile ? '0' : '0 18px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              background: '#172A3A',
               flexShrink: 0,
             }}
           >
-            <Space>
-              <CarOutlined style={{ fontSize: 24, color: '#1677ff' }} />
-              {(!collapsed || isMobile) && (
-                <Title level={4} style={{ color: '#fff', margin: 0, fontWeight: 700 }}>
-                  TMS Portal
-                </Title>
-              )}
-            </Space>
+            {collapsed && !isMobile ? (
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 4,
+                  background: '#24445D',
+                  border: '1px solid #365A73',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  letterSpacing: '0.5px',
+                }}
+              >
+                SPT
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 13.5, letterSpacing: '0.6px', lineHeight: 1.2 }}>
+                  SRI PONNIAMMAN TRANS
+                </div>
+                <div style={{ color: '#89939A', fontSize: 10, fontWeight: 500, letterSpacing: '0.6px', textTransform: 'uppercase', marginTop: 3 }}>
+                  Transport Operations
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Scrollable Navigation Menu */}
@@ -311,39 +334,41 @@ export default function AppShell({ children }: AppShellProps) {
               selectedKeys={getSelectedKeys()}
               defaultOpenKeys={getOpenKeys()}
               items={menuItems}
-              style={{ borderRight: 0 }}
+              style={{ borderRight: 0, background: '#172A3A' }}
             />
           </div>
 
-          {/* Pinned Logout Button at Navbar Bottom */}
+          {/* Pinned Logout Action at Sidebar Bottom */}
           <div
             style={{
-              padding: collapsed && !isMobile ? '12px 8px' : '16px',
-              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-              background: '#001529',
+              padding: collapsed && !isMobile ? '12px 8px' : '14px 16px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              background: '#172A3A',
               flexShrink: 0,
               display: 'flex',
               justifyContent: 'center',
             }}
           >
             <Button
-              type="primary"
-              danger
               icon={<LogoutOutlined />}
               onClick={handleLogout}
               block={!collapsed || isMobile}
               style={{
-                height: '40px',
-                fontWeight: 600,
+                height: '36px',
+                fontWeight: 500,
+                fontSize: '12.5px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '6px',
-                width: collapsed && !isMobile ? '40px' : '100%',
+                borderRadius: '4px',
+                background: '#24445D',
+                borderColor: '#365A73',
+                color: '#C2CCD4',
+                width: collapsed && !isMobile ? '36px' : '100%',
               }}
-              title="Logout"
+              title="Sign Out"
             >
-              {(!collapsed || isMobile) && 'Logout'}
+              {(!collapsed || isMobile) && 'Sign Out'}
             </Button>
           </div>
         </div>
@@ -356,16 +381,20 @@ export default function AppShell({ children }: AppShellProps) {
         }}
       >
         <Header
+          className="spt-command-header"
           style={{
-            background: '#fff',
+            background: '#FFFFFF',
             padding: isMobile ? '0 12px' : '0 24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            boxShadow: '0 1px 4px rgba(0, 21, 41, 0.08)',
+            borderBottom: '1px solid #D4DAD9',
+            boxShadow: '0 1px 3px rgba(23, 42, 58, 0.04)',
             position: 'sticky',
             top: 0,
             zIndex: 99,
+            height: 56,
+            lineHeight: '56px',
           }}
         >
           <Space align="center" size={isMobile ? 'small' : 'middle'}>
@@ -373,25 +402,25 @@ export default function AppShell({ children }: AppShellProps) {
               type="text"
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               onClick={() => setCollapsed(!collapsed)}
-              style={{ fontSize: 18, width: 36, height: 36 }}
+              style={{ fontSize: 16, width: 34, height: 34, color: '#34424C' }}
               title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             />
-            <Text strong style={{ fontSize: isMobile ? 14 : 16 }}>
-              {isMobile ? 'TMS Portal' : 'Transport & Logistics Management System'}
+            <Text strong style={{ fontSize: isMobile ? 13.5 : 15, color: '#1E2933', letterSpacing: '0.2px' }}>
+              {isMobile ? 'Sri Ponniamman Trans' : 'Transport & Logistics Management System'}
             </Text>
           </Space>
 
           <Space size={isMobile ? 'small' : 'middle'}>
             <Dropdown menu={{ items: settingsMenuItems }} placement="bottomRight">
-              <Button type="text" icon={<SettingOutlined />} style={{ color: '#595959' }}>
+              <Button type="text" icon={<SettingOutlined />} style={{ color: '#5F6B73', fontSize: 13 }}>
                 {!isMobile && 'Settings & Tools'}
               </Button>
             </Dropdown>
 
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Space style={{ cursor: 'pointer' }}>
-                <Avatar style={{ backgroundColor: '#1677ff' }} icon={<UserOutlined />} />
-                {!isMobile && <Text strong>{user.name || user.email}</Text>}
+                <Avatar style={{ backgroundColor: '#17324D', color: '#FFFFFF', fontSize: 13 }} icon={<UserOutlined />} />
+                {!isMobile && <Text strong style={{ fontSize: 13, color: '#1E2933' }}>{user.name || user.email}</Text>}
               </Space>
             </Dropdown>
           </Space>

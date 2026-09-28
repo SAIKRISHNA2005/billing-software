@@ -56,35 +56,35 @@ export default function CompanyReportPage() {
       title: 'Company Name',
       dataIndex: 'companyName',
       key: 'companyName',
-      render: (name: string) => <Text strong style={{ color: '#1677ff' }}>{name}</Text>
+      render: (name: string) => <Text strong style={{ color: '#17324D' }}>{name}</Text>
     },
     {
       title: 'Total Trips',
       dataIndex: 'totalTrips',
       key: 'totalTrips',
       align: 'center' as const,
-      render: (count: number) => <Tag color="blue" style={{ fontSize: 14 }}>{count}</Tag>
+      render: (count: number) => <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontVariantNumeric: 'tabular-nums' }}>{count}</Tag>
     },
     {
       title: 'Completed Trips',
       dataIndex: 'completedTrips',
       key: 'completedTrips',
       align: 'center' as const,
-      render: (count: number) => <Tag color="green" style={{ fontSize: 14 }}>{count}</Tag>
+      render: (count: number) => <Tag style={{ background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #D4DAD9', fontVariantNumeric: 'tabular-nums' }}>{count}</Tag>
     },
     {
       title: 'Pending Trips',
       dataIndex: 'pendingTrips',
       key: 'pendingTrips',
       align: 'center' as const,
-      render: (count: number) => <Tag color="orange" style={{ fontSize: 14 }}>{count}</Tag>
+      render: (count: number) => <Tag style={{ background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #D4DAD9', fontVariantNumeric: 'tabular-nums' }}>{count}</Tag>
     },
     {
       title: 'Total Billing (₹)',
       dataIndex: 'totalBilling',
       key: 'totalBilling',
       align: 'right' as const,
-      render: (amt: number) => <Text strong style={{ color: '#3f8600', fontSize: 15 }}>{formatCurrencyINR(amt)}</Text>
+      render: (amt: number) => <Text strong style={{ color: '#3F6F4A', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>{formatCurrencyINR(amt)}</Text>
     },
     {
       title: 'Drill-down',
@@ -94,6 +94,7 @@ export default function CompanyReportPage() {
         <Button
           type="link"
           icon={<EyeOutlined />}
+          style={{ color: '#365A73' }}
           onClick={() => setSelectedCompanyTrips(record)}
         >
           View Trips ({record.trips?.length || 0})
@@ -106,18 +107,18 @@ export default function CompanyReportPage() {
     <div style={{ padding: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <Title level={2} style={{ margin: 0 }}>
-            <BankOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+          <Title level={2} style={{ margin: 0, color: '#17324D', letterSpacing: '-0.01em' }}>
+            <BankOutlined style={{ marginRight: 8, color: '#17324D' }} />
             Company-wise Performance Report
           </Title>
-          <Text type="secondary">Consolidated trip volumes and revenue billed across legal operating companies</Text>
+          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>Consolidated trip volumes and revenue billed across legal operating companies</Text>
         </div>
         <Button icon={<ReloadOutlined />} onClick={fetchCompanyReport}>
           Refresh
         </Button>
       </div>
 
-      <Card style={{ borderRadius: 8 }}>
+      <Card style={{ borderRadius: 4, borderColor: '#D4DAD9' }}>
         <Space style={{ marginBottom: 16 }} wrap>
           <Select
             placeholder="Filter Company"
@@ -152,13 +153,13 @@ export default function CompanyReportPage() {
           loading={loading}
           pagination={false}
           footer={() => (
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontWeight: 'bold', fontSize: 15 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontWeight: 'bold', fontSize: 13 }}>
               <span>Grand Totals Summary:</span>
               <Space size="large">
-                <span>Total Trips: <Tag color="blue">{totals.totalTrips || 0}</Tag></span>
-                <span>Completed: <Tag color="green">{totals.completedTrips || 0}</Tag></span>
-                <span>Pending: <Tag color="orange">{totals.pendingTrips || 0}</Tag></span>
-                <span>Total Billing: <span style={{ color: '#3f8600' }}>{formatCurrencyINR(totals.totalBilling || 0)}</span></span>
+                <span>Total Trips: <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9' }}>{totals.totalTrips || 0}</Tag></span>
+                <span>Completed: <Tag style={{ background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #D4DAD9' }}>{totals.completedTrips || 0}</Tag></span>
+                <span>Pending: <Tag style={{ background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #D4DAD9' }}>{totals.pendingTrips || 0}</Tag></span>
+                <span>Total Billing: <span style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>{formatCurrencyINR(totals.totalBilling || 0)}</span></span>
               </Space>
             </div>
           )}
@@ -174,11 +175,11 @@ export default function CompanyReportPage() {
       >
         <Table
           columns={[
-            { title: 'Enquiry ID', dataIndex: 'id', key: 'id' },
-            { title: 'Transaction No', dataIndex: 'transactionNo', key: 'transactionNo' },
-            { title: 'Vehicle No', dataIndex: 'vehicleNo', key: 'vehicleNo' },
-            { title: 'Stage', dataIndex: 'stage', key: 'stage', render: (s: string) => <Tag color="blue">{s}</Tag> },
-            { title: 'Freight (₹)', dataIndex: 'freightAmount', key: 'freightAmount', render: (amt: number) => formatCurrencyINR(amt) }
+            { title: 'Enquiry ID', dataIndex: 'id', key: 'id', render: (id: string) => <span style={{ fontFamily: 'monospace' }}>{id}</span> },
+            { title: 'Transaction No', dataIndex: 'transactionNo', key: 'transactionNo', render: (txn: string) => <span style={{ fontFamily: 'monospace' }}>{txn}</span> },
+            { title: 'Vehicle No', dataIndex: 'vehicleNo', key: 'vehicleNo', render: (veh: string) => <span style={{ fontFamily: 'monospace' }}>{veh}</span> },
+            { title: 'Stage', dataIndex: 'stage', key: 'stage', render: (s: string) => <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9' }}>{s}</Tag> },
+            { title: 'Freight (₹)', dataIndex: 'freightAmount', key: 'freightAmount', render: (amt: number) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCurrencyINR(amt)}</span> }
           ]}
           dataSource={selectedCompanyTrips?.trips || []}
           rowKey="id"

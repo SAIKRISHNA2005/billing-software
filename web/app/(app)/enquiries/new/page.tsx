@@ -53,8 +53,8 @@ export default function NewEnquiryPage() {
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <Title level={2} style={{ margin: 0 }}>
-          <FileAddOutlined style={{ marginRight: 10, color: '#1677ff' }} />
+        <Title level={2} style={{ margin: 0, color: '#1E2933' }}>
+          <FileAddOutlined style={{ marginRight: 10, color: '#17324D' }} />
           Add Transport Enquiry
         </Title>
         <Paragraph type="secondary" style={{ marginTop: 4 }}>
@@ -82,11 +82,11 @@ export default function NewEnquiryPage() {
               <p style={{ fontSize: 16, margin: '8px 0' }}>
                 Enquiry ID: <strong>{createdResult?.id}</strong>
               </p>
-              <p style={{ fontSize: 16, margin: '8px 0', color: '#1677ff' }}>
+              <p style={{ fontSize: 16, margin: '8px 0', color: '#17324D' }}>
                 Transaction No: <strong>{createdResult?.transactionNumber}</strong>
               </p>
               {createdResult?.invoiceNumber && (
-                <p style={{ fontSize: 16, margin: '8px 0', color: '#52c41a' }}>
+                <p style={{ fontSize: 16, margin: '8px 0', color: '#3F6F4A' }}>
                   Invoice No: <strong>{createdResult?.invoiceNumber}</strong>
                 </p>
               )}

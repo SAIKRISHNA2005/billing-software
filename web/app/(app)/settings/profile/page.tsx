@@ -96,8 +96,8 @@ export default function CompanyProfilePage() {
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-      <Title level={2} style={{ marginBottom: 24 }}>
-        <SafetyCertificateOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+      <Title level={2} style={{ marginBottom: 24, color: '#1E2933' }}>
+        <SafetyCertificateOutlined style={{ marginRight: 8, color: '#17324D' }} />
         Company Profile & Settings
       </Title>
 

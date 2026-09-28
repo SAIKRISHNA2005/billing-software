@@ -238,33 +238,33 @@ export default function CreateBillPage() {
   ];
 
   return (
-    <div style={{ padding: 24, maxWidth: 1000, margin: '0 auto' }}>
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ padding: '4px 0 24px', maxWidth: 1000, margin: '0 auto' }}>
+      <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <Space>
           <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
             Back
           </Button>
-          <Title level={2} style={{ margin: 0 }}>
-            <FileAddOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+          <Title level={2} style={{ margin: 0, color: '#1E2933', fontSize: 22, fontWeight: 600 }}>
+            <FileAddOutlined style={{ marginRight: 8, color: '#17324D' }} />
             Create Bill Invoice
           </Title>
         </Space>
-        <Tag color="orange" style={{ fontSize: 14, padding: '4px 12px' }}>
+        <Tag style={{ fontSize: 12.5, padding: '3px 10px', color: '#9E6B1D', background: '#FDF6E8', border: '1px solid #E8CCA1', fontWeight: 600 }}>
           Next Bill No: {nextNumberPreview}
         </Tag>
       </div>
 
       <Form form={form} layout="vertical" disabled={loading || submitting}>
-        <Card title="Invoice Header Information" style={{ borderRadius: 8, marginBottom: 24 }}>
+        <Card title="Invoice Header Information" style={{ borderRadius: 4, marginBottom: 20 }}>
           <Row gutter={16}>
             <Col xs={24} md={12}>
               <Form.Item label="Company">
-                <Input value={companyName || companyIdParam} disabled style={{ fontWeight: 'bold' }} />
+                <Input value={companyName || companyIdParam} disabled style={{ fontWeight: 600, color: '#1E2933' }} />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
               <Form.Item label="Client Party">
-                <Input value={clientName || clientIdParam} disabled style={{ fontWeight: 'bold' }} />
+                <Input value={clientName || clientIdParam} disabled style={{ fontWeight: 600, color: '#1E2933' }} />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
@@ -286,9 +286,9 @@ export default function CreateBillPage() {
 
         <Card
           title="Itemized Invoice Charges"
-          style={{ borderRadius: 8, marginBottom: 24 }}
+          style={{ borderRadius: 4, marginBottom: 20 }}
           extra={
-            <Button type="dashed" icon={<PlusOutlined />} onClick={handleAddItem}>
+            <Button type="dashed" icon={<PlusOutlined />} onClick={handleAddItem} style={{ borderColor: '#B9C3C4', color: '#17324D' }}>
               Add Line Item
             </Button>
           }
@@ -300,8 +300,8 @@ export default function CreateBillPage() {
             pagination={false}
             footer={() => (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text strong>Total Invoice Amount:</Text>
-                <Title level={3} style={{ margin: 0, color: '#1677ff' }}>
+                <Text strong style={{ fontSize: 14, color: '#34424C' }}>Total Invoice Amount:</Text>
+                <Title level={3} style={{ margin: 0, color: '#17324D', fontWeight: 700 }}>
                   {formatCurrencyINR(totalAmount)}
                 </Title>
               </div>

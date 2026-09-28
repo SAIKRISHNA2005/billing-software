@@ -190,9 +190,9 @@ export function EnquiryExpensesTab({ enquiryId, vehicleId }: EnquiryExpensesTabP
       width: 130,
       align: 'right',
       render: (amt: number) => (
-        <Text strong style={{ color: '#cf1322' }}>
+        <span style={{ color: '#1E2933', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
           {formatINR(amt)}
-        </Text>
+        </span>
       ),
     },
     {
@@ -212,13 +212,13 @@ export function EnquiryExpensesTab({ enquiryId, vehicleId }: EnquiryExpensesTabP
         if (source === 'ENQUIRY') {
           return (
             <Tooltip title="Auto-synced from enquiry Diesel/Halting. Edit from the enquiry form.">
-              <Tag color="purple" icon={<LockOutlined />}>
+              <Tag style={{ background: '#ECEFEE', color: '#365A73', border: '1px solid #D4DAD9' }} icon={<LockOutlined />}>
                 Auto (Enquiry)
               </Tag>
             </Tooltip>
           );
         }
-        return <Tag color="geekblue">Manual</Tag>;
+        return <Tag style={{ background: '#F3F4F2', color: '#5F6B73', border: '1px solid #D4DAD9' }}>Manual</Tag>;
       },
     },
     {
@@ -256,46 +256,46 @@ export function EnquiryExpensesTab({ enquiryId, vehicleId }: EnquiryExpensesTabP
     <div>
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={12} md={6}>
-          <Card size="small" style={{ backgroundColor: '#fff1f0', borderColor: '#ffa39e' }}>
+          <Card size="small" className="spt-kpi-card spt-kpi-amber">
             <Statistic
-              title="Total Job Expenses"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Job Expenses</span>}
               value={totalAmount}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#cf1322', fontWeight: 700 }}
+              valueStyle={{ color: '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card size="small" style={{ backgroundColor: '#fffbe6', borderColor: '#ffe58f' }}>
+          <Card size="small" className="spt-kpi-card spt-kpi-amber">
             <Statistic
-              title="Diesel"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Diesel</span>}
               value={dieselAmount}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#d46b08', fontWeight: 600 }}
+              valueStyle={{ color: '#C58A2A', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card size="small" style={{ backgroundColor: '#e6f4ff', borderColor: '#91caff' }}>
+          <Card size="small" className="spt-kpi-card spt-kpi-steel">
             <Statistic
-              title="Halting"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Halting</span>}
               value={haltingAmount}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#0958d9', fontWeight: 600 }}
+              valueStyle={{ color: '#365A73', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card size="small" style={{ backgroundColor: '#fafafa' }}>
+          <Card size="small" className="spt-kpi-card spt-kpi-steel">
             <Statistic
-              title="Other Trip Expenses"
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Other Trip Expenses</span>}
               value={otherExpenses}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#595959', fontWeight: 600 }}
+              valueStyle={{ color: '#5F6B73', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>

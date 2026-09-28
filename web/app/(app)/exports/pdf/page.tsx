@@ -13,8 +13,8 @@ export default function PdfExportPage() {
 
   return (
     <div style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
-      <Title level={2} style={{ marginBottom: 24 }}>
-        <FilePdfOutlined style={{ marginRight: 8, color: '#ff4d4f' }} />
+      <Title level={2} style={{ marginBottom: 24, color: '#1E2933' }}>
+        <FilePdfOutlined style={{ marginRight: 8, color: '#A8473C' }} />
         PDF Report Exports
       </Title>
 

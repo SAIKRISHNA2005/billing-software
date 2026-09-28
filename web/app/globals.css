@@ -1,11 +1,79 @@
+/* ==========================================================================
+   SRI PONNIAMMAN TRANS — INDUSTRIAL MARITIME ERP DESIGN SYSTEM
+   ========================================================================== */
+
+:root {
+  /* Primary Brand: Deep Maritime Navy */
+  --spt-navy: #17324D;
+  --spt-navy-dark: #11202D;
+  --spt-navy-hover: #24445D;
+  --spt-navy-active: #0F2234;
+
+  /* Secondary Brand: Harbor Steel Blue */
+  --spt-steel: #365A73;
+  --spt-steel-light: #4A7594;
+  --spt-steel-subtle: #EEF3F6;
+
+  /* Accent: Muted Teal (operational movements & route milestones) */
+  --spt-teal: #2F6F73;
+  --spt-teal-subtle: #E8F2F3;
+
+  /* Industrial Accent: Muted Safety Amber (pending, halting, attention) */
+  --spt-amber: #C58A2A;
+  --spt-amber-dark: #9E6B1D;
+  --spt-amber-subtle: #FDF6E8;
+  --spt-amber-border: #E8CCA1;
+
+  /* Operational Success: Deep Operational Green */
+  --spt-green: #3F6F4A;
+  --spt-green-dark: #2F5938;
+  --spt-green-subtle: #EBF4ED;
+  --spt-green-border: #B7D9BF;
+
+  /* Operational Error / Destructive: Deep Brick Red */
+  --spt-red: #A8473C;
+  --spt-red-dark: #87362D;
+  --spt-red-subtle: #FBEFEF;
+  --spt-red-border: #E5BDB9;
+
+  /* Canvas & Work Surfaces */
+  --spt-canvas: #F3F4F2;
+  --spt-surface: #FFFFFF;
+  --spt-surface-secondary: #ECEFEE;
+
+  /* Ledger Table Surfaces */
+  --spt-table-header: #E5E9E8;
+  --spt-table-header-text: #34424C;
+  --spt-table-row-hover: #EEF3F2;
+  --spt-table-row-border: #E3E7E6;
+
+  /* Borders */
+  --spt-border: #D4DAD9;
+  --spt-border-strong: #B9C3C4;
+  --spt-border-light: #E5E9E8;
+
+  /* Typography Colors */
+  --spt-text: #1E2933;
+  --spt-text-secondary: #5F6B73;
+  --spt-text-muted: #89939A;
+
+  /* Navigation Console */
+  --spt-nav-bg: #172A3A;
+  --spt-nav-hover: #1D354A;
+  --spt-nav-active: #24445D;
+  --spt-nav-text: #C2CCD4;
+  --spt-nav-text-active: #FFFFFF;
+}
+
 html,
 body {
   padding: 0;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
-    sans-serif;
-  background-color: #f5f7fa;
-  color: #1f2937;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  background-color: var(--spt-canvas);
+  color: var(--spt-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
@@ -17,58 +85,190 @@ a {
   text-decoration: none;
 }
 
-/* Popover Confirmation Action Buttons (Green Yes / Red No) */
-.popover-confirm-yes {
-  background-color: #52c41a !important;
-  border-color: #52c41a !important;
-  color: #ffffff !important;
-  font-weight: 600 !important;
-  border-radius: 6px !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+/* ==========================================================================
+   Typography & Numeric Precision
+   ========================================================================== */
+.tabular-nums,
+.ant-table-cell,
+.ant-statistic-content-value {
+  font-variant-numeric: tabular-nums;
 }
 
-.popover-confirm-yes:hover,
-.popover-confirm-yes:focus {
-  background-color: #389e0d !important;
-  border-color: #237804 !important;
-  color: #ffffff !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(82, 196, 26, 0.5) !important;
+.financial-num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--spt-text);
 }
 
-.popover-confirm-no {
-  background-color: #ffffff !important;
-  border-color: #ff4d4f !important;
-  color: #ff4d4f !important;
+.code-identifier {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ==========================================================================
+   Application Shell: Navigation Console & Command Bar
+   ========================================================================== */
+.spt-sidebar {
+  background: var(--spt-nav-bg) !important;
+}
+
+.spt-sidebar .ant-menu-dark {
+  background: var(--spt-nav-bg) !important;
+}
+
+.spt-sidebar .ant-menu-dark .ant-menu-item,
+.spt-sidebar .ant-menu-dark .ant-menu-submenu-title {
+  color: var(--spt-nav-text) !important;
+  font-size: 13.5px !important;
   font-weight: 500 !important;
-  border-radius: 6px !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  margin: 2px 8px !important;
+  width: calc(100% - 16px) !important;
+  border-radius: 4px !important;
+  transition: all 0.18s ease !important;
 }
 
-.popover-confirm-no:hover,
-.popover-confirm-no:focus {
-  background-color: #ff4d4f !important;
-  border-color: #cf1322 !important;
-  color: #ffffff !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(255, 77, 79, 0.5) !important;
+.spt-sidebar .ant-menu-dark .ant-menu-item:hover,
+.spt-sidebar .ant-menu-dark .ant-menu-submenu-title:hover {
+  background-color: var(--spt-nav-hover) !important;
+  color: #FFFFFF !important;
 }
 
-/* Popover card styling */
-.action-popover-card .ant-popover-inner {
-  border-radius: 12px !important;
-  padding: 16px 18px !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16) !important;
-  border: 1px solid #e2e8f0 !important;
+/* Restrained physical control-panel active indicator */
+.spt-sidebar .ant-menu-dark .ant-menu-item-selected {
+  background-color: var(--spt-nav-active) !important;
+  color: var(--spt-nav-text-active) !important;
+  border-left: 3px solid var(--spt-amber) !important;
+  font-weight: 600 !important;
+  padding-left: 21px !important;
 }
 
-/* Custom Vehicle Status Toggle Button */
+.spt-sidebar .ant-menu-dark .ant-menu-submenu-selected > .ant-menu-submenu-title {
+  color: var(--spt-nav-text-active) !important;
+  background-color: rgba(36, 68, 93, 0.4) !important;
+}
+
+.spt-sidebar .ant-menu-dark .ant-menu-sub {
+  background: #11202D !important;
+}
+
+/* Command Header Bar */
+.spt-command-header {
+  background: var(--spt-surface) !important;
+  border-bottom: 1px solid var(--spt-border) !important;
+  box-shadow: 0 1px 3px rgba(23, 42, 58, 0.04) !important;
+}
+
+/* ==========================================================================
+   Ledger Tables: Commercial Logistics & Financial Density
+   ========================================================================== */
+.ant-table-wrapper {
+  border-radius: 4px;
+}
+
+.ant-table {
+  background: var(--spt-surface);
+  border: 1px solid var(--spt-border);
+  border-radius: 4px;
+}
+
+.ant-table-thead > tr > th {
+  background: var(--spt-table-header) !important;
+  color: var(--spt-table-header-text) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--spt-border-strong) !important;
+  padding: 10px 12px !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--spt-table-row-border) !important;
+  padding: 9px 12px !important;
+  font-size: 12.5px;
+  color: var(--spt-text);
+}
+
+.ant-table-tbody > tr:hover > td {
+  background-color: var(--spt-table-row-hover) !important;
+}
+
+.ant-table-pagination.ant-pagination {
+  margin: 12px 0 !important;
+}
+
+/* ==========================================================================
+   Cards & Surfaces: Enterprise Equipment Panels
+   ========================================================================== */
+.ant-card {
+  border: 1px solid var(--spt-border) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 3px rgba(23, 42, 58, 0.05) !important;
+  background: var(--spt-surface);
+}
+
+.ant-card-head {
+  border-bottom: 1px solid var(--spt-border) !important;
+  padding: 0 16px !important;
+  min-height: 44px !important;
+}
+
+.ant-card-head-title {
+  font-size: 14.5px !important;
+  font-weight: 600 !important;
+  color: var(--spt-text) !important;
+  padding: 10px 0 !important;
+}
+
+.ant-card-body {
+  padding: 16px !important;
+}
+
+/* KPI Panel Semantic Left Accents */
+.spt-kpi-card {
+  border-radius: 4px !important;
+  border: 1px solid var(--spt-border) !important;
+  background: var(--spt-surface) !important;
+  box-shadow: 0 1px 3px rgba(23, 42, 58, 0.04) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.spt-kpi-card:hover {
+  border-color: var(--spt-border-strong) !important;
+  box-shadow: 0 2px 6px rgba(23, 42, 58, 0.08) !important;
+}
+
+.spt-kpi-steel {
+  border-left: 3.5px solid var(--spt-steel) !important;
+}
+
+.spt-kpi-amber {
+  border-left: 3.5px solid var(--spt-amber) !important;
+}
+
+.spt-kpi-green {
+  border-left: 3.5px solid var(--spt-green) !important;
+}
+
+.spt-kpi-red {
+  border-left: 3.5px solid var(--spt-red) !important;
+}
+
+.spt-kpi-teal {
+  border-left: 3.5px solid var(--spt-teal) !important;
+}
+
+/* ==========================================================================
+   Vehicle Status Toggle Button (Restrained Industrial Fleet Switch)
+   ========================================================================== */
 .vehicle-status-toggle {
   display: inline-flex !important;
   align-items: center !important;
   position: relative !important;
   box-sizing: border-box !important;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
   vertical-align: middle !important;
   user-select: none !important;
   cursor: pointer !important;
@@ -79,94 +279,142 @@ a {
   display: block !important;
   position: static !important;
   border-radius: 50% !important;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
   flex-shrink: 0 !important;
   margin: 0 !important;
 }
 
-/* TOGGLE ON: The whole toggle button is blue and circle is white (right side) */
+/* TOGGLE ON: Deep Maritime Navy capsule + White knob (Right) */
 .vehicle-status-toggle.toggle-on {
   justify-content: flex-end !important;
-  background: linear-gradient(180deg, #1890ff 0%, #0958d9 100%) !important;
-  border: 2px solid #1677ff !important;
-  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.35) !important;
+  background: var(--spt-navy) !important;
+  border: 1.5px solid var(--spt-navy) !important;
+  box-shadow: none !important;
 }
 
 .vehicle-status-toggle.toggle-on .toggle-circle {
-  background: #ffffff !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.28) !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
 }
 
-/* TOGGLE OFF: The whole toggle button is white and circle is blue (left side) */
+/* TOGGLE OFF: White surface + Steel border + Steel Blue knob (Left) */
 .vehicle-status-toggle.toggle-off {
   justify-content: flex-start !important;
-  background: #ffffff !important;
-  border: 2px solid #cfd6e4 !important;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid var(--spt-border-strong) !important;
+  box-shadow: inset 0 1px 2px rgba(23, 42, 58, 0.04) !important;
 }
 
 .vehicle-status-toggle.toggle-off .toggle-circle {
-  background: linear-gradient(180deg, #1890ff 0%, #0958d9 100%) !important;
-  box-shadow: 0 2px 5px rgba(22, 119, 255, 0.35) !important;
+  background: var(--spt-steel) !important;
+  box-shadow: 0 1px 2px rgba(23, 42, 58, 0.15) !important;
 }
 
 .vehicle-status-toggle:hover {
-  transform: translateY(-1px);
-}
-
-.vehicle-status-toggle.toggle-on:hover {
-  box-shadow: 0 4px 14px rgba(22, 119, 255, 0.55) !important;
+  opacity: 0.92;
 }
 
 .vehicle-status-toggle.toggle-off:hover {
-  border-color: #1677ff !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  border-color: var(--spt-navy) !important;
 }
 
 /* ==========================================================================
    ActionConfirmPopover & RecordDetailPopover Card Styles
    ========================================================================== */
-.popover-confirm-yes {
-  background-color: #52c41a !important;
-  border-color: #52c41a !important;
-  color: #ffffff !important;
-  font-weight: 500 !important;
+.action-popover-card .ant-popover-inner {
   border-radius: 6px !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 6px 20px rgba(23, 42, 58, 0.14) !important;
+  border: 1px solid var(--spt-border) !important;
+  padding: 14px 16px !important;
+  background: var(--spt-surface) !important;
+}
+
+.popover-confirm-yes {
+  background-color: var(--spt-green) !important;
+  border-color: var(--spt-green) !important;
+  color: #FFFFFF !important;
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
 }
 
 .popover-confirm-yes:hover,
 .popover-confirm-yes:focus {
-  background-color: #389e0d !important;
-  border-color: #389e0d !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.45) !important;
-  transform: translateY(-1px);
+  background-color: var(--spt-green-dark) !important;
+  border-color: var(--spt-green-dark) !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
 }
 
 .popover-confirm-no {
-  background-color: #ffffff !important;
-  border: 1.5px solid #ff4d4f !important;
-  color: #ff4d4f !important;
+  background-color: #FFFFFF !important;
+  border: 1px solid var(--spt-border-strong) !important;
+  color: #34424C !important;
   font-weight: 500 !important;
-  border-radius: 6px !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
 }
 
 .popover-confirm-no:hover,
 .popover-confirm-no:focus {
-  background-color: #ff4d4f !important;
-  border-color: #cf1322 !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.45) !important;
-  transform: translateY(-1px);
+  background-color: var(--spt-surface-secondary) !important;
+  border-color: var(--spt-text-muted) !important;
+  color: var(--spt-text) !important;
+  box-shadow: none !important;
 }
 
-.action-popover-card .ant-popover-inner {
-  border-radius: 12px !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15), 0 4px 14px rgba(0, 0, 0, 0.08) !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  padding: 14px 16px !important;
+/* ==========================================================================
+   Ant Design Form, Input, Button & Tag Overrides
+   ========================================================================== */
+.ant-btn {
+  border-radius: 4px !important;
+  font-size: 13px !important;
+  box-shadow: none !important;
+}
+
+.ant-btn-primary {
+  background-color: var(--spt-navy) !important;
+  border-color: var(--spt-navy) !important;
+  color: #FFFFFF !important;
+}
+
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+  background-color: var(--spt-navy-hover) !important;
+  border-color: var(--spt-navy-hover) !important;
+  color: #FFFFFF !important;
+}
+
+.ant-btn-primary:active {
+  background-color: var(--spt-navy-active) !important;
+  border-color: var(--spt-navy-active) !important;
+}
+
+.ant-input,
+.ant-input-number,
+.ant-select-selector,
+.ant-picker {
+  border-radius: 4px !important;
+  border-color: var(--spt-border) !important;
+  color: var(--spt-text) !important;
+}
+
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-number-focused,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
+  border-color: var(--spt-navy) !important;
+  box-shadow: 0 0 0 2px rgba(23, 50, 77, 0.15) !important;
+}
+
+.ant-tag {
+  border-radius: 3px !important;
+  font-size: 11.5px !important;
+  padding: 0 6px !important;
+  font-weight: 500 !important;
 }
 
 /* ==========================================================================
@@ -185,7 +433,6 @@ a {
     overflow-x: auto;
   }
 
-  /* Make filter buttons and selects wrap nicely on mobile */
   .ant-space-wrap {
     row-gap: 8px !important;
   }
@@ -197,11 +444,12 @@ a {
   }
 
   .ant-typography h2 {
-    font-size: 20px !important;
+    font-size: 19px !important;
   }
 
   .ant-typography h3 {
-    font-size: 18px !important;
+    font-size: 17px !important;
   }
 }
+
 

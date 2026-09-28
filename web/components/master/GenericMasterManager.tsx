@@ -262,7 +262,7 @@ export function GenericMasterManager<T extends MasterRecord = MasterRecord>({
             >
               <Button
                 type="text"
-                icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
+                icon={<CheckCircleOutlined style={{ color: '#3F6F4A' }} />}
                 size="small"
                 title="Reactivate"
                 loading={reactivateMutation.isPending}

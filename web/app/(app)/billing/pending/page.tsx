@@ -255,7 +255,7 @@ export default function PendingBillsPage() {
       align: 'right',
       width: 140,
       render: (amt: number) => (
-        <Text strong style={{ color: '#3f8600' }}>
+        <Text strong style={{ color: '#17324D' }}>
           {formatCurrencyINR(amt)}
         </Text>
       ),
@@ -266,7 +266,7 @@ export default function PendingBillsPage() {
       key: 'containerSize',
       width: 90,
       align: 'center',
-      render: (size: string) => <Tag color="purple">{size || '40 FT'}</Tag>,
+      render: (size: string) => <Tag color="default">{size || '40 FT'}</Tag>,
     },
     {
       title: 'Enquiry / TXN',
@@ -276,10 +276,10 @@ export default function PendingBillsPage() {
       render: (txn: string, record: PendingBillRow) => (
         <RecordDetailPopover record={record} title={`Consignment ${record.enquiryId}`}>
           <div>
-            <Link href={`/enquiries/${record.enquiryId}`} style={{ fontWeight: 600, color: '#1677ff' }}>
+            <Link href={`/enquiries/${record.enquiryId}`} style={{ fontWeight: 600, color: '#17324D' }}>
               {record.enquiryId}
             </Link>
-            <div style={{ fontSize: 12, color: '#666' }}>{txn}</div>
+            <div style={{ fontSize: 12, color: '#5F6B73' }}>{txn}</div>
           </div>
         </RecordDetailPopover>
       ),
@@ -303,12 +303,12 @@ export default function PendingBillsPage() {
         <Space size="small">
           <RecordDetailPopover record={record} title={`Consignment ${record.enquiryId}`}>
             <Tooltip title="View Consignment Details">
-              <Button type="text" size="small" icon={<EyeOutlined style={{ color: '#1677ff' }} />} />
+              <Button type="text" size="small" icon={<EyeOutlined style={{ color: '#365A73' }} />} />
             </Tooltip>
           </RecordDetailPopover>
           <Tooltip title="Edit Consignment">
             <Link href={`/enquiries/${record.enquiryId}`}>
-              <Button type="text" size="small" icon={<EditOutlined style={{ color: '#52c41a' }} />} />
+              <Button type="text" size="small" icon={<EditOutlined style={{ color: '#3F6F4A' }} />} />
             </Link>
           </Tooltip>
         </Space>
@@ -319,14 +319,14 @@ export default function PendingBillsPage() {
   const totalSelectedAmount = selectedRows.reduce((sum, r) => sum + (r.suggestedAmount || 0), 0);
 
   return (
-    <div style={{ padding: '24px 0' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+    <div style={{ padding: '4px 0 24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <Title level={2} style={{ margin: 0 }}>
-            <FileAddOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+          <Title level={2} style={{ margin: 0, color: '#1E2933', fontSize: 22, fontWeight: 600 }}>
+            <FileAddOutlined style={{ marginRight: 8, color: '#C58A2A' }} />
             Pending Bills
           </Title>
-          <Text type="secondary">Completed transport jobs waiting to be grouped and issued into client invoices</Text>
+          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>Completed transport jobs waiting to be grouped and issued into client invoices</Text>
         </div>
         <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={fetchPending}>

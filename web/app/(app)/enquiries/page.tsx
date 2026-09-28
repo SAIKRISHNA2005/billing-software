@@ -207,7 +207,7 @@ export default function EnquiriesListPage() {
       sorter: true,
       render: (enqNo, record) => (
         <RecordDetailPopover record={record} title={`Enquiry #ENQ-${enqNo}`}>
-          <Link href={`/enquiries/${record.id}`} style={{ fontWeight: 600, color: '#1677ff' }}>
+          <Link href={`/enquiries/${record.id}`} style={{ fontWeight: 600, color: '#17324D' }}>
             {`ENQ-${enqNo}`}
           </Link>
         </RecordDetailPopover>
@@ -301,7 +301,7 @@ export default function EnquiriesListPage() {
                 fontSize: 10,
                 fontWeight: 700,
                 letterSpacing: 0.3,
-                color: isToggled ? '#1677ff' : '#8c8c8c',
+                color: isToggled ? '#17324D' : '#5F6B73',
               }}
             >
               {isToggled ? 'SENT FOR WORK' : 'NOT ASSIGNED'}
@@ -396,7 +396,7 @@ export default function EnquiriesListPage() {
               <Tooltip title="Quick View Popover">
                 <Button
                   type="text"
-                  icon={<EyeOutlined style={{ color: '#1677ff' }} />}
+                  icon={<EyeOutlined style={{ color: '#365A73' }} />}
                   size="small"
                 />
               </Tooltip>
@@ -405,7 +405,7 @@ export default function EnquiriesListPage() {
             <Tooltip title="Edit Enquiry">
               <Button
                 type="text"
-                icon={<EditOutlined style={{ color: '#52c41a' }} />}
+                icon={<EditOutlined style={{ color: '#365A73' }} />}
                 size="small"
                 onClick={() => router.push(`/enquiries/${record.id}/edit`)}
               />
@@ -459,8 +459,8 @@ export default function EnquiriesListPage() {
         }}
       >
         <div>
-          <Title level={2} style={{ margin: 0 }}>
-            <FileTextOutlined style={{ marginRight: 10, color: '#1677ff' }} />
+          <Title level={2} style={{ margin: 0, color: '#1E2933' }}>
+            <FileTextOutlined style={{ marginRight: 10, color: '#17324D' }} />
             Transport Enquiries
           </Title>
           <Paragraph type="secondary" style={{ margin: 0 }}>
@@ -643,7 +643,7 @@ export default function EnquiriesListPage() {
                   </Col>
                   <Col xs={12} sm={8} md={4}>
                     <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Vendor Payable</Text>
-                    <Text strong style={{ color: '#389e0d' }}>{formatCurrencyINR(record.vendorFinance?.totalPayable)}</Text>
+                    <Text strong style={{ color: '#3F6F4A', fontFamily: 'monospace' }}>{formatCurrencyINR(record.vendorFinance?.totalPayable)}</Text>
                   </Col>
                   <Col xs={12} sm={8} md={4}>
                     <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Movement Status</Text>

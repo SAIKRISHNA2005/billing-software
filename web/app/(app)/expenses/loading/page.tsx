@@ -277,9 +277,9 @@ export default function LoadingExpensesPage() {
       width: 130,
       align: 'right',
       render: (amt: number) => (
-        <Text strong style={{ color: '#cf1322', fontSize: 14 }}>
+        <span style={{ color: '#1E2933', fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
           {formatINR(amt)}
-        </Text>
+        </span>
       ),
     },
     {
@@ -292,7 +292,7 @@ export default function LoadingExpensesPage() {
         const label = record.enquiryNumber || enqId;
         return (
           <Link href={`/enquiries/${enqId}`}>
-            <Tag color="blue" icon={<FileTextOutlined />} style={{ cursor: 'pointer' }}>
+            <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', cursor: 'pointer', fontFamily: 'monospace' }} icon={<FileTextOutlined />}>
               {label}
             </Tag>
           </Link>
@@ -306,7 +306,7 @@ export default function LoadingExpensesPage() {
       width: 140,
       render: (veh: string) =>
         veh ? (
-          <Tag icon={<CarOutlined />}>{veh}</Tag>
+          <Tag style={{ background: '#ECEFEE', color: '#1E2933', border: '1px solid #D4DAD9', fontFamily: 'monospace' }} icon={<CarOutlined />}>{veh}</Tag>
         ) : (
           <Text type="secondary">-</Text>
         ),
@@ -328,13 +328,13 @@ export default function LoadingExpensesPage() {
         if (source === 'ENQUIRY') {
           return (
             <Tooltip title={`Auto-synced from enquiry ${record.enquiryNumber || record.enquiryId}. Edit from the enquiry.`}>
-              <Tag color="purple" icon={<LockOutlined />}>
+              <Tag style={{ background: '#ECEFEE', color: '#365A73', border: '1px solid #D4DAD9' }} icon={<LockOutlined />}>
                 Enquiry
               </Tag>
             </Tooltip>
           );
         }
-        return <Tag color="geekblue">Manual</Tag>;
+        return <Tag style={{ background: '#F3F4F2', color: '#5F6B73', border: '1px solid #D4DAD9' }}>Manual</Tag>;
       },
     },
     {
@@ -390,10 +390,10 @@ export default function LoadingExpensesPage() {
         }}
       >
         <div>
-          <Title level={3} style={{ margin: 0 }}>
+          <Title level={3} style={{ margin: 0, color: '#17324D', letterSpacing: '-0.01em' }}>
             Loading Expenses
           </Title>
-          <Text type="secondary">
+          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
             Trip and job-associated operational expenses with automatic synchronization from transport enquiries.
           </Text>
         </div>
@@ -410,45 +410,45 @@ export default function LoadingExpensesPage() {
       {/* KPI Stats Row */}
       <Row gutter={16} style={{ marginBottom: 20 }}>
         <Col xs={24} sm={12} md={6}>
-          <Card size="small" bordered={false} style={{ background: '#fff1f0', borderColor: '#ffa39e' }}>
+          <Card size="small" className="spt-kpi-card spt-kpi-amber">
             <Statistic
-              title="Total Loading Expenses"
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Loading Expenses</span>}
               value={summaryTotals.totalAmount}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#cf1322', fontWeight: 700 }}
+              valueStyle={{ color: '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card size="small" bordered={false} style={{ background: '#fafafa' }}>
+          <Card size="small" className="spt-kpi-card spt-kpi-steel">
             <Statistic
-              title="Recorded Entries"
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Recorded Entries</span>}
               value={summaryTotals.count}
-              prefix={<WalletOutlined />}
-              valueStyle={{ color: '#262626', fontWeight: 600 }}
+              prefix={<WalletOutlined style={{ color: '#365A73' }} />}
+              valueStyle={{ color: '#1E2933', fontWeight: 600 }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card size="small" bordered={false} style={{ background: '#fffbe6', borderColor: '#ffe58f' }}>
+          <Card size="small" className="spt-kpi-card spt-kpi-amber">
             <Statistic
-              title="Diesel Total"
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Diesel Total</span>}
               value={summaryTotals.categoryBreakdown['Diesel'] || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#d46b08', fontWeight: 600 }}
+              valueStyle={{ color: '#C58A2A', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card size="small" bordered={false} style={{ background: '#e6f4ff', borderColor: '#91caff' }}>
+          <Card size="small" className="spt-kpi-card spt-kpi-steel">
             <Statistic
-              title="Halting Total"
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Halting Total</span>}
               value={summaryTotals.categoryBreakdown['Halting'] || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#0958d9', fontWeight: 600 }}
+              valueStyle={{ color: '#365A73', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
@@ -540,12 +540,12 @@ export default function LoadingExpensesPage() {
             });
             return (
               <Table.Summary fixed>
-                <Table.Summary.Row style={{ background: '#fafafa', fontWeight: 600 }}>
+                <Table.Summary.Row style={{ background: '#E5E9E8', fontWeight: 600 }}>
                   <Table.Summary.Cell index={0} colSpan={2}>
                     Page Total
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={1} align="right">
-                    <Text strong style={{ color: '#cf1322' }}>
+                    <Text strong style={{ color: '#17324D', fontFamily: 'monospace' }}>
                       {formatINR(pageTotal)}
                     </Text>
                   </Table.Summary.Cell>

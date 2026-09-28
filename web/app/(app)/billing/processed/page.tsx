@@ -195,7 +195,7 @@ export default function ProcessedBillsPage() {
       width: 140,
       render: (num: string, record: any) => (
         <RecordDetailPopover record={record} title={`Invoice ${num || record.id}`} type="bill">
-          <Link href={`/billing/processed/${record.id}`} style={{ fontWeight: 600, color: '#1677ff' }}>
+          <Link href={`/billing/processed/${record.id}`} style={{ fontWeight: 600, color: '#17324D' }}>
             {num || record.id}
           </Link>
         </RecordDetailPopover>
@@ -215,7 +215,7 @@ export default function ProcessedBillsPage() {
       align: 'right',
       width: 140,
       render: (amt: number) => (
-        <Text strong style={{ color: '#3f8600' }}>
+        <Text strong style={{ color: '#17324D' }}>
           {formatCurrencyINR(amt)}
         </Text>
       ),
@@ -233,7 +233,7 @@ export default function ProcessedBillsPage() {
       key: 'financialYear',
       width: 90,
       align: 'center',
-      render: (fy: string) => <Tag color="purple">{fy || '-'}</Tag>,
+      render: (fy: string) => <Tag color="default">{fy || '-'}</Tag>,
     },
     {
       title: 'Download',
@@ -301,7 +301,7 @@ export default function ProcessedBillsPage() {
             <Button
               size="small"
               icon={<EditOutlined />}
-              style={{ borderColor: '#52c41a', color: '#52c41a', borderRadius: 4 }}
+              style={{ borderColor: '#3F6F4A', color: '#3F6F4A', borderRadius: 4 }}
             >
               Edit
             </Button>
@@ -312,15 +312,15 @@ export default function ProcessedBillsPage() {
   ];
 
   return (
-    <div style={{ padding: '24px 0' }}>
+    <div style={{ padding: '4px 0 24px' }}>
       {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <Title level={2} style={{ margin: 0 }}>
-            <AuditOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+          <Title level={2} style={{ margin: 0, color: '#1E2933', fontSize: 22, fontWeight: 600 }}>
+            <AuditOutlined style={{ marginRight: 8, color: '#17324D' }} />
             Processed Bills Directory
           </Title>
-          <Text type="secondary">Issued invoices with assigned financial-year sequence numbers and generated PDFs</Text>
+          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>Issued invoices with assigned financial-year sequence numbers and generated PDFs</Text>
         </div>
         <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={() => fetchBills(1)}>

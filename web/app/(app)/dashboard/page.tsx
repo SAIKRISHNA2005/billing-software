@@ -38,7 +38,7 @@ import { formatCurrencyINR } from '@/lib/utils/format';
 
 const { Title, Text } = Typography;
 
-const EXPENSE_COLORS = ['#fa541c', '#722ed1'];
+const EXPENSE_COLORS = ['#C58A2A', '#365A73'];
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -81,10 +81,14 @@ export default function DashboardPage() {
       dataIndex: 'billNumber',
       key: 'billNumber',
       render: (num: string, r: any) => (
-        <Button type="link" onClick={() => router.push(`/billing/processed/${r.id}`)}>
+        <Button
+          type="link"
+          style={{ padding: 0, fontWeight: 600, color: '#17324D' }}
+          onClick={() => router.push(`/billing/processed/${r.id}`)}
+        >
           {num}
         </Button>
-      )
+      ),
     },
     { title: 'Company', dataIndex: 'companyName', key: 'companyName' },
     { title: 'Client', dataIndex: 'clientName', key: 'clientName' },
@@ -92,41 +96,53 @@ export default function DashboardPage() {
       title: 'Billing Date',
       dataIndex: 'billingDate',
       key: 'billingDate',
-      render: (d: string) => (d ? dayjs(d).format('DD-MM-YYYY') : '-')
+      render: (d: string) => (d ? dayjs(d).format('DD-MM-YYYY') : '-'),
     },
     {
       title: 'Amount (₹)',
       dataIndex: 'totalAmount',
       key: 'totalAmount',
       align: 'right' as const,
-      render: (amt: number) => <Text strong style={{ color: '#3f8600' }}>{formatCurrencyINR(amt)}</Text>
-    }
+      render: (amt: number) => (
+        <Text strong style={{ color: '#17324D' }}>
+          {formatCurrencyINR(amt)}
+        </Text>
+      ),
+    },
   ];
 
-  const expensePieData = [
-    { name: 'Loading Expenses', value: summary?.totalLoadingAmount || 0 },
-    { name: 'General Expenses', value: summary?.totalGeneralAmount || 0 },
-  ].filter(item => item.value > 0);
-
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: '4px 0 24px' }}>
       {/* Header Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 20,
+          flexWrap: 'wrap',
+          gap: 16,
+        }}
+      >
         <div>
-          <Title level={2} style={{ margin: 0 }}>
-            <DashboardOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+          <Title level={2} style={{ margin: 0, color: '#1E2933', fontSize: 22, fontWeight: 600 }}>
+            <DashboardOutlined style={{ marginRight: 8, color: '#17324D' }} />
             Management Control Room
           </Title>
-          <Text type="secondary">Real-time daily operations, billing revenues, and financial KPIs</Text>
+          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
+            Real-time daily operations, billing revenues, and commercial ledger KPIs
+          </Text>
         </div>
 
         <Space wrap>
           <span>
-            <Text type="secondary" style={{ marginRight: 8 }}>Auto-Refresh (60s):</Text>
+            <Text type="secondary" style={{ marginRight: 8, fontSize: 12.5 }}>
+              Auto-Refresh (60s):
+            </Text>
             <Switch checked={autoRefresh} onChange={setAutoRefresh} size="small" />
           </span>
           <Button icon={<ReloadOutlined />} onClick={fetchDashboard} loading={loading}>
-            Refresh Dashboard
+            Refresh
           </Button>
           <Link href="/enquiries/new">
             <Button type="primary" icon={<PlusOutlined />}>
@@ -142,15 +158,18 @@ export default function DashboardPage() {
           <Card
             hoverable
             onClick={() => router.push('/operations/movement')}
-            style={{ borderRadius: 8, cursor: 'pointer' }}
+            className="spt-kpi-card spt-kpi-steel"
+            style={{ cursor: 'pointer' }}
           >
             <Statistic
-              title="Today's Active Trips"
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Today&apos;s Active Trips</span>}
               value={summary?.todaysTrips || 0}
-              prefix={<CarOutlined style={{ color: '#1677ff' }} />}
-              valueStyle={{ color: '#1677ff', fontWeight: 'bold' }}
+              prefix={<CarOutlined style={{ color: '#365A73' }} />}
+              valueStyle={{ color: '#17324D', fontWeight: 700 }}
             />
-            <Text type="secondary" style={{ fontSize: 12 }}>Click to open Vehicle Movement</Text>
+            <Text type="secondary" style={{ fontSize: 11.5, color: '#89939A' }}>
+              Click to view Vehicle Movement
+            </Text>
           </Card>
         </Col>
 
@@ -158,15 +177,16 @@ export default function DashboardPage() {
           <Card
             hoverable
             onClick={() => router.push('/billing/pending')}
-            style={{ borderRadius: 8, cursor: 'pointer' }}
+            className="spt-kpi-card spt-kpi-amber"
+            style={{ cursor: 'pointer' }}
           >
             <Statistic
-              title="Pending Unbilled Jobs"
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Pending Unbilled Jobs</span>}
               value={summary?.pendingBillsCount || 0}
-              prefix={<FileAddOutlined style={{ color: '#fa8c16' }} />}
-              valueStyle={{ color: '#fa8c16', fontWeight: 'bold' }}
+              prefix={<FileAddOutlined style={{ color: '#C58A2A' }} />}
+              valueStyle={{ color: '#C58A2A', fontWeight: 700 }}
             />
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text type="secondary" style={{ fontSize: 11.5, color: '#89939A' }}>
               Suggested: {formatCurrencyINR(summary?.pendingBillsAmount || 0)}
             </Text>
           </Card>
@@ -176,15 +196,18 @@ export default function DashboardPage() {
           <Card
             hoverable
             onClick={() => router.push('/billing/processed')}
-            style={{ borderRadius: 8, cursor: 'pointer' }}
+            className="spt-kpi-card spt-kpi-green"
+            style={{ cursor: 'pointer' }}
           >
             <Statistic
-              title="Processed Bills Today"
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Processed Bills Today</span>}
               value={summary?.processedBillsTodayCount || 0}
-              prefix={<CheckCircleOutlined style={{ color: '#722ed1' }} />}
-              valueStyle={{ color: '#722ed1', fontWeight: 'bold' }}
+              prefix={<CheckCircleOutlined style={{ color: '#3F6F4A' }} />}
+              valueStyle={{ color: '#3F6F4A', fontWeight: 700 }}
             />
-            <Text type="secondary" style={{ fontSize: 12 }}>Invoices processed today</Text>
+            <Text type="secondary" style={{ fontSize: 11.5, color: '#89939A' }}>
+              Invoices closed today
+            </Text>
           </Card>
         </Col>
 
@@ -192,16 +215,19 @@ export default function DashboardPage() {
           <Card
             hoverable
             onClick={() => router.push('/reports/daily')}
-            style={{ borderRadius: 8, backgroundColor: '#f6ffed', cursor: 'pointer' }}
+            className="spt-kpi-card spt-kpi-teal"
+            style={{ cursor: 'pointer' }}
           >
             <Statistic
-              title="Today's Total Revenue"
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Today&apos;s Total Revenue</span>}
               value={summary?.todaysRevenue || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#389e0d', fontWeight: 'bold' }}
+              valueStyle={{ color: '#17324D', fontWeight: 700 }}
             />
-            <Text type="secondary" style={{ fontSize: 12 }}>Sum of today&apos;s processed bills</Text>
+            <Text type="secondary" style={{ fontSize: 11.5, color: '#89939A' }}>
+              Sum of today&apos;s billed revenue
+            </Text>
           </Card>
         </Col>
       </Row>
@@ -212,13 +238,16 @@ export default function DashboardPage() {
           <Card
             hoverable
             onClick={() => router.push('/enquiries')}
-            style={{ borderRadius: 8, cursor: 'pointer' }}
+            className="spt-kpi-card spt-kpi-steel"
+            style={{ cursor: 'pointer' }}
           >
             <Statistic
-              title="Today's New Enquiries"
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Today&apos;s New Enquiries</span>}
               value={summary?.todaysEnquiries || 0}
-              prefix={<PlusOutlined style={{ color: '#1890ff' }} />}
+              prefix={<PlusOutlined style={{ color: '#365A73' }} />}
+              valueStyle={{ color: '#1E2933', fontWeight: 600 }}
             />
+            <Text type="secondary" style={{ fontSize: 11.5, color: '#89939A' }}>Consignments registered today</Text>
           </Card>
         </Col>
 
@@ -226,15 +255,17 @@ export default function DashboardPage() {
           <Card
             hoverable
             onClick={() => router.push('/expenses/loading')}
-            style={{ borderRadius: 8, cursor: 'pointer' }}
+            className="spt-kpi-card spt-kpi-red"
+            style={{ cursor: 'pointer' }}
           >
             <Statistic
-              title="Today's Total Expenses"
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Today&apos;s Total Expenses</span>}
               value={summary?.todaysExpenses || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#cf1322' }}
+              valueStyle={{ color: '#A8473C', fontWeight: 600 }}
             />
+            <Text type="secondary" style={{ fontSize: 11.5, color: '#89939A' }}>Loading & general disbursements</Text>
           </Card>
         </Col>
 
@@ -242,46 +273,48 @@ export default function DashboardPage() {
           <Card
             hoverable
             onClick={() => router.push('/vendors/payments')}
-            style={{ borderRadius: 8, cursor: 'pointer' }}
+            className="spt-kpi-card spt-kpi-amber"
+            style={{ cursor: 'pointer' }}
           >
             <Statistic
-              title="Pending Vendor Balances"
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Pending Vendor Balances</span>}
               value={summary?.pendingVendorPayments || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#d46b08' }}
+              valueStyle={{ color: '#C58A2A', fontWeight: 600 }}
             />
+            <Text type="secondary" style={{ fontSize: 11.5, color: '#89939A' }}>Accounts payable outstanding</Text>
           </Card>
         </Col>
       </Row>
 
       {/* Visual Representation Charts Section: Row 1 */}
-      <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
+      <Row gutter={[20, 20]} style={{ marginBottom: 20 }}>
         {/* Chart 1: Daily Revenue Billing Trend (Last 14 Days) */}
         <Col xs={24} lg={12}>
           <Card
             title={
               <Space>
-                <DollarOutlined style={{ color: '#1677ff' }} />
-                <span>Daily Reports & Revenue Billing Trend (Last 14 Days)</span>
+                <DollarOutlined style={{ color: '#365A73' }} />
+                <span style={{ fontSize: 14 }}>Daily Reports & Revenue Billing Trend (14 Days)</span>
               </Space>
             }
-            extra={<Link href="/reports/daily">View Daily Report</Link>}
-            style={{ borderRadius: 8, height: '100%' }}
+            extra={<Link href="/reports/daily" style={{ fontSize: 12.5, color: '#17324D', fontWeight: 500 }}>Daily Report ➔</Link>}
+            style={{ height: '100%' }}
           >
             {summary?.dailyRevenueChart && summary.dailyRevenueChart.length > 0 ? (
-              <div style={{ width: '100%', height: 300 }}>
+              <div style={{ width: '100%', height: 280 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={summary.dailyRevenueChart} margin={{ top: 15, right: 20, left: 10, bottom: 15 }}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#1677ff" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#1677ff" stopOpacity={0.05}/>
+                        <stop offset="5%" stopColor="#365A73" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#365A73" stopOpacity={0.02} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="displayDate" style={{ fontSize: 11 }} />
-                    <YAxis style={{ fontSize: 11 }} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E9E8" />
+                    <XAxis dataKey="displayDate" style={{ fontSize: 11, fill: '#5F6B73' }} />
+                    <YAxis style={{ fontSize: 11, fill: '#5F6B73' }} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
                     <Tooltip
                       formatter={(val: any, name: string) => [
                         name === 'revenue' ? formatCurrencyINR(Number(val)) : val,
@@ -290,8 +323,8 @@ export default function DashboardPage() {
                       labelFormatter={(label) => `Date: ${label}`}
                     />
                     <Legend />
-                    <Area type="monotone" dataKey="revenue" name="Daily Revenue (₹)" stroke="#1677ff" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
-                    <Bar dataKey="billsCount" name="Processed Bills" fill="#52c41a" barSize={12} radius={[3, 3, 0, 0]} />
+                    <Area type="monotone" dataKey="revenue" name="Daily Revenue (₹)" stroke="#365A73" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
+                    <Bar dataKey="billsCount" name="Processed Bills" fill="#3F6F4A" barSize={12} radius={[2, 2, 0, 0]} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -308,23 +341,23 @@ export default function DashboardPage() {
           <Card
             title={
               <Space>
-                <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                <span>Company-wise Revenue Billing ({summary?.currentFinancialYear || 'Current FY'})</span>
+                <CheckCircleOutlined style={{ color: '#3F6F4A' }} />
+                <span style={{ fontSize: 14 }}>Company-wise Revenue Billing ({summary?.currentFinancialYear || 'Current FY'})</span>
               </Space>
             }
-            extra={<Link href="/reports/company">View Company Report</Link>}
-            style={{ borderRadius: 8, height: '100%' }}
+            extra={<Link href="/reports/company" style={{ fontSize: 12.5, color: '#17324D', fontWeight: 500 }}>Company Report ➔</Link>}
+            style={{ height: '100%' }}
           >
             {summary?.companyBillingChart && summary.companyBillingChart.length > 0 ? (
-              <div style={{ width: '100%', height: 300 }}>
+              <div style={{ width: '100%', height: 280 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={summary.companyBillingChart} margin={{ top: 15, right: 20, left: 10, bottom: 25 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="companyName" style={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" />
-                    <YAxis style={{ fontSize: 11 }} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E9E8" />
+                    <XAxis dataKey="companyName" style={{ fontSize: 11, fill: '#5F6B73' }} interval={0} angle={-15} textAnchor="end" />
+                    <YAxis style={{ fontSize: 11, fill: '#5F6B73' }} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
                     <Tooltip formatter={(val: any) => formatCurrencyINR(Number(val))} />
                     <Legend />
-                    <Bar dataKey="totalBilling" name="Billed Revenue (₹)" fill="#1677ff" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="totalBilling" name="Billed Revenue (₹)" fill="#17324D" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -338,72 +371,72 @@ export default function DashboardPage() {
       </Row>
 
       {/* Visual Representation Charts Section: Row 2 */}
-      <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
+      <Row gutter={[20, 20]} style={{ marginBottom: 20 }}>
         {/* Chart 3: Expenses Comparison (Loading Expenses vs General Expenses) */}
         <Col xs={24} lg={12}>
           <Card
             title={
               <Space>
-                <WalletOutlined style={{ color: '#fa541c' }} />
-                <span>Operational Expenses Breakdown (Loading vs General)</span>
+                <WalletOutlined style={{ color: '#C58A2A' }} />
+                <span style={{ fontSize: 14 }}>Operational Expenses Breakdown (Loading vs General)</span>
               </Space>
             }
             extra={
               <Space size={8}>
-                <Link href="/expenses/loading">Loading</Link>
+                <Link href="/expenses/loading" style={{ fontSize: 12.5, color: '#17324D' }}>Loading</Link>
                 <Text type="secondary">|</Text>
-                <Link href="/expenses/general">General</Link>
+                <Link href="/expenses/general" style={{ fontSize: 12.5, color: '#17324D' }}>General</Link>
               </Space>
             }
-            style={{ borderRadius: 8, height: '100%' }}
+            style={{ height: '100%' }}
           >
             <Row gutter={16} align="middle">
               <Col xs={24} sm={14}>
-                <div style={{ width: '100%', height: 260 }}>
+                <div style={{ width: '100%', height: 250 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={[
                         {
                           category: 'Loading Expenses',
                           amount: summary?.totalLoadingAmount || 0,
-                          fill: '#fa541c',
+                          fill: '#C58A2A',
                         },
                         {
                           category: 'General Expenses',
                           amount: summary?.totalGeneralAmount || 0,
-                          fill: '#722ed1',
+                          fill: '#365A73',
                         },
                       ]}
                       margin={{ top: 15, right: 20, left: 10, bottom: 15 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="category" style={{ fontSize: 11 }} />
-                      <YAxis style={{ fontSize: 11 }} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E9E8" />
+                      <XAxis dataKey="category" style={{ fontSize: 11, fill: '#5F6B73' }} />
+                      <YAxis style={{ fontSize: 11, fill: '#5F6B73' }} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
                       <Tooltip formatter={(val: any) => formatCurrencyINR(Number(val))} />
-                      <Bar dataKey="amount" name="Expense Amount (₹)" radius={[4, 4, 0, 0]}>
-                        <Cell fill="#fa541c" />
-                        <Cell fill="#722ed1" />
+                      <Bar dataKey="amount" name="Expense Amount (₹)" radius={[3, 3, 0, 0]}>
+                        <Cell fill="#C58A2A" />
+                        <Cell fill="#365A73" />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </Col>
               <Col xs={24} sm={10}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <div style={{ padding: '12px 14px', borderRadius: 8, background: '#fff2e8', border: '1px solid #ffbb96' }}>
-                    <div style={{ fontSize: 12, color: '#d4380d', fontWeight: 600 }}>Trip Loading Expenses</div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: '#d4380d', marginTop: 2 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ padding: '12px 14px', borderRadius: 4, background: '#FDF6E8', border: '1px solid #E8CCA1' }}>
+                    <div style={{ fontSize: 11.5, color: '#9E6B1D', fontWeight: 600, textTransform: 'uppercase' }}>Trip Loading Expenses</div>
+                    <div style={{ fontSize: 17, fontWeight: 700, color: '#C58A2A', marginTop: 2 }}>
                       {formatCurrencyINR(summary?.totalLoadingAmount || 0)}
                     </div>
-                    <div style={{ fontSize: 11, color: '#8c8c8c', marginTop: 2 }}>Unloader, labour, port charges</div>
+                    <div style={{ fontSize: 11, color: '#89939A', marginTop: 2 }}>Unloader, labour, port charges</div>
                   </div>
 
-                  <div style={{ padding: '12px 14px', borderRadius: 8, background: '#f9f0ff', border: '1px solid #d3adf7' }}>
-                    <div style={{ fontSize: 12, color: '#531dab', fontWeight: 600 }}>General Expenses</div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: '#531dab', marginTop: 2 }}>
+                  <div style={{ padding: '12px 14px', borderRadius: 4, background: '#EEF3F6', border: '1px solid #D4DAD9' }}>
+                    <div style={{ fontSize: 11.5, color: '#365A73', fontWeight: 600, textTransform: 'uppercase' }}>General Expenses</div>
+                    <div style={{ fontSize: 17, fontWeight: 700, color: '#17324D', marginTop: 2 }}>
                       {formatCurrencyINR(summary?.totalGeneralAmount || 0)}
                     </div>
-                    <div style={{ fontSize: 11, color: '#8c8c8c', marginTop: 2 }}>Office rent, utilities, overheads</div>
+                    <div style={{ fontSize: 11, color: '#89939A', marginTop: 2 }}>Office rent, utilities, overheads</div>
                   </div>
                 </div>
               </Col>
@@ -416,20 +449,20 @@ export default function DashboardPage() {
           <Card
             title={
               <Space>
-                <FileAddOutlined style={{ color: '#fa8c16' }} />
-                <span>Pending Bills Distribution (Company-wise Unbilled Jobs)</span>
+                <FileAddOutlined style={{ color: '#C58A2A' }} />
+                <span style={{ fontSize: 14 }}>Pending Bills Distribution (Unbilled Jobs)</span>
               </Space>
             }
-            extra={<Link href="/billing/pending">View Pending Bills</Link>}
-            style={{ borderRadius: 8, height: '100%' }}
+            extra={<Link href="/billing/pending" style={{ fontSize: 12.5, color: '#17324D', fontWeight: 500 }}>Pending Bills ➔</Link>}
+            style={{ height: '100%' }}
           >
             {summary?.pendingBillsCompanyChart && summary.pendingBillsCompanyChart.length > 0 ? (
-              <div style={{ width: '100%', height: 260 }}>
+              <div style={{ width: '100%', height: 250 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={summary.pendingBillsCompanyChart} margin={{ top: 15, right: 20, left: 10, bottom: 25 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="companyName" style={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" />
-                    <YAxis style={{ fontSize: 11 }} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E9E8" />
+                    <XAxis dataKey="companyName" style={{ fontSize: 11, fill: '#5F6B73' }} interval={0} angle={-15} textAnchor="end" />
+                    <YAxis style={{ fontSize: 11, fill: '#5F6B73' }} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
                     <Tooltip
                       formatter={(val: any, name: string) => [
                         name === 'amount' ? formatCurrencyINR(Number(val)) : val,
@@ -437,8 +470,8 @@ export default function DashboardPage() {
                       ]}
                     />
                     <Legend />
-                    <Bar dataKey="amount" name="Pending Amount (₹)" fill="#fa8c16" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="count" name="Unbilled Jobs Count" fill="#13c2c2" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="amount" name="Pending Amount (₹)" fill="#C58A2A" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="count" name="Unbilled Jobs Count" fill="#2F6F73" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -452,12 +485,11 @@ export default function DashboardPage() {
       </Row>
 
       {/* Row 3: Recent 10 Processed Invoices Table */}
-      <Row gutter={[24, 24]}>
+      <Row gutter={[20, 20]}>
         <Col xs={24}>
           <Card
-            title="Recent Processed Invoices"
-            style={{ borderRadius: 8 }}
-            extra={<Link href="/billing/processed">View All Processed Bills</Link>}
+            title={<span style={{ fontSize: 14 }}>Recent Processed Invoices</span>}
+            extra={<Link href="/billing/processed" style={{ fontSize: 12.5, color: '#17324D', fontWeight: 500 }}>View All Invoices ➔</Link>}
           >
             <Table
               columns={recentBillsColumns}

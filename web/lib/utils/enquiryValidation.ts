@@ -6,11 +6,11 @@ export const CONTAINER_NUMBER_REGEX = /^[A-Z]{4}[0-9]{7}$/;
 export const STAGE_TAG_COLORS: Record<string, string> = {
   ENQUIRY_CREATED: 'default',
   VEHICLE_ASSIGNED: 'processing',
-  CONTAINER_MOVEMENT: 'cyan',
-  PORT_MOVEMENT: 'purple',
+  CONTAINER_MOVEMENT: '#365A73',
+  PORT_MOVEMENT: '#2F6F73',
   COMPLETED: 'success',
-  BILLING: 'gold',
-  PROCESSED: 'green',
+  BILLING: 'warning',
+  PROCESSED: '#17324D',
 };
 
 export const STAGE_LABELS: Record<string, string> = {

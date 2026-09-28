@@ -119,8 +119,8 @@ export default function EditEnquiryPage({ params }: PageProps) {
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <Title level={2} style={{ margin: 0 }}>
-          <EditOutlined style={{ marginRight: 10, color: '#1677ff' }} />
+        <Title level={2} style={{ margin: 0, color: '#1E2933' }}>
+          <EditOutlined style={{ marginRight: 10, color: '#17324D' }} />
           Edit Transport Enquiry ({id})
         </Title>
         <Paragraph type="secondary" style={{ marginTop: 4 }}>
