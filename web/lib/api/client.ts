@@ -17,8 +17,9 @@ apiClient.interceptors.response.use(
   (error) => {
     // Standard error formatting
     if (error.response?.status === 401 && typeof window !== 'undefined') {
-      // If unauthorized and in browser, redirect to login unless already there
-      if (!window.location.pathname.startsWith('/login')) {
+      const isAuthEndpoint = error.config?.url?.includes('/auth/me');
+      // Only redirect on primary auth check failure
+      if (isAuthEndpoint && !window.location.pathname.startsWith('/login')) {
         window.location.href = '/login';
       }
     }

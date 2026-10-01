@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Popover, Button, Typography } from 'antd';
 import { QuestionCircleOutlined } from '@ant-design/icons';
+import { useTheme } from '@/components/providers/ThemeContext';
 
 const { Text } = Typography;
 
@@ -31,6 +32,8 @@ export const ActionConfirmPopover: React.FC<ActionConfirmPopoverProps> = ({
   disabled = false,
   loading = false,
 }) => {
+  const { themeMode } = useTheme();
+  const isDark = themeMode === 'dark';
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
@@ -62,8 +65,8 @@ export const ActionConfirmPopover: React.FC<ActionConfirmPopoverProps> = ({
             width: 32,
             height: 32,
             borderRadius: 4,
-            backgroundColor: '#EEF3F6',
-            border: '1px solid #D4DAD9',
+            backgroundColor: isDark ? '#27272A' : '#EEF3F6',
+            border: isDark ? '1px solid #3F3F46' : '1px solid #D4DAD9',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -71,14 +74,14 @@ export const ActionConfirmPopover: React.FC<ActionConfirmPopoverProps> = ({
             marginTop: 2,
           }}
         >
-          <QuestionCircleOutlined style={{ fontSize: 16, color: '#365A73' }} />
+          <QuestionCircleOutlined style={{ fontSize: 16, color: isDark ? '#38BDF8' : '#365A73' }} />
         </div>
         <div>
-          <Text strong style={{ fontSize: 13.5, display: 'block', lineHeight: 1.35, color: '#1E2933' }}>
+          <Text strong style={{ fontSize: 13.5, display: 'block', lineHeight: 1.35, color: isDark ? '#FFFFFF' : '#1E2933' }}>
             {title}
           </Text>
           {description && (
-            <div style={{ fontSize: 12, color: '#5F6B73', marginTop: 4, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 12, color: isDark ? '#A1A1AA' : '#5F6B73', marginTop: 4, lineHeight: 1.4 }}>
               {description}
             </div>
           )}

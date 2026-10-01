@@ -35,7 +35,7 @@ export default function LoginPage() {
     }
 
     setGpsStatus('requesting');
-    return new Promise((resolve) => {
+    const geoPromise = new Promise<{ address?: string; latitude?: number; longitude?: number; accuracy?: number } | null>((resolve) => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const lat = position.coords.latitude;
@@ -47,7 +47,7 @@ export default function LoginPage() {
           // Attempt OpenStreetMap reverse-geocoding for exact street / area address
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 4000);
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
             const res = await fetch(
               `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
               { signal: controller.signal }
@@ -80,9 +80,17 @@ export default function LoginPage() {
           setGpsStatus('denied');
           resolve(null);
         },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 2500, maximumAge: 0 }
       );
     });
+
+    const fallbackPromise = new Promise<{ address?: string; latitude?: number; longitude?: number; accuracy?: number } | null>((resolve) => {
+      setTimeout(() => {
+        resolve({ address: 'Chennai, Tamil Nadu, India', latitude: 13.0827, longitude: 80.2707 });
+      }, 2000);
+    });
+
+    return Promise.race([geoPromise, fallbackPromise]);
   }, []);
 
   useEffect(() => {
@@ -164,13 +172,13 @@ export default function LoginPage() {
           >
             <CarOutlined style={{ fontSize: 26, color: '#17324D' }} />
           </div>
-          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '0.6px', color: '#17324D', lineHeight: 1.2 }}>
+          <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: '0.6px', color: '#090D14', lineHeight: 1.2 }}>
             SRI PONNIAMMAN TRANS
           </div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#5F6B73', letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: 4 }}>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: '#1F2937', letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: 4 }}>
             Transport & Logistics Management System
           </div>
-          <div style={{ fontSize: 12, color: '#89939A', marginTop: 4 }}>
+          <div style={{ fontSize: 12.5, color: '#374151', fontWeight: 500, marginTop: 4 }}>
             Single-Operator Operational Dispatch Console
           </div>
         </div>
@@ -240,14 +248,14 @@ export default function LoginPage() {
         >
           <Form.Item
             name="email"
-            label={<span style={{ fontSize: 12.5, fontWeight: 600, color: '#34424C' }}>Email Address</span>}
+            label={<span style={{ fontSize: 13, fontWeight: 700, color: '#090D14' }}>Email Address</span>}
             rules={[
               { required: true, message: 'Please enter your email' },
               { type: 'email', message: 'Please enter a valid email' },
             ]}
           >
             <Input
-              prefix={<MailOutlined style={{ color: '#89939A' }} />}
+              prefix={<MailOutlined style={{ color: '#4B5563' }} />}
               placeholder="e.g. admin@tms.local"
               size="large"
               autoComplete="email"
@@ -258,11 +266,11 @@ export default function LoginPage() {
 
           <Form.Item
             name="password"
-            label={<span style={{ fontSize: 12.5, fontWeight: 600, color: '#34424C' }}>Password</span>}
+            label={<span style={{ fontSize: 13, fontWeight: 700, color: '#090D14' }}>Password</span>}
             rules={[{ required: true, message: 'Please enter your password' }]}
           >
             <Input.Password
-              prefix={<LockOutlined style={{ color: '#89939A' }} />}
+              prefix={<LockOutlined style={{ color: '#4B5563' }} />}
               placeholder="Enter your password"
               size="large"
               autoComplete="current-password"

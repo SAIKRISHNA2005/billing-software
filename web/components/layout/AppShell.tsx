@@ -13,6 +13,7 @@ import {
   Dropdown,
   Avatar,
   Modal,
+  Tooltip,
 } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -32,8 +33,11 @@ import {
   CalendarOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  SunOutlined,
+  MoonOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useTheme } from '@/components/providers/ThemeContext';
 import ChangePasswordModal from '@/components/auth/ChangePasswordModal';
 
 const { Header, Sider, Content } = Layout;
@@ -47,6 +51,7 @@ export default function AppShell({ children }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isLoading, isAuthenticated, logout } = useAuth();
+  const { themeMode, toggleTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -276,8 +281,8 @@ export default function AppShell({ children }: AppShellProps) {
           top: 0,
           bottom: 0,
           zIndex: isMobile ? 1000 : 100,
-          background: '#172A3A',
-          boxShadow: isMobile && !collapsed ? '4px 0 16px rgba(23, 42, 58, 0.4)' : 'none',
+          background: themeMode === 'dark' ? '#121214' : '#172A3A',
+          boxShadow: isMobile && !collapsed ? '4px 0 16px rgba(0, 0, 0, 0.4)' : 'none',
           transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
@@ -290,8 +295,8 @@ export default function AppShell({ children }: AppShellProps) {
               alignItems: 'center',
               justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
               padding: collapsed && !isMobile ? '0' : '0 18px',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-              background: '#172A3A',
+              borderBottom: themeMode === 'dark' ? '1px solid #27272A' : '1px solid rgba(255, 255, 255, 0.08)',
+              background: themeMode === 'dark' ? '#121214' : '#172A3A',
               flexShrink: 0,
             }}
           >
@@ -301,8 +306,8 @@ export default function AppShell({ children }: AppShellProps) {
                   width: 36,
                   height: 36,
                   borderRadius: 4,
-                  background: '#24445D',
-                  border: '1px solid #365A73',
+                  background: themeMode === 'dark' ? '#27272A' : '#24445D',
+                  border: themeMode === 'dark' ? '1px solid #3F3F46' : '1px solid #365A73',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -319,7 +324,7 @@ export default function AppShell({ children }: AppShellProps) {
                 <div style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 13.5, letterSpacing: '0.6px', lineHeight: 1.2 }}>
                   SRI PONNIAMMAN TRANS
                 </div>
-                <div style={{ color: '#89939A', fontSize: 10, fontWeight: 500, letterSpacing: '0.6px', textTransform: 'uppercase', marginTop: 3 }}>
+                <div style={{ color: themeMode === 'dark' ? '#A1A1AA' : '#89939A', fontSize: 10, fontWeight: 500, letterSpacing: '0.6px', textTransform: 'uppercase', marginTop: 3 }}>
                   Transport Operations
                 </div>
               </div>
@@ -334,7 +339,7 @@ export default function AppShell({ children }: AppShellProps) {
               selectedKeys={getSelectedKeys()}
               defaultOpenKeys={getOpenKeys()}
               items={menuItems}
-              style={{ borderRight: 0, background: '#172A3A' }}
+              style={{ borderRight: 0, background: themeMode === 'dark' ? '#121214' : '#172A3A' }}
             />
           </div>
 
@@ -342,8 +347,8 @@ export default function AppShell({ children }: AppShellProps) {
           <div
             style={{
               padding: collapsed && !isMobile ? '12px 8px' : '14px 16px',
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-              background: '#172A3A',
+              borderTop: themeMode === 'dark' ? '1px solid #27272A' : '1px solid rgba(255, 255, 255, 0.08)',
+              background: themeMode === 'dark' ? '#121214' : '#172A3A',
               flexShrink: 0,
               display: 'flex',
               justifyContent: 'center',
@@ -361,9 +366,9 @@ export default function AppShell({ children }: AppShellProps) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderRadius: '4px',
-                background: '#24445D',
-                borderColor: '#365A73',
-                color: '#C2CCD4',
+                background: themeMode === 'dark' ? '#27272A' : '#24445D',
+                borderColor: themeMode === 'dark' ? '#3F3F46' : '#365A73',
+                color: themeMode === 'dark' ? '#FFFFFF' : '#C2CCD4',
                 width: collapsed && !isMobile ? '36px' : '100%',
               }}
               title="Sign Out"
@@ -383,13 +388,13 @@ export default function AppShell({ children }: AppShellProps) {
         <Header
           className="spt-command-header"
           style={{
-            background: '#FFFFFF',
+            background: themeMode === 'dark' ? '#18181B' : '#FFFFFF',
             padding: isMobile ? '0 12px' : '0 24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderBottom: '1px solid #D4DAD9',
-            boxShadow: '0 1px 3px rgba(23, 42, 58, 0.04)',
+            borderBottom: themeMode === 'dark' ? '1px solid #2E2E33' : '1px solid #D4DAD9',
+            boxShadow: themeMode === 'dark' ? '0 1px 3px rgba(0, 0, 0, 0.4)' : '0 1px 3px rgba(23, 42, 58, 0.04)',
             position: 'sticky',
             top: 0,
             zIndex: 99,
@@ -402,25 +407,49 @@ export default function AppShell({ children }: AppShellProps) {
               type="text"
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               onClick={() => setCollapsed(!collapsed)}
-              style={{ fontSize: 16, width: 34, height: 34, color: '#34424C' }}
+              style={{ fontSize: 16, width: 34, height: 34, color: themeMode === 'dark' ? '#FFFFFF' : '#34424C' }}
               title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             />
-            <Text strong style={{ fontSize: isMobile ? 13.5 : 15, color: '#1E2933', letterSpacing: '0.2px' }}>
+            <Text strong style={{ fontSize: isMobile ? 13.5 : 15, color: themeMode === 'dark' ? '#FFFFFF' : '#1E2933', letterSpacing: '0.2px' }}>
               {isMobile ? 'Sri Ponniamman Trans' : 'Transport & Logistics Management System'}
             </Text>
           </Space>
 
           <Space size={isMobile ? 'small' : 'middle'}>
+            {/* Dark Mode / Light Mode Toggle Button */}
+            <Tooltip title={themeMode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+              <Button
+                type="text"
+                icon={
+                  themeMode === 'dark' ? (
+                    <SunOutlined style={{ color: '#FDB813', fontSize: 16 }} />
+                  ) : (
+                    <MoonOutlined style={{ color: '#5F6B73', fontSize: 16 }} />
+                  )
+                }
+                onClick={toggleTheme}
+                style={{
+                  color: themeMode === 'dark' ? '#FFFFFF' : '#5F6B73',
+                  fontSize: 13,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                {!isMobile && (themeMode === 'dark' ? 'Light Mode' : 'Dark Mode')}
+              </Button>
+            </Tooltip>
+
             <Dropdown menu={{ items: settingsMenuItems }} placement="bottomRight">
-              <Button type="text" icon={<SettingOutlined />} style={{ color: '#5F6B73', fontSize: 13 }}>
+              <Button type="text" icon={<SettingOutlined />} style={{ color: themeMode === 'dark' ? '#A1A1AA' : '#5F6B73', fontSize: 13 }}>
                 {!isMobile && 'Settings & Tools'}
               </Button>
             </Dropdown>
 
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Space style={{ cursor: 'pointer' }}>
-                <Avatar style={{ backgroundColor: '#17324D', color: '#FFFFFF', fontSize: 13 }} icon={<UserOutlined />} />
-                {!isMobile && <Text strong style={{ fontSize: 13, color: '#1E2933' }}>{user.name || user.email}</Text>}
+                <Avatar style={{ backgroundColor: themeMode === 'dark' ? '#27272A' : '#17324D', color: '#FFFFFF', fontSize: 13 }} icon={<UserOutlined />} />
+                {!isMobile && <Text strong style={{ fontSize: 13, color: themeMode === 'dark' ? '#FFFFFF' : '#1E2933' }}>{user.name || user.email}</Text>}
               </Space>
             </Dropdown>
           </Space>

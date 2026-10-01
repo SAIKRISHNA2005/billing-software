@@ -1,4 +1,3 @@
-'use me';
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -140,6 +139,9 @@ export default function CompanyReportPage() {
           >
             <Select.Option value="Import">Import</Select.Option>
             <Select.Option value="Export">Export</Select.Option>
+            <Select.Option value="Empty">Empty</Select.Option>
+            <Select.Option value="Offload">Offload</Select.Option>
+            <Select.Option value="Flattrack">Flattrack</Select.Option>
           </Select>
           <Button type="primary" icon={<SearchOutlined />} onClick={fetchCompanyReport}>
             Apply Filters

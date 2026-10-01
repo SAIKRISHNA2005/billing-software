@@ -33,6 +33,7 @@ import {
   CarOutlined,
   FileTextOutlined,
   WalletOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -44,6 +45,7 @@ import {
   formatINR,
   ExpenseTotals,
 } from '@/lib/utils/expensesHelper';
+import { exportToExcel } from '@/lib/utils/exportHelper';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -115,6 +117,87 @@ export default function LoadingExpensesPage() {
   useEffect(() => {
     fetchExpenses();
   }, [fetchExpenses]);
+
+  const handleResetFilters = () => {
+    setSearchText('');
+    setCategoryFilter(undefined);
+    setSourceFilter(undefined);
+    setDateRange(null);
+    setPage(1);
+  };
+
+  const exportToCSV = (items: LoadingExpenseItem[], filename: string) => {
+    if (!items || items.length === 0) {
+      message.warning('No loading expense records to export');
+      return;
+    }
+    const headers = [
+      'Expense ID',
+      'Date',
+      'Category',
+      'Source',
+      'Vehicle No',
+      'Enquiry / TXN',
+      'Amount (INR)',
+      'Description'
+    ];
+    const rows = items.map((r) => [
+      `"${r.id}"`,
+      `"${r.expenseDate || ''}"`,
+      `"${r.category || ''}"`,
+      `"${r.source || ''}"`,
+      `"${r.vehicleNumber || ''}"`,
+      `"${r.enquiryNumber || r.enquiryId || ''}"`,
+      r.amount || 0,
+      `"${(r.description || '').replace(/"/g, '""')}"`,
+    ]);
+    const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    message.success(`Exported ${items.length} record(s) successfully!`);
+  };
+
+  const loadingExportColumns = [
+    { key: 'id', title: 'Expense ID' },
+    { key: 'expenseDate', title: 'Date' },
+    { key: 'category', title: 'Category' },
+    { key: 'amount', title: 'Amount (INR)' },
+    { key: 'source', title: 'Source' },
+    { key: 'vehicleNumber', title: 'Vehicle Number' },
+    { key: 'enquiryId', title: 'Enquiry ID' },
+    { key: 'notes', title: 'Notes / Remarks' },
+  ];
+
+  const handleExportFiltered = () => {
+    if (data.length === 0) {
+      message.warning('No loading expense records to export');
+      return;
+    }
+    exportToExcel(data, loadingExportColumns, `Loading_Expenses_Filtered_${dayjs().format('YYYY-MM-DD')}`);
+    message.success(`Exported ${data.length} filtered loading expense records to Excel`);
+  };
+
+  const handleExportAll = async () => {
+    try {
+      message.loading({ content: 'Fetching all loading expenses for export...', key: 'exportLoading' });
+      const res = await axios.get('/api/expenses/loading?limit=2000');
+      const allItems = res.data?.data?.items || data;
+      if (allItems.length === 0) {
+        message.warning({ content: 'No loading expenses available to export', key: 'exportLoading' });
+        return;
+      }
+      exportToExcel(allItems, loadingExportColumns, `Loading_Expenses_ALL_${dayjs().format('YYYY-MM-DD')}`);
+      message.success({ content: `Exported all ${allItems.length} loading expense records to Excel`, key: 'exportLoading' });
+    } catch {
+      exportToExcel(data, loadingExportColumns, `Loading_Expenses_ALL_${dayjs().format('YYYY-MM-DD')}`);
+      message.success({ content: `Exported ${data.length} loading expense records to Excel`, key: 'exportLoading' });
+    }
+  };
 
   // Load lookups for drawer
   const loadDrawerLookups = async () => {
@@ -241,14 +324,6 @@ export default function LoadingExpensesPage() {
         message.error('Delete failed');
       }
     }
-  };
-
-  const handleResetFilters = () => {
-    setSearchText('');
-    setCategoryFilter(undefined);
-    setSourceFilter(undefined);
-    setDateRange(null);
-    setPage(1);
   };
 
   const columns: ColumnsType<LoadingExpenseItem> = [
@@ -397,14 +472,19 @@ export default function LoadingExpensesPage() {
             Trip and job-associated operational expenses with automatic synchronization from transport enquiries.
           </Text>
         </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          size="large"
-          onClick={() => handleOpenDrawer()}
-        >
-          Record Expense
-        </Button>
+        <Space wrap>
+          <Button icon={<DownloadOutlined />} onClick={handleExportAll}>
+            Export All
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            size="large"
+            onClick={() => handleOpenDrawer()}
+          >
+            Record Expense
+          </Button>
+        </Space>
       </div>
 
       {/* KPI Stats Row */}
@@ -502,12 +582,15 @@ export default function LoadingExpensesPage() {
             />
           </Col>
           <Col xs={24} sm={12} md={4} style={{ textAlign: 'right' }}>
-            <Space>
+            <Space wrap>
               <Button icon={<ReloadOutlined />} onClick={handleResetFilters}>
                 Reset
               </Button>
               <Button type="primary" onClick={fetchExpenses}>
                 Filter
+              </Button>
+              <Button icon={<DownloadOutlined />} onClick={handleExportFiltered}>
+                Export Filtered
               </Button>
             </Space>
           </Col>

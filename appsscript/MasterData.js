@@ -150,7 +150,7 @@ const MasterDataModule = {
     // Format & Validate Specific Entity Fields
     if (entity === 'vehicles') {
       data.vehicleNumber = this._formatVehicleNumber(data.vehicleNumber);
-      if (!data.vehicleType) throw new Error('Vehicle type is required.');
+      data.vehicleType = data.vehicleType || data.vehicleClass || 'Commercial Vehicle';
 
       // Check uniqueness of vehicleNumber
       const dup = allRows.find(
@@ -428,5 +428,50 @@ const MasterDataModule = {
     });
 
     return results;
+  },
+
+  getVehicleExpiryAlerts: function() {
+    const vehicles = SheetRepo.getAllRows('vehicles', true).filter(function (v) { return !v.deletedAt; });
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const alerts = [];
+
+    const validityFields = [
+      { key: 'fitnessValidUpTo', label: 'Fitness' },
+      { key: 'taxValidUpTo', label: 'Tax' },
+      { key: 'insuranceValidUpTo', label: 'Insurance' },
+      { key: 'puccValidUpTo', label: 'PUCC' },
+      { key: 'permitValidUpTo', label: 'Permit' },
+      { key: 'nationalPermitValidUpTo', label: 'National Permit' },
+    ];
+
+    vehicles.forEach(function (v) {
+      validityFields.forEach(function (f) {
+        const val = v[f.key];
+        if (val) {
+          const dateObj = new Date(val);
+          if (!isNaN(dateObj.getTime())) {
+            const expDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+            const diffTime = expDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            // Alert if expiring in <= 3 days or already expired
+            if (diffDays <= 3) {
+              alerts.push({
+                vehicleId: v.id,
+                vehicleNumber: v.vehicleNumber,
+                ownerName: v.ownerName || '',
+                documentKey: f.key,
+                documentLabel: f.label,
+                expiryDate: val,
+                daysRemaining: diffDays,
+                isExpired: diffDays < 0,
+              });
+            }
+          }
+        }
+      });
+    });
+
+    return alerts;
   },
 };

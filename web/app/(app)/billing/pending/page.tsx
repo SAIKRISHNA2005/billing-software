@@ -12,6 +12,7 @@ import {
   Typography,
   Alert,
   Tooltip,
+  DatePicker,
   message,
 } from 'antd';
 import {
@@ -31,6 +32,7 @@ import dayjs from 'dayjs';
 import { formatCurrencyINR, formatDate } from '@/lib/utils/format';
 import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 import { RecordDetailPopover } from '@/components/common/RecordDetailPopover';
+import { exportToExcel } from '@/lib/utils/exportHelper';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -67,12 +69,14 @@ export default function PendingBillsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [companyId, setCompanyId] = useState('');
   const [clientId, setClientId] = useState('');
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null);
 
-  const fetchPending = async () => {
+  const fetchPending = async (overrideParams?: { companyId?: string; clientId?: string; search?: string }) => {
     setLoading(true);
     try {
+      const p = overrideParams !== undefined ? overrideParams : { companyId, clientId, search };
       const res = await axios.get('/api/billing/pending', {
-        params: { companyId, clientId, search },
+        params: p,
       });
       if (res.data && res.data.success) {
         setItems(res.data.data.items || []);
@@ -84,6 +88,28 @@ export default function PendingBillsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      if (dateRange && dateRange[0] && dateRange[1]) {
+        const itemDate = dayjs(item.completedAt || item.date || item.createdAt);
+        if (itemDate.isValid()) {
+          if (itemDate.isBefore(dateRange[0].startOf('day')) || itemDate.isAfter(dateRange[1].endOf('day'))) {
+            return false;
+          }
+        }
+      }
+      return true;
+    });
+  }, [items, dateRange]);
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setCompanyId('');
+    setClientId('');
+    setDateRange(null);
+    fetchPending({ search: '', companyId: '', clientId: '' });
   };
 
   const fetchMasters = async () => {
@@ -133,13 +159,7 @@ export default function PendingBillsPage() {
     }),
   };
 
-  // Export to CSV
-  const handleExportCSV = () => {
-    if (items.length === 0) {
-      message.warning('No pending bills data to export');
-      return;
-    }
-
+  const exportRowsToCSV = (rowsToExport: PendingBillRow[], filename: string) => {
     const headers = [
       'Enquiry No',
       'Transaction No',
@@ -156,7 +176,7 @@ export default function PendingBillsPage() {
       'Created Date',
     ];
 
-    const rows = items.map((r) => [
+    const rows = rowsToExport.map((r) => [
       `"${r.enquiryId}"`,
       `"${r.transactionNo || ''}"`,
       `"${(r.clientName || '').replace(/"/g, '""')}"`,
@@ -176,11 +196,53 @@ export default function PendingBillsPage() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `TMS_Pending_Bills_${dayjs().format('YYYY-MM-DD')}.csv`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    message.success('Pending bills exported to CSV successfully');
+  };
+
+  const pendingExportColumns = [
+    { key: 'enquiryId', title: 'Enquiry No' },
+    { key: 'transactionNo', title: 'Transaction No' },
+    { key: 'clientName', title: 'Client Name' },
+    { key: 'companyName', title: 'Company Name' },
+    { key: 'loadingType', title: 'Loading Type' },
+    { key: 'vehicleNo', title: 'Vehicle Number' },
+    { key: 'containerNo', title: 'Container Number' },
+    { key: 'weight', title: 'Weight' },
+    { key: 'haltingDays', title: 'Halting Days' },
+    { key: 'haltingAmount', title: 'Halting Amount (INR)' },
+    { key: 'suggestedAmount', title: 'Billing Amount (INR)' },
+    { key: 'containerSize', title: 'Size' },
+    { key: 'createdAt', title: 'Created Date' },
+  ];
+
+  // Export filtered rows currently visible as Excel
+  const handleExportFiltered = () => {
+    if (filteredItems.length === 0) {
+      message.warning('No filtered pending bills data to export');
+      return;
+    }
+    exportToExcel(filteredItems, pendingExportColumns, `TMS_Pending_Bills_Filtered_${dayjs().format('YYYY-MM-DD')}`);
+    message.success(`Exported ${filteredItems.length} filtered pending bill records to Excel`);
+  };
+
+  // Export all pending rows from server as Excel
+  const handleExportAll = async () => {
+    try {
+      message.loading({ content: 'Fetching all pending bills for export...', key: 'exportAll' });
+      const res = await axios.get('/api/billing/pending', { params: { limit: 2000 } });
+      const allItems: PendingBillRow[] = res.data?.data?.items || items;
+      if (allItems.length === 0) {
+        message.warning({ content: 'No pending bills available to export', key: 'exportAll' });
+        return;
+      }
+      exportToExcel(allItems, pendingExportColumns, `TMS_Pending_Bills_ALL_${dayjs().format('YYYY-MM-DD')}`);
+      message.success({ content: `Successfully exported all ${allItems.length} pending bills to Excel`, key: 'exportAll' });
+    } catch {
+      message.error({ content: 'Failed to export all records', key: 'exportAll' });
+    }
   };
 
   const columns: ColumnsType<PendingBillRow> = [
@@ -329,11 +391,11 @@ export default function PendingBillsPage() {
           <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>Completed transport jobs waiting to be grouped and issued into client invoices</Text>
         </div>
         <Space wrap>
-          <Button icon={<ReloadOutlined />} onClick={fetchPending}>
+          <Button icon={<ReloadOutlined />} onClick={() => fetchPending()}>
             Refresh
           </Button>
-          <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
-            Export Excel
+          <Button icon={<DownloadOutlined />} onClick={handleExportAll}>
+            Export All
           </Button>
           <ActionConfirmPopover
             title={`Are you sure you want to create an invoice for ${selectedRows.length} item(s)?`}
@@ -377,7 +439,7 @@ export default function PendingBillsPage() {
             prefix={<SearchOutlined />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onPressEnter={fetchPending}
+            onPressEnter={() => fetchPending()}
             style={{ width: 260 }}
             allowClear
           />
@@ -407,24 +469,28 @@ export default function PendingBillsPage() {
               </Select.Option>
             ))}
           </Select>
-          <Button type="primary" onClick={fetchPending}>
+          <DatePicker.RangePicker
+            placeholder={['Start Date', 'End Date']}
+            format="DD/MM/YYYY"
+            value={dateRange}
+            onChange={(d) => setDateRange(d as any)}
+            style={{ width: 230 }}
+          />
+          <Button type="primary" onClick={() => fetchPending()}>
             Filter
           </Button>
-          <Button
-            onClick={() => {
-              setSearch('');
-              setCompanyId('');
-              setClientId('');
-            }}
-          >
+          <Button onClick={handleResetFilters}>
             Reset
+          </Button>
+          <Button icon={<DownloadOutlined />} onClick={handleExportFiltered}>
+            Export Filtered
           </Button>
         </Space>
 
         <Table
           rowSelection={rowSelection}
           columns={columns}
-          dataSource={items}
+          dataSource={filteredItems}
           rowKey="enquiryId"
           loading={loading}
           scroll={{ x: 1600 }}

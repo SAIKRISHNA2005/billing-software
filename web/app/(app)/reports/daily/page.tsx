@@ -45,6 +45,7 @@ import { formatCurrencyINR, formatDate } from '@/lib/utils/format';
 import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 import { RecordDetailPopover } from '@/components/common/RecordDetailPopover';
 import { VehicleStatusToggle } from '@/components/common/VehicleStatusToggle';
+import { exportToExcel } from '@/lib/utils/exportHelper';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -88,6 +89,11 @@ export default function DailyReportPage() {
   const [report, setReport] = useState<any>(null);
   const [detailedEnquiries, setDetailedEnquiries] = useState<DailyReportEnquiryRow[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterLoadingType, setFilterLoadingType] = useState<string>('ALL');
+  const [filterMovementStatus, setFilterMovementStatus] = useState<string>('ALL');
+  const [filterShippingStatus, setFilterShippingStatus] = useState<string>('ALL');
+  const [filterCompany, setFilterCompany] = useState<string>('ALL');
+  const [tableDateRange, setTableDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null);
 
   // Row inspection and edit modal
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -283,30 +289,68 @@ export default function DailyReportPage() {
     fetchDailyReport();
   }, []);
 
-  // Filtered detailed enquiries by search
-  const filteredDetailedEnquiries = useMemo(() => {
-    if (!searchQuery.trim()) return detailedEnquiries;
-    const q = searchQuery.toLowerCase().trim();
-    return detailedEnquiries.filter((row) => {
-      return (
-        String(row.clientName || '').toLowerCase().includes(q) ||
-        String(row.companyName || '').toLowerCase().includes(q) ||
-        String(row.vehicleNumber || '').toLowerCase().includes(q) ||
-        String(row.containerNumber || '').toLowerCase().includes(q) ||
-        String(row.bookingNumber || '').toLowerCase().includes(q) ||
-        String(row.billingNumber || '').toLowerCase().includes(q) ||
-        String(row.driverNumber || '').toLowerCase().includes(q)
-      );
+  // Distinct companies present in daily enquiries for filter dropdown
+  const dailyCompanyOptions = useMemo(() => {
+    const s = new Set<string>();
+    detailedEnquiries.forEach((row) => {
+      if (row.companyName && row.companyName !== '-') s.add(row.companyName);
     });
-  }, [detailedEnquiries, searchQuery]);
+    return Array.from(s);
+  }, [detailedEnquiries]);
 
-  // Export Daily Table as CSV
-  const handleExportCSV = () => {
-    if (detailedEnquiries.length === 0) {
-      message.warning('No daily enquiry records to export');
-      return;
-    }
+  // Filtered detailed enquiries by search + dropdowns
+  const filteredDetailedEnquiries = useMemo(() => {
+    return detailedEnquiries.filter((row) => {
+      if (filterLoadingType !== 'ALL') {
+        const lt = (row.loadingType || '').toUpperCase();
+        if (lt !== filterLoadingType.toUpperCase()) return false;
+      }
+      if (filterMovementStatus !== 'ALL') {
+        const ms = (row.movementStatus || 'NOT_MOVED').toUpperCase();
+        if (ms !== filterMovementStatus.toUpperCase()) return false;
+      }
+      if (filterShippingStatus !== 'ALL') {
+        const ss = (row.shippingStatus || 'PENDING').toUpperCase();
+        if (ss !== filterShippingStatus.toUpperCase()) return false;
+      }
+      if (filterCompany !== 'ALL') {
+        if (row.companyName !== filterCompany) return false;
+      }
+      if (tableDateRange && tableDateRange[0] && tableDateRange[1]) {
+        const d = dayjs(row.date || row.creationDate || row.bookingDate);
+        if (d.isValid()) {
+          if (d.isBefore(tableDateRange[0].startOf('day')) || d.isAfter(tableDateRange[1].endOf('day'))) {
+            return false;
+          }
+        }
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matches =
+          String(row.clientName || '').toLowerCase().includes(q) ||
+          String(row.companyName || '').toLowerCase().includes(q) ||
+          String(row.vehicleNumber || '').toLowerCase().includes(q) ||
+          String(row.containerNumber || '').toLowerCase().includes(q) ||
+          String(row.bookingNumber || '').toLowerCase().includes(q) ||
+          String(row.billingNumber || '').toLowerCase().includes(q) ||
+          String(row.driverNumber || '').toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+      return true;
+    });
+  }, [detailedEnquiries, searchQuery, filterLoadingType, filterMovementStatus, filterShippingStatus, filterCompany, tableDateRange]);
 
+  const handleResetDailyFilters = () => {
+    setSearchQuery('');
+    setFilterLoadingType('ALL');
+    setFilterMovementStatus('ALL');
+    setFilterShippingStatus('ALL');
+    setFilterCompany('ALL');
+    setTableDateRange(null);
+  };
+
+  // Helper to export any given list of daily rows as CSV
+  const exportDailyRowsToCSV = (rowsToExport: DailyReportEnquiryRow[], filename: string) => {
     const headers = [
       'CreationDate',
       'BookingDate',
@@ -333,7 +377,7 @@ export default function DailyReportPage() {
       'Comments',
     ];
 
-    const rows = detailedEnquiries.map((r) => [
+    const rows = rowsToExport.map((r) => [
       `"${r.creationDate || ''}"`,
       `"${r.bookingDate || ''}"`,
       `"${(r.companyName || '').replace(/"/g, '""')}"`,
@@ -363,11 +407,64 @@ export default function DailyReportPage() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `TMS_Daily_Report_${selectedDate.format('YYYY-MM-DD')}.csv`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    message.success('Daily report exported to CSV successfully');
+  };
+
+  const dailyExportColumns = [
+    { key: 'creationDate', title: 'Creation Date' },
+    { key: 'bookingDate', title: 'Booking Date' },
+    { key: 'companyName', title: 'Company Name' },
+    { key: 'loadingType', title: 'Type' },
+    { key: 'clientName', title: 'Client Name' },
+    { key: 'billingNumber', title: 'Billing Number' },
+    { key: 'bookingNumber', title: 'Booking Number' },
+    { key: 'feet', title: 'Feet' },
+    { key: 'containerNumber', title: 'Container Number' },
+    { key: 'sealNumber', title: 'Seal Number' },
+    { key: 'vehicleNumber', title: 'Vehicle Number' },
+    { key: 'driverNumber', title: 'Driver Number' },
+    { key: 'diesel', title: 'Diesel' },
+    { key: 'advance', title: 'Advance' },
+    { key: 'companyIn', title: 'Company In' },
+    { key: 'companyOut', title: 'Company Out' },
+    { key: 'printIn', title: 'Print In' },
+    { key: 'printOut', title: 'Print Out' },
+    { key: 'portIn', title: 'Port In' },
+    { key: 'portOut', title: 'Port Out' },
+    { key: 'movementStatus', title: 'Movement Status' },
+    { key: 'shippingStatus', title: 'Shipping Status' },
+    { key: 'comments', title: 'Comments' },
+  ];
+
+  // Export currently filtered rows as Excel (toolbar button near filters)
+  const handleExportFiltered = () => {
+    if (filteredDetailedEnquiries.length === 0) {
+      message.warning('No filtered daily enquiry records to export');
+      return;
+    }
+    exportToExcel(
+      filteredDetailedEnquiries,
+      dailyExportColumns,
+      `TMS_Daily_Report_Filtered_${selectedDate.format('YYYY-MM-DD')}`
+    );
+    message.success(`Exported ${filteredDetailedEnquiries.length} filtered daily records to Excel`);
+  };
+
+  // Export all daily rows as Excel (top header button)
+  const handleExportAll = () => {
+    if (detailedEnquiries.length === 0) {
+      message.warning('No daily enquiry records to export');
+      return;
+    }
+    exportToExcel(
+      detailedEnquiries,
+      dailyExportColumns,
+      `TMS_Daily_Report_ALL_${selectedDate.format('YYYY-MM-DD')}`
+    );
+    message.success(`Exported all ${detailedEnquiries.length} daily records to Excel`);
   };
 
   // Existing table columns preserved exactly
@@ -755,8 +852,8 @@ export default function DailyReportPage() {
               Sync Live Workbooks
             </Button>
           </ActionConfirmPopover>
-          <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
-            Export Excel
+          <Button icon={<DownloadOutlined />} onClick={handleExportAll}>
+            Export All
           </Button>
           <Button icon={<PrinterOutlined />} onClick={() => window.print()}>
             Print PDF
@@ -841,33 +938,6 @@ export default function DailyReportPage() {
         </Col>
       </Row>
 
-      {/* Existing Operational & Billing Overview Tables */}
-      <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
-        <Col xs={24} lg={14}>
-          <Card title={`Enquiries Created (${report?.enquiriesDetail?.length || 0})`} style={{ borderRadius: 8 }}>
-            <Table
-              columns={enquiryColumns}
-              dataSource={report?.enquiriesDetail || []}
-              rowKey="id"
-              loading={loading}
-              pagination={false}
-              size="small"
-            />
-          </Card>
-        </Col>
-        <Col xs={24} lg={10}>
-          <Card title={`Invoices Processed (${report?.billsDetail?.length || 0})`} style={{ borderRadius: 8 }}>
-            <Table
-              columns={billColumns}
-              dataSource={report?.billsDetail || []}
-              rowKey="id"
-              loading={loading}
-              pagination={false}
-              size="small"
-            />
-          </Card>
-        </Col>
-      </Row>
 
       {/* ENQUIRY / DAILY MOVEMENT DETAILS (Comprehensive 23-Column Table) */}
       <Card
@@ -879,17 +949,72 @@ export default function DailyReportPage() {
                 Comprehensive log of 23 consignment and movement parameters for {selectedDate.format('DD-MM-YYYY')}
               </Text>
             </div>
-            <Space>
+            <Space wrap>
               <Input
                 placeholder="Search Client, Vehicle, Container..."
                 prefix={<SearchOutlined />}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ width: 280 }}
+                style={{ width: 220 }}
                 allowClear
               />
-              <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
-                Export CSV
+              <Select
+                value={filterLoadingType}
+                onChange={(v) => setFilterLoadingType(v)}
+                style={{ width: 125 }}
+              >
+                <Select.Option value="ALL">All Types</Select.Option>
+                <Select.Option value="IMPORT">Import</Select.Option>
+                <Select.Option value="EXPORT">Export</Select.Option>
+                <Select.Option value="EMPTY">Empty</Select.Option>
+                <Select.Option value="OFFLOAD">Offload</Select.Option>
+                <Select.Option value="FLATTRACK">Flattrack</Select.Option>
+              </Select>
+              <Select
+                value={filterMovementStatus}
+                onChange={(v) => setFilterMovementStatus(v)}
+                style={{ width: 140 }}
+              >
+                <Select.Option value="ALL">All Movements</Select.Option>
+                <Select.Option value="MOVED">MOVED</Select.Option>
+                <Select.Option value="NOT_MOVED">NOT_MOVED</Select.Option>
+              </Select>
+              <Select
+                value={filterShippingStatus}
+                onChange={(v) => setFilterShippingStatus(v)}
+                style={{ width: 130 }}
+              >
+                <Select.Option value="ALL">All Shipping</Select.Option>
+                <Select.Option value="PENDING">PENDING</Select.Option>
+                <Select.Option value="IN_PROGRESS">IN_PROGRESS</Select.Option>
+                <Select.Option value="COMPLETED">COMPLETED</Select.Option>
+              </Select>
+              {dailyCompanyOptions.length > 0 && (
+                <Select
+                  value={filterCompany}
+                  onChange={(v) => setFilterCompany(v)}
+                  style={{ width: 150 }}
+                >
+                  <Select.Option value="ALL">All Companies</Select.Option>
+                  {dailyCompanyOptions.map((c) => (
+                    <Select.Option key={c} value={c}>
+                      {c}
+                    </Select.Option>
+                  ))}
+                </Select>
+              )}
+              <DatePicker.RangePicker
+                placeholder={['Start Date', 'End Date']}
+                format="DD/MM/YYYY"
+                value={tableDateRange}
+                onChange={(d) => setTableDateRange(d as any)}
+                style={{ width: 230 }}
+              />
+              <Button onClick={handleResetDailyFilters}>
+                Reset
+              </Button>
+              <Button icon={<DownloadOutlined />} onClick={handleExportFiltered}>
+                Export Filtered
               </Button>
             </Space>
           </div>

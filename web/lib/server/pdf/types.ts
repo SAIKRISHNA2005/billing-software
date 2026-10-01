@@ -21,11 +21,13 @@ export interface BillData {
   financialYear: string;
   status: string;
 
-  // Billed To Section (strictly NO GST/PAN)
+  // Billed To Section
   client: {
     id?: string;
     name: string;
     address: string;
+    gstin?: string;
+    pan?: string;
   };
 
   // Company Details
@@ -37,6 +39,10 @@ export interface BillData {
     pan: string;
     phone?: string;
     email?: string;
+    bankName?: string;
+    accountNo?: string;
+    ifscCode?: string;
+    branch?: string;
   };
 
   // Bill Details Section
@@ -72,5 +78,6 @@ export interface BillData {
     headerImage?: string;
     sealImage?: string;
     signatureImage?: string;
+    sealAndSignatureImage?: string;
   };
 }

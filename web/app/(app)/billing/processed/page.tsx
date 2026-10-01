@@ -32,6 +32,7 @@ import dayjs from 'dayjs';
 import { formatCurrencyINR } from '@/lib/utils/format';
 import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 import { RecordDetailPopover } from '@/components/common/RecordDetailPopover';
+import { exportToExcel } from '@/lib/utils/exportHelper';
 
 const { Title, Text, Paragraph } = Typography;
 const { RangePicker } = DatePicker;
@@ -51,10 +52,10 @@ export default function ProcessedBillsPage() {
   const [grandTotal, setGrandTotal] = useState(0);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  const fetchBills = async (page = 1) => {
+  const fetchBills = async (page = 1, overrideParams?: Record<string, any>) => {
     setLoading(true);
     try {
-      const params: Record<string, any> = {
+      let params: Record<string, any> = {
         page,
         limit: pagination.pageSize,
         status: 'PROCESSED',
@@ -67,6 +68,10 @@ export default function ProcessedBillsPage() {
       if (dateRange && dateRange[0] && dateRange[1]) {
         params.dateFrom = dateRange[0].format('YYYY-MM-DD');
         params.dateTo = dateRange[1].format('YYYY-MM-DD');
+      }
+
+      if (overrideParams) {
+        params = { ...params, ...overrideParams };
       }
 
       const res = await axios.get('/api/billing/bills', { params });
@@ -87,6 +92,22 @@ export default function ProcessedBillsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setDateRange(null);
+    setFinancialYear('');
+    setCompanyId('');
+    setClientId('');
+    fetchBills(1, {
+      financialYear: '',
+      companyId: '',
+      clientId: '',
+      search: '',
+      dateFrom: undefined,
+      dateTo: undefined,
+    });
   };
 
   const fetchMasters = async () => {
@@ -151,15 +172,9 @@ export default function ProcessedBillsPage() {
     }
   };
 
-  // Export List to CSV
-  const handleExportCSV = () => {
-    if (items.length === 0) {
-      message.warning('No processed bills to export');
-      return;
-    }
-
+  const exportBillsToCSV = (billsToExport: any[], filename: string) => {
     const headers = ['Company Name', 'Bill Number', 'Client Name', 'Total Amount', 'Billing Date', 'Financial Year', 'Status'];
-    const rows = items.map((b) => [
+    const rows = billsToExport.map((b) => [
       `"${(b.companyName || '').replace(/"/g, '""')}"`,
       `"${b.billNumber || ''}"`,
       `"${(b.clientName || '').replace(/"/g, '""')}"`,
@@ -173,11 +188,49 @@ export default function ProcessedBillsPage() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `TMS_Processed_Bills_${dayjs().format('YYYY-MM-DD')}.csv`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    message.success('Processed bills exported to CSV successfully');
+  };
+
+  const billExportColumns = [
+    { key: 'companyName', title: 'Company Name' },
+    { key: 'billNumber', title: 'Bill Number' },
+    { key: 'clientName', title: 'Client Name' },
+    { key: 'totalAmount', title: 'Total Amount (INR)' },
+    { key: 'billingDate', title: 'Billing Date' },
+    { key: 'financialYear', title: 'Financial Year' },
+    { key: 'status', title: 'Status' },
+  ];
+
+  // Export currently filtered rows as Excel
+  const handleExportFiltered = () => {
+    if (items.length === 0) {
+      message.warning('No filtered processed bills to export');
+      return;
+    }
+    exportToExcel(items, billExportColumns, `TMS_Processed_Bills_Filtered_${dayjs().format('YYYY-MM-DD')}`);
+    message.success(`Exported ${items.length} filtered processed bills to Excel`);
+  };
+
+  // Export whole records from server as Excel
+  const handleExportAll = async () => {
+    try {
+      message.loading({ content: 'Fetching all processed bills for export...', key: 'exportAll' });
+      const res = await axios.get('/api/billing/bills', {
+        params: { status: 'PROCESSED', limit: 2000 },
+      });
+      const allItems = res.data?.data?.items || items;
+      if (allItems.length === 0) {
+        message.warning({ content: 'No processed bills available to export', key: 'exportAll' });
+        return;
+      }
+      exportToExcel(allItems, billExportColumns, `TMS_Processed_Bills_ALL_${dayjs().format('YYYY-MM-DD')}`);
+      message.success({ content: `Successfully exported all ${allItems.length} processed bills to Excel`, key: 'exportAll' });
+    } catch {
+      message.error({ content: 'Failed to export all processed bills', key: 'exportAll' });
+    }
   };
 
   const columns: ColumnsType<any> = [
@@ -326,8 +379,8 @@ export default function ProcessedBillsPage() {
           <Button icon={<ReloadOutlined />} onClick={() => fetchBills(1)}>
             Refresh
           </Button>
-          <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
-            Export Excel
+          <Button icon={<DownloadOutlined />} onClick={handleExportAll}>
+            Export All
           </Button>
         </Space>
       </div>
@@ -389,16 +442,11 @@ export default function ProcessedBillsPage() {
           <Button type="primary" onClick={() => fetchBills(1)}>
             Filter
           </Button>
-          <Button
-            onClick={() => {
-              setSearch('');
-              setDateRange(null);
-              setFinancialYear('');
-              setCompanyId('');
-              setClientId('');
-            }}
-          >
+          <Button onClick={handleResetFilters}>
             Reset
+          </Button>
+          <Button icon={<DownloadOutlined />} onClick={handleExportFiltered}>
+            Export Filtered
           </Button>
         </Space>
 

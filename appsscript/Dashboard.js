@@ -235,6 +235,25 @@ var DashboardModule = (function () {
       };
     });
 
+    // 12. Recent 20 created enquiries
+    var sortedEnquiries = enquiries.slice().sort(function (a, b) {
+      return (b.createdAt || b.date || '').localeCompare(a.createdAt || a.date || '');
+    });
+    var recentEnquiries = sortedEnquiries.slice(0, 20).map(function (e) {
+      return {
+        id: e.id,
+        enquiryNumber: e.enquiryNumber || e.id,
+        transactionNumber: e.transactionNumber || e.transactionNo || '',
+        companyName: companyMap[e.companyId] || e.companyId,
+        clientName: clientMap[e.clientId] || e.clientId,
+        date: e.date || e.createdAt,
+        loadingType: e.loadingType || 'Import',
+        vehicleNumber: e.vehicleNumber || e.vehicleNo || '',
+        stage: e.stage || 'BOOKED',
+        freightAmount: parseFloat(e.freightAmount) || 0
+      };
+    });
+
     var summary = {
       todaysTrips: todaysTripsCount,
       todaysEnquiries: todaysEnquiriesCount,
@@ -251,7 +270,8 @@ var DashboardModule = (function () {
       totalLoadingAmount: totalLoadingAmount,
       totalGeneralAmount: totalGeneralAmount,
       dailyRevenueChart: dailyRevenueChart,
-      recentBills: recentBills
+      recentBills: recentBills,
+      recentEnquiries: recentEnquiries
     };
 
     // Cache summary for 5 seconds

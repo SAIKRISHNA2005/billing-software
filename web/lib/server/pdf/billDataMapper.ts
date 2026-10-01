@@ -131,15 +131,19 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
     } catch {}
   }
 
-  // 3. Resolve Client Details (Ensure address is populated)
+  // 3. Resolve Client Details (Ensure address, GSTIN, and PAN are populated)
   let clientAddress = bill.clientAddress || bill.client?.address || '';
+  let clientGstin = bill.clientGstin || bill.client?.gstin || bill.client?.gstNo || '';
+  let clientPan = bill.clientPan || bill.client?.pan || bill.client?.panNo || '';
   const clientName = bill.clientName || bill.client?.name || 'SIA LOGISTICS GLOBAL';
 
-  if (!clientAddress && bill.clientId) {
+  if ((!clientAddress || !clientGstin || !clientPan) && bill.clientId) {
     try {
       const cltRes = await callAppsScript<any>('clients.get', { id: bill.clientId }, sessionToken);
-      if (cltRes.success && cltRes.data?.address) {
-        clientAddress = cltRes.data.address;
+      if (cltRes.success && cltRes.data) {
+        if (!clientAddress && cltRes.data.address) clientAddress = cltRes.data.address;
+        if (!clientGstin && (cltRes.data.gstin || cltRes.data.gstNo)) clientGstin = cltRes.data.gstin || cltRes.data.gstNo;
+        if (!clientPan && (cltRes.data.pan || cltRes.data.panNo)) clientPan = cltRes.data.pan || cltRes.data.panNo;
       }
     } catch {}
   }
@@ -147,6 +151,13 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
   if (!clientAddress) {
     const firstEnqWithAddr = linkedEnquiries.find((e) => e.clientAddress);
     clientAddress = firstEnqWithAddr?.clientAddress || '#37/24, Narayana Sarang Garden Street,\n5th Floor, Seethakathi Centre,\nParrys, Chennai - 600 001.';
+  }
+
+  if (!clientGstin) {
+    clientGstin = '33AAECS1234F1Z5';
+  }
+  if (!clientPan) {
+    clientPan = clientGstin && clientGstin.length >= 12 ? clientGstin.substring(2, 12) : 'AAECS1234F';
   }
 
   // 4b. Pre-fetch vehicle and container masters for ID resolution if necessary
@@ -275,39 +286,42 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
       const freightAmt = Number(e.freightAmount) || 0;
       const unitRate = count > 0 && freightAmt > 0 ? Math.round(freightAmt / count) : freightAmt;
 
-      // Build Compact, Professional Multi-Line Description HTML
-      const descLines: string[] = [];
-      const sealText = e.sealNumber && e.sealNumber !== '-' ? ` &nbsp;|&nbsp; <strong>Seal No:</strong> ${e.sealNumber}` : '';
-      descLines.push(`<div><strong>Count:</strong> ${countLabel}${sealText}</div>`);
-
-      const hasVehicle = Boolean(vNum && vNum !== '-');
-      const hasContainer = Boolean(cNum && cNum !== '-');
-      if (hasVehicle || hasContainer) {
-        const vPart = hasVehicle ? `<strong>Vehicle No:</strong> ${vNum}` : '';
-        const sep = (hasVehicle && hasContainer) ? ' &nbsp;|&nbsp; ' : '';
-        const cPart = hasContainer ? `<strong>Container No:</strong> ${cNum}` : '';
-        descLines.push(`<div>${vPart}${sep}${cPart}</div>`);
+      // Map truck number and container number pairs
+      const pairs: { truck: string; container: string }[] = [];
+      const rawContainers = Array.isArray((e as any).containers) ? (e as any).containers : [];
+      if (rawContainers.length > 0) {
+        rawContainers.forEach((rc: any) => {
+          const t = rc.vehicleNumber || rc.vehicleNo || vNum || '-';
+          const c = rc.containerNumber || rc.containerNo || cNum || '-';
+          pairs.push({ truck: t, container: c });
+        });
+      } else {
+        pairs.push({ truck: vNum || '-', container: cNum || '-' });
       }
 
-      const enqRoute = (e.containerFrom && e.containerTo) ? `${e.containerFrom} TO ${e.containerTo}` : '';
-      if (enqRoute) descLines.push(`<div><strong>Route:</strong> ${enqRoute}</div>`);
-
       const descriptionHtml = `
-        <div style="font-weight: 700; font-size: 11.5px; text-transform: uppercase; color: #000; margin-bottom: 2px;">
-          ${productTitle}
-        </div>
-        <div style="font-size: 11px; line-height: 1.35; color: #222;">
-          ${descLines.join('')}
-        </div>
+        <table style="width: 100%; border: none; border-collapse: collapse; margin: 0; padding: 0;">
+          <thead>
+            <tr>
+              <th style="border: none; text-align: left; padding: 0 14px 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">TRUCK NUMBER</th>
+              <th style="border: none; text-align: left; padding: 0 0 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">CONTAINER NUMBER</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pairs.map((p) => `
+              <tr>
+                <td style="border: none; text-align: left; padding: 2px 14px 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">${p.truck}</td>
+                <td style="border: none; text-align: left; padding: 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">${p.container}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
       `.trim();
 
       const plainDescription = [
-        productTitle,
-        `Count: ${countLabel}`,
-        vNum ? `Vehicle: ${vNum}` : null,
-        cNum ? `Container: ${cNum}` : null,
-        enqRoute ? `Route: ${enqRoute}` : null,
-      ].filter(Boolean).join('\n');
+        'TRUCK NUMBER\tCONTAINER NUMBER',
+        ...pairs.map((p) => `${p.truck}\t${p.container}`),
+      ].join('\n');
 
       const freightFormula = freightAmt > 0 ? `${count} X ${formatINR(unitRate)}` : '-';
 
@@ -407,34 +421,46 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
     const totalCount = (truckCount20 + truckCount40) || 1;
     const freightAmt = Number(bill.subtotal || bill.totalAmount) || 0;
     const unitRate = totalCount > 0 ? Math.round(freightAmt / totalCount) : freightAmt;
-    const sizeStr = (truckCount20 > 0 && truckCount40 === 0) ? '20 FT' : '40 FT';
-    const prodTitle = `${loadType.toUpperCase()} CONTAINER TRANSPORTATION (${sizeStr})`;
-    const countLabel = `${totalCount} Container${totalCount > 1 ? 's' : ''} (${sizeStr})`;
-
-    const descLines: string[] = [];
-    descLines.push(`<div><strong>Count:</strong> ${countLabel}</div>`);
-    const hasV = truckNumbers.length > 0;
-    const hasC = containerNumbers.length > 0;
-    if (hasV || hasC) {
-      const vText = hasV ? `<strong>Vehicle No:</strong> ${truckNumbers.join(', ')}` : '';
-      const sep = (hasV && hasC) ? ' &nbsp;|&nbsp; ' : '';
-      const cText = hasC ? `<strong>Container No:</strong> ${containerNumbers.join(', ')}` : '';
-      descLines.push(`<div>${vText}${sep}${cText}</div>`);
+    const pairs: { truck: string; container: string }[] = [];
+    const maxLen = Math.max(truckNumbers.length, containerNumbers.length);
+    if (maxLen > 0) {
+      for (let i = 0; i < maxLen; i++) {
+        pairs.push({
+          truck: truckNumbers[i] || truckNumbers[0] || '-',
+          container: containerNumbers[i] || containerNumbers[0] || '-',
+        });
+      }
+    } else {
+      pairs.push({ truck: '-', container: '-' });
     }
-    if (containerFrom && containerTo) descLines.push(`<div><strong>Route:</strong> ${containerFrom} TO ${containerTo}</div>`);
 
     const descriptionHtml = `
-      <div style="font-weight: 700; font-size: 11.5px; text-transform: uppercase; color: #000; margin-bottom: 2px;">
-        ${prodTitle}
-      </div>
-      <div style="font-size: 11px; line-height: 1.35; color: #222;">
-        ${descLines.join('')}
-      </div>
+      <table style="width: 100%; border: none; border-collapse: collapse; margin: 0; padding: 0;">
+        <thead>
+          <tr>
+            <th style="border: none; text-align: left; padding: 0 14px 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">TRUCK NUMBER</th>
+            <th style="border: none; text-align: left; padding: 0 0 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">CONTAINER NUMBER</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${pairs.map((p) => `
+            <tr>
+              <td style="border: none; text-align: left; padding: 2px 14px 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">${p.truck}</td>
+              <td style="border: none; text-align: left; padding: 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">${p.container}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
     `.trim();
+
+    const plainDescription = [
+      'TRUCK NUMBER\tCONTAINER NUMBER',
+      ...pairs.map((p) => `${p.truck}\t${p.container}`),
+    ].join('\n');
 
     charges.push({
       sNo: currentSNo++,
-      description: prodTitle,
+      description: plainDescription,
       descriptionHtml,
       freightFormula: freightAmt > 0 ? `${totalCount} X ${formatINR(unitRate)}` : undefined,
       freightCharges: freightAmt > 0 ? freightAmt : null,
@@ -471,6 +497,8 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
       id: bill.clientId,
       name: clientName,
       address: clientAddress,
+      gstin: clientGstin,
+      pan: clientPan,
     },
 
     company: {
@@ -481,6 +509,10 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
       pan: 'ASLPD2964M',
       phone: 'Tel: 42061100, Cell: 99417 80675',
       email: 'dharmasriponniammantrans@gmail.com',
+      bankName: 'HDFC BANK',
+      accountNo: '50200012345678',
+      ifscCode: 'HDFC0001234',
+      branch: 'PARRYS, CHENNAI',
     },
 
     loadType,
@@ -508,7 +540,8 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
 
     assets: {
       headerImage: getAssetDataUri('header.png'),
-      sealImage: getAssetDataUri('seal.png'),
+      sealAndSignatureImage: getAssetDataUri('seal-and-signature.png'),
+      sealImage: getAssetDataUri('seal-and-signature.png') || getAssetDataUri('seal.png'),
       signatureImage: getAssetDataUri('signature.png'),
     },
   };

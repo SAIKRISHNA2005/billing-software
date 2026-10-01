@@ -820,6 +820,9 @@ export default function ConsolidatedVendorReportPage() {
                       >
                         <Select.Option value="IMPORT">Import</Select.Option>
                         <Select.Option value="EXPORT">Export</Select.Option>
+                        <Select.Option value="EMPTY">Empty</Select.Option>
+                        <Select.Option value="OFFLOAD">Offload</Select.Option>
+                        <Select.Option value="FLATTRACK">Flattrack</Select.Option>
                       </Select>
                     </Col>
                     <Col xs={24} sm={12} md={5}>

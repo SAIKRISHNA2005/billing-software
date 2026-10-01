@@ -81,7 +81,7 @@ export function generateBillHtml(data: BillData): string {
   <style>
     @page {
       size: A4 portrait;
-      margin: 8mm 10mm;
+      margin: 3mm 10mm 6mm 10mm;
     }
     * {
       box-sizing: border-box;
@@ -101,18 +101,19 @@ export function generateBillHtml(data: BillData): string {
       width: 100%;
       max-width: 192mm;
       margin: 0 auto;
+      padding-top: 0;
     }
     /* FULL-WIDTH TOP STATIC HEADER */
     .top-header-full {
       width: 100%;
-      padding: 0 0 5px 0;
+      padding: 0 0 2px 0;
       position: relative;
       text-align: center;
     }
     .header-image-container {
       width: 100%;
       text-align: center;
-      margin: 0 0 3px 0;
+      margin: 0 0 2px 0;
       padding: 0;
     }
     .header-image-container img {
@@ -168,7 +169,9 @@ export function generateBillHtml(data: BillData): string {
       border: none !important;
       background: #fff;
       position: relative;
-      margin-bottom: 5px;
+      margin-top: 0;
+      margin-bottom: 2px;
+      padding-top: 0;
     }
     .header-image-container {
       width: 100%;
@@ -338,38 +341,40 @@ export function generateBillHtml(data: BillData): string {
       width: 100%;
     }
     .gst-pan-box {
-      width: 65%;
-      border-right: 1.5px solid #000;
-      padding: 8px 12px;
+      width: 60%;
+      border-right: none !important;
+      padding: 10px 14px 55px 14px;
       font-size: 11px;
+      min-height: 155px;
     }
     .seal-sign-box {
-      width: 35%;
-      padding: 8px 12px;
+      width: 40%;
+      padding: 10px 14px 20px 14px;
+      margin: 0;
       text-align: center;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      min-height: 80px;
-    }
-    .seal-placeholder-frame {
-      border: 1px solid #000;
-      height: 32px;
-      width: 130px;
-      margin: 2px auto 4px auto;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
-      color: #444;
-      background: #fff;
+      min-height: 155px;
+      overflow: hidden;
     }
-    .signatory-label {
-      border-top: 1px dotted #000;
-      margin-top: 10px;
-      padding-top: 3px;
-      font-size: 11px;
-      font-weight: bold;
+    .seal-sign-img-wrap {
+      width: 100%;
+      height: 100%;
+      min-height: 125px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 0;
+    }
+    .seal-sign-img-wrap img {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      max-height: 125px;
+      object-fit: contain;
+      display: block;
     }
   </style>
 </head>
@@ -426,14 +431,24 @@ export function generateBillHtml(data: BillData): string {
 
       <!-- 1. TOP 2-COLUMN SECTION -->
       <div class="info-split-row">
-        <!-- LEFT: TO SECTION (STRICTLY NO GST/PAN) -->
+        <!-- LEFT: TO SECTION WITH CLIENT GST, PAN & CONTAINER ROUTE -->
         <div class="info-left-to">
-          <div style="font-weight: bold; margin-bottom: 2px; font-size: 12px;">To :</div>
-          <div style="font-size: 13.5px; font-weight: 800; letter-spacing: 0.2px; margin-bottom: 3px; text-transform: uppercase;">
+          <div style="font-weight: bold; margin-bottom: 1px; font-size: 11px;">To :</div>
+          <div style="font-size: 13px; font-weight: 800; letter-spacing: 0.2px; margin-bottom: 2px; text-transform: uppercase;">
             ${data.client.name || 'CLIENT NAME'}
           </div>
-          <div style="white-space: pre-line; line-height: 1.35; font-size: 11px; color: #111;">
+          <div style="white-space: pre-line; line-height: 1.25; font-size: 10.5px; color: #111; margin-bottom: 4px;">
             ${data.client.address || 'Address on file'}
+          </div>
+          <div style="font-size: 10.5px; line-height: 1.35; margin-bottom: 4px;">
+            <div><span style="font-weight: bold;">GST NO :</span> ${data.client.gstin || '-'}</div>
+            <div><span style="font-weight: bold;">PAN NO :</span> ${data.client.pan || '-'}</div>
+          </div>
+          <div style="margin-top: 2px;">
+            <div style="font-weight: bold; font-size: 10.5px; margin-bottom: 2px;">Container From & To :</div>
+            <div class="route-box" style="margin: 0; text-align: left; padding: 2px 6px;">
+              ${data.routeText || (data.containerFrom && data.containerTo ? `${data.containerFrom} TO ${data.containerTo}` : 'LOCAL TRANSPORT')}
+            </div>
           </div>
         </div>
 
@@ -447,19 +462,14 @@ export function generateBillHtml(data: BillData): string {
             <div class="detail-label">Bill Date :</div>
             <div style="font-weight: bold;">${data.billDate || '-'}</div>
           </div>
-          <div class="detail-line" style="margin-top: 2px;">
+          <div class="detail-line" style="margin-top: 4px;">
             <div class="detail-label">Load Type :</div>
             <div style="display: flex; flex-wrap: wrap; gap: 4px;">
               ${loadTypes.map(lt => renderCheckbox(lt.label, lt.key)).join('')}
             </div>
           </div>
 
-          <div style="font-weight: bold; margin-top: 3px; font-size: 11px;">Container From & To :</div>
-          <div class="route-box">
-            ${data.routeText || (data.containerFrom && data.containerTo ? `${data.containerFrom} TO ${data.containerTo}` : 'LOCAL TRANSPORT')}
-          </div>
-
-          <div class="truck-type-row">
+          <div class="truck-type-row" style="margin-top: 10px;">
             <span style="font-weight: bold;">Truck Type :</span>
             <span>
               <span class="count-box">${data.truckCount20 || 0}</span>
@@ -506,41 +516,40 @@ export function generateBillHtml(data: BillData): string {
         Total Rupees in words : <span style="font-weight: normal; margin-left: 6px;">${data.totalInWords || 'Zero Rupees Only'}</span>
       </div>
 
-      <!-- 5. BOTTOM SECTION: GST/PAN & SEAL/SIGNATURE -->
+      <!-- 5. BOTTOM SECTION: GST/BANK DETAILS & SEAL/SIGNATURE -->
       <div class="bottom-section">
-        <!-- GST & PAN (Bottom Left) -->
+        <!-- GST & BANK DETAILS (Bottom Left) -->
         <div class="gst-pan-box">
-          <div style="font-weight: bold; font-size: 11.5px; margin-bottom: 4px;">GST Details</div>
-          <div style="display: flex; margin-bottom: 2px;">
-            <div style="width: 70px; font-weight: bold;">GST No</div>
+          <div style="font-weight: bold; font-size: 11.5px; margin-bottom: 5px; text-transform: uppercase;">GST & Bank Details</div>
+          <div style="display: grid; grid-template-columns: 85px auto; row-gap: 2.5px; font-size: 11px;">
+            <div style="font-weight: bold;">GST NO</div>
             <div>: ${data.company.gstin || '33ASLPD2964M1ZH'}</div>
-          </div>
-          <div style="display: flex;">
-            <div style="width: 70px; font-weight: bold;">PAN No</div>
+            <div style="font-weight: bold;">PAN NO</div>
             <div>: ${data.company.pan || 'ASLPD2964M'}</div>
+            <div style="font-weight: bold;">BANK NAME</div>
+            <div>: ${data.company.bankName || 'HDFC BANK'}</div>
+            <div style="font-weight: bold;">A/C NO</div>
+            <div>: ${data.company.accountNo || '50200012345678'}</div>
+            <div style="font-weight: bold;">IFSC CODE</div>
+            <div>: ${data.company.ifscCode || 'HDFC0001234'}</div>
+            <div style="font-weight: bold;">BRANCH</div>
+            <div>: ${data.company.branch || 'PARRYS, CHENNAI'}</div>
           </div>
+          <!-- Generous empty space below GST & Bank details inside box -->
+          <div style="height: 25px;"></div>
         </div>
 
-        <!-- SEAL & AUTHORISED SIGNATORY (Bottom Right) -->
+        <!-- SEAL & SIGNATURE (Bottom Right) -->
         <div class="seal-sign-box">
-          <div style="font-size: 11px; font-weight: bold; margin-bottom: 2px;">Seal</div>
-          ${data.assets?.sealImage ? `
-            <div style="margin: 0 auto;">
-              <img src="${data.assets.sealImage}" alt="Seal" style="max-height: 45px; max-width: 140px; object-fit: contain;" />
+          ${(data.assets?.sealAndSignatureImage || data.assets?.sealImage) ? `
+            <div class="seal-sign-img-wrap">
+              <img src="${data.assets.sealAndSignatureImage || data.assets.sealImage}" alt="Seal & Signature" />
             </div>
           ` : `
-            <div class="seal-placeholder-frame">
-              [ Seal ]
+            <div class="seal-placeholder-frame" style="width: 90%; height: 90px; margin: 0 auto; display: flex; align-items: center; justify-content: center; border: 1px dashed #999;">
+              [ Seal & Signature ]
             </div>
           `}
-          <div class="signatory-label">
-            ${data.assets?.signatureImage ? `
-              <div style="margin-bottom: 2px;">
-                <img src="${data.assets.signatureImage}" alt="Signature" style="max-height: 35px; max-width: 140px; object-fit: contain;" />
-              </div>
-            ` : ''}
-            Authorised Signatory
-          </div>
         </div>
       </div>
 

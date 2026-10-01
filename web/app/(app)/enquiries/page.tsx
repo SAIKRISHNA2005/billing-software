@@ -27,10 +27,12 @@ import {
   ReloadOutlined,
   FilterOutlined,
   FileTextOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ColumnsType } from 'antd/es/table';
+import dayjs from 'dayjs';
 import { apiClient } from '@/lib/api/client';
 import { AsyncMasterSelect } from '@/components/common/AsyncMasterSelect';
 import { formatCurrencyINR, formatDate } from '@/lib/utils/format';
@@ -38,6 +40,7 @@ import { STAGE_TAG_COLORS, STAGE_LABELS } from '@/lib/utils/enquiryValidation';
 import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 import { RecordDetailPopover } from '@/components/common/RecordDetailPopover';
 import { VehicleStatusToggle } from '@/components/common/VehicleStatusToggle';
+import { exportToExcel } from '@/lib/utils/exportHelper';
 import axios from 'axios';
 
 const { Title, Paragraph, Text } = Typography;
@@ -195,6 +198,54 @@ export default function EnquiriesListPage() {
     setStage(undefined);
     setDateRange(null);
     setPage(1);
+  };
+
+  const enquiryExportColumns = [
+    { key: 'enquiryNumber', title: 'Enquiry No' },
+    { key: 'transactionNumber', title: 'TXN Number' },
+    { key: 'date', title: 'Date' },
+    { key: 'companyName', title: 'Company' },
+    { key: 'clientName', title: 'Client' },
+    { key: 'loadingType', title: 'Loading Type' },
+    { key: 'vehicleNumber', title: 'Vehicle No' },
+    { key: 'driverInfo', title: 'Driver' },
+    { key: 'containerNumber', title: 'Container No' },
+    { key: 'sealNumber', title: 'Seal No' },
+    { key: 'stage', title: 'Stage' },
+    { key: 'freightAmount', title: 'Freight (INR)' },
+    { key: 'advanceAmount', title: 'Advance (INR)' },
+    { key: 'haltingAmount', title: 'Halting (INR)' },
+    { key: 'otherCharges', title: 'Other Charges (INR)' },
+    { key: 'billId', title: 'Bill / Invoice ID' },
+  ];
+
+  const handleExportFiltered = () => {
+    if (data.length === 0) {
+      message.warning('No enquiry records to export');
+      return;
+    }
+    exportToExcel(data, enquiryExportColumns, `Enquiries_Filtered_${dayjs().format('YYYY-MM-DD')}`);
+    message.success(`Exported ${data.length} filtered enquiry records to Excel`);
+  };
+
+  const handleExportAll = async () => {
+    try {
+      message.loading({ content: 'Fetching all enquiries for export...', key: 'exportEnq' });
+      const res = await apiClient.get<any>('/enquiries?limit=3000');
+      const allItems = res.data?.data?.items || data;
+      if (allItems.length === 0) {
+        message.warning({ content: 'No enquiries available to export', key: 'exportEnq' });
+        return;
+      }
+      exportToExcel(allItems, enquiryExportColumns, `Enquiries_ALL_${dayjs().format('YYYY-MM-DD')}`);
+      message.success({ content: `Exported all ${allItems.length} enquiry records to Excel`, key: 'exportEnq' });
+    } catch {
+      if (data.length > 0) {
+        exportToExcel(data, enquiryExportColumns, `Enquiries_ALL_${dayjs().format('YYYY-MM-DD')}`);
+      } else {
+        message.error({ content: 'Failed to fetch all enquiries for export', key: 'exportEnq' });
+      }
+    }
   };
 
   // Table Columns Definition
@@ -468,11 +519,16 @@ export default function EnquiriesListPage() {
           </Paragraph>
         </div>
 
-        <Link href="/enquiries/new">
-          <Button type="primary" icon={<PlusOutlined />} size="large">
-            Add New Enquiry
+        <Space wrap>
+          <Button icon={<DownloadOutlined />} onClick={handleExportAll}>
+            Export All
           </Button>
-        </Link>
+          <Link href="/enquiries/new">
+            <Button type="primary" icon={<PlusOutlined />} size="large">
+              Add New Enquiry
+            </Button>
+          </Link>
+        </Space>
       </div>
 
       {/* FILTER & SEARCH BAR */}
@@ -505,6 +561,9 @@ export default function EnquiriesListPage() {
               options={[
                 { value: 'Import', label: 'Import' },
                 { value: 'Export', label: 'Export' },
+                { value: 'Empty', label: 'Empty' },
+                { value: 'Offload', label: 'Offload' },
+                { value: 'Flattrack', label: 'Flattrack' },
               ]}
             />
           </Col>
@@ -530,6 +589,7 @@ export default function EnquiriesListPage() {
             <RangePicker
               format="DD-MM-YYYY"
               style={{ width: '100%' }}
+              value={dateRange && dateRange[0] && dateRange[1] ? [dayjs(dateRange[0], 'DD-MM-YYYY'), dayjs(dateRange[1], 'DD-MM-YYYY')] : null}
               onChange={(_, dateStrings) => {
                 if (dateStrings[0] && dateStrings[1]) {
                   setDateRange([dateStrings[0], dateStrings[1]]);
@@ -542,7 +602,13 @@ export default function EnquiriesListPage() {
           </Col>
 
           <Col xs={24} sm={12} md={4}>
-            <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+            <Space wrap style={{ width: '100%', justifyContent: 'flex-end' }}>
+              <Button type="primary" onClick={() => { setPage(1); fetchEnquiries(); }}>
+                Filter
+              </Button>
+              <Button icon={<DownloadOutlined />} onClick={handleExportFiltered}>
+                Export Filtered
+              </Button>
               <Button icon={<ReloadOutlined />} onClick={fetchEnquiries} loading={loading}>
                 Refresh
               </Button>

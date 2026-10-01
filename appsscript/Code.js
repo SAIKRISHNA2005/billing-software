@@ -77,6 +77,7 @@ const ACTION_HANDLERS = {
   'vehicles.deactivate': function(payload, sessionToken) { return MasterDataModule.deactivate('vehicles', payload.id, sessionToken); },
   'vehicles.reactivate': function(payload, sessionToken) { return MasterDataModule.reactivate('vehicles', payload.id, sessionToken); },
   'vehicles.lookup': function(payload, sessionToken) { return MasterDataModule.lookup('vehicles', payload, sessionToken); },
+  'vehicles.alerts': function(payload, sessionToken) { return MasterDataModule.getVehicleExpiryAlerts(); },
 
   // Master Data Generic Actions: Drivers
   'drivers.list': function(payload, sessionToken) { return MasterDataModule.list('drivers', payload, sessionToken); },
@@ -351,6 +352,49 @@ function handleHealthCheck(payload, sessionToken) {
  * Web App GET Entrypoint (Convenience / Ping)
  */
 function doGet(e) {
+  try {
+    if (e && e.parameter && (e.parameter.action || e.parameter.data)) {
+      var action = e.parameter.action;
+      var payload = {};
+      var sessionToken = e.parameter.sessionToken || '';
+
+      if (e.parameter.data) {
+        try {
+          var parsed = JSON.parse(e.parameter.data);
+          if (parsed.action) action = parsed.action;
+          if (parsed.payload) payload = parsed.payload;
+          if (parsed.sessionToken) sessionToken = parsed.sessionToken;
+        } catch (pe) {
+          // ignore
+        }
+      } else if (e.parameter.payload) {
+        try {
+          payload = JSON.parse(e.parameter.payload);
+        } catch (pe) {
+          payload = e.parameter.payload;
+        }
+      }
+
+      if (action && ACTION_HANDLERS[action]) {
+        var handler = ACTION_HANDLERS[action];
+        var result = handler(payload, sessionToken);
+        return createJsonResponse({
+          success: true,
+          data: result,
+          message: "Operation completed successfully",
+          errors: [],
+        });
+      }
+    }
+  } catch (err) {
+    return createJsonResponse({
+      success: false,
+      data: null,
+      message: err.message || "An unexpected server error occurred",
+      errors: [{ message: err.message || "Internal error" }],
+    });
+  }
+
   return createJsonResponse({
     success: true,
     data: {
@@ -359,7 +403,7 @@ function doGet(e) {
       runtime: "Apps Script V8",
       timestamp: new Date().toISOString(),
     },
-    message: "TMS Apps Script Web App is active. Send POST requests to invoke actions.",
+    message: "TMS Apps Script Web App is active and operational.",
     errors: [],
   });
 }

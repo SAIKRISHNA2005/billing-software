@@ -350,15 +350,10 @@ export default function ConsolidatedBillingReportPage() {
     }
   };
 
-  // Export Billing Invoices to CSV
-  const handleExportCSV = () => {
-    if (filteredInvoices.length === 0) {
-      message.warning('No billing records to export');
-      return;
-    }
-
+  // Export Billing Invoices helper
+  const exportInvoicesToCSV = (rows: any[], filename: string) => {
     const headers = ['Bill Number', 'Financial Year', 'Billing Date', 'Company', 'Client', 'Status', 'Total Amount'];
-    const csvRows = filteredInvoices.map((b) => [
+    const csvRows = rows.map((b) => [
       `"${b.billNumber || ''}"`,
       `"${b.financialYear || ''}"`,
       `"${b.billingDate || ''}"`,
@@ -372,11 +367,37 @@ export default function ConsolidatedBillingReportPage() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `TMS_Billing_Report_${dayjs().format('YYYY-MM-DD')}.csv`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    message.success('Billing report exported to CSV successfully');
+  };
+
+  const handleExportFiltered = () => {
+    if (filteredInvoices.length === 0) {
+      message.warning('No filtered billing records to export');
+      return;
+    }
+    exportInvoicesToCSV(filteredInvoices, `TMS_Billing_Report_Filtered_${dayjs().format('YYYY-MM-DD')}.csv`);
+    message.success(`Exported ${filteredInvoices.length} filtered billing records`);
+  };
+
+  const handleExportAll = () => {
+    if (invoices.length === 0) {
+      message.warning('No billing records to export');
+      return;
+    }
+    exportInvoicesToCSV(invoices, `TMS_Billing_Report_ALL_${dayjs().format('YYYY-MM-DD')}.csv`);
+    message.success(`Exported all ${invoices.length} billing records`);
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setFinancialYear('');
+    setCompanyFilter(undefined);
+    setClientFilter(undefined);
+    setStatusFilter('');
+    setDateRange(null);
   };
 
   // Columns for Tab 1: Invoices
@@ -653,8 +674,8 @@ export default function ConsolidatedBillingReportPage() {
             <Button icon={<ReloadOutlined />} onClick={fetchBillingReport}>
               Refresh
             </Button>
-            <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
-              Export Excel
+            <Button icon={<DownloadOutlined />} onClick={handleExportAll}>
+              Export All
             </Button>
             <Button icon={<PrinterOutlined />} onClick={() => window.print()}>
               Print PDF
@@ -736,8 +757,8 @@ export default function ConsolidatedBillingReportPage() {
               <div>
                 {/* Invoices Filters */}
                 <Card bordered={false} style={{ marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                  <Row gutter={[16, 16]} align="middle">
-                    <Col xs={24} sm={12} md={5}>
+                  <Row gutter={[12, 12]} align="middle">
+                    <Col xs={24} sm={12} md={4}>
                       <Input
                         placeholder="Search Bill No, Client, Company..."
                         prefix={<SearchOutlined />}
@@ -746,7 +767,7 @@ export default function ConsolidatedBillingReportPage() {
                         allowClear
                       />
                     </Col>
-                    <Col xs={24} sm={12} md={4}>
+                    <Col xs={24} sm={12} md={3}>
                       <Select
                         placeholder="Financial Year"
                         style={{ width: '100%' }}
@@ -800,13 +821,28 @@ export default function ConsolidatedBillingReportPage() {
                         <Select.Option value="DRAFT">DRAFT</Select.Option>
                       </Select>
                     </Col>
-                    <Col xs={24} sm={12} md={4}>
+                    <Col xs={24} sm={12} md={6}>
                       <RangePicker
                         style={{ width: '100%' }}
                         format="DD/MM/YYYY"
                         value={dateRange}
                         onChange={(dates) => setDateRange(dates as any)}
                       />
+                    </Col>
+                  </Row>
+                  <Row justify="end" style={{ marginTop: 12 }}>
+                    <Col>
+                      <Space>
+                        <Button type="primary" onClick={fetchBillingReport}>
+                          Filter
+                        </Button>
+                        <Button onClick={handleResetFilters}>
+                          Reset
+                        </Button>
+                        <Button icon={<DownloadOutlined />} onClick={handleExportFiltered}>
+                          Export Filtered
+                        </Button>
+                      </Space>
                     </Col>
                   </Row>
                 </Card>

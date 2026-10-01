@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import {
   Table,
   Button,
@@ -17,1219 +17,1117 @@ import {
   message,
   Row,
   Col,
-  Tabs,
+  Descriptions,
+  Badge,
+  Popconfirm,
+  Statistic,
   Alert,
 } from 'antd';
 import {
   SearchOutlined,
   ReloadOutlined,
   CarOutlined,
-  ClockCircleOutlined,
   EditOutlined,
   EyeOutlined,
-  CheckCircleOutlined,
   PlusOutlined,
   ExclamationCircleOutlined,
   FileDoneOutlined,
+  DownloadOutlined,
+  DeleteOutlined,
+  UploadOutlined,
+  WarningOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons';
-import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
-import type { ColumnsType } from 'antd/es/table';
-import dayjs from 'dayjs';
-import { apiClient } from '@/lib/api/client';
-import { AsyncMasterSelect } from '@/components/common/AsyncMasterSelect';
-import { formatDateTime, formatDate, formatCurrencyINR } from '@/lib/utils/format';
-import { STAGE_TAG_COLORS, STAGE_LABELS } from '@/lib/utils/enquiryValidation';
 import { VehicleStatusToggle } from '@/components/common/VehicleStatusToggle';
-import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
+import { useSearchParams, useRouter } from 'next/navigation';
+import dayjs from 'dayjs';
+import axios from 'axios';
+import { exportToExcel } from '@/lib/utils/exportHelper';
+import { useTheme } from '@/components/providers/ThemeContext';
 
 const { Title, Text, Paragraph } = Typography;
-const { RangePicker } = DatePicker;
 
-// Types
-interface MovementRow {
+export interface VehicleRecord {
   id: string;
-  enquiryNumber: number | string;
-  transactionNumber: string;
-  date: string;
-  companyId: string;
-  companyName?: string;
-  clientId: string;
-  clientName?: string;
-  loadingType: 'Import' | 'Export';
-  vehicleNumber?: string;
-  driverInfo?: string;
-  containerNumber?: string;
-  sealNumber?: string;
-  stage: string;
-  movement?: {
-    id?: string;
-    companyInTime?: string;
-    companyOutTime?: string;
-    printInTime?: string;
-    printOutTime?: string;
-    portInTime?: string;
-    portOutTime?: string;
-    movementStatus?: string;
-    shippingStatus?: string;
-  };
+  vehicleNumber: string;
+  ownerName?: string;
+  registeringAuthority?: string;
+  vehicleClass?: string;
+  fuelType?: string;
+  emissionNorm?: string;
+  vehicleAge?: string;
+  hypothecated?: string;
+  vehicleStatus?: string;
+  registrationDate?: string;
+  fitnessValidUpTo?: string;
+  taxValidUpTo?: string;
+  insuranceValidUpTo?: string;
+  puccValidUpTo?: string;
+  permitValidUpTo?: string;
+  nationalPermitValidUpTo?: string;
+  vehicleType?: string;
+  vendorId?: string;
+  active?: boolean | string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-interface PendingRow {
-  id: string;
-  enquiryNumber: number | string;
-  transactionNumber: string;
-  date: string;
-  companyId: string;
-  companyName?: string;
-  clientId: string;
-  clientName?: string;
-  loadingType: 'Import' | 'Export';
-  vehicleNumber?: string;
-  driverInfo?: string;
-  containerNumber?: string;
-  sealNumber?: string;
-  stage: string;
-  movement?: {
-    companyInTime?: string;
-    companyOutTime?: string;
-    portInTime?: string;
-    portOutTime?: string;
-    movementStatus?: string;
-    shippingStatus?: string;
-  };
-}
-
-interface CompletedRow {
-  id: string;
-  enquiryNumber: number | string;
-  transactionNumber: string;
-  date: string;
-  completedAt?: string;
-  companyId: string;
-  companyName?: string;
-  clientId: string;
-  clientName?: string;
-  loadingType: 'Import' | 'Export';
-  vehicleNumber?: string;
-  driverInfo?: string;
-  containerNumber?: string;
-  stage: string;
-  billId?: string;
-  vendorFinance?: {
-    totalPayable?: number;
-    balance?: number;
-  };
-}
+const VALIDITY_FIELDS = [
+  { key: 'fitnessValidUpTo', label: 'Fitness Valid UpTo' },
+  { key: 'taxValidUpTo', label: 'Tax Valid UpTo' },
+  { key: 'insuranceValidUpTo', label: 'Insurance Valid UpTo' },
+  { key: 'puccValidUpTo', label: 'PUCC Valid UpTo' },
+  { key: 'permitValidUpTo', label: 'Permit Valid UpTo' },
+  { key: 'nationalPermitValidUpTo', label: 'National Permit Valid UpTo' },
+];
 
 function VehicleManagementContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab = searchParams.get('tab') || 'movement';
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const highlightVehicleId = searchParams.get('vehicleId');
+  const { themeMode } = useTheme();
+  const isDark = themeMode === 'dark';
 
-  // Sync tab with URL
-  const handleTabChange = (key: string) => {
-    setActiveTab(key);
-    router.replace(`/operations/movement?tab=${key}`, { scroll: false });
-  };
+  const [loading, setLoading] = useState(false);
+  const [vehicles, setVehicles] = useState<VehicleRecord[]>([]);
+  const [searchText, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [expiryFilter, setExpiryFilter] = useState<string>('ALL');
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null);
 
-  // ==========================================
-  // TAB 1: ALL / CURRENT MOVEMENT STATE
-  // ==========================================
-  const [movData, setMovData] = useState<MovementRow[]>([]);
-  const [movLoading, setMovLoading] = useState(false);
-  const [movTotal, setMovTotal] = useState(0);
-  const [movPage, setMovPage] = useState(1);
-  const [movPageSize, setMovPageSize] = useState(20);
-  const [movSearch, setMovSearch] = useState('');
-  const [movCompanyId, setMovCompanyId] = useState<string | undefined>();
-  const [movClientId, setMovClientId] = useState<string | undefined>();
-  const [movVendorId, setMovVendorId] = useState<string | undefined>();
-  const [movLoadingType, setMovLoadingType] = useState<string | undefined>();
-  const [movDateRange, setMovDateRange] = useState<[string, string] | null>(null);
+  // Modals
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleRecord | null>(null);
 
-  // Quick edit modal
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [selectedMovRecord, setSelectedMovRecord] = useState<MovementRow | null>(null);
-  const [submittingMov, setSubmittingMov] = useState(false);
-  const [movForm] = Form.useForm();
+  const [formModalOpen, setFormModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form] = Form.useForm();
 
-  const fetchMovements = useCallback(async () => {
-    setMovLoading(true);
+  // Documents Placeholder Modal
+  const [docModalOpen, setDocModalOpen] = useState(false);
+  const [docVehicle, setDocVehicle] = useState<VehicleRecord | null>(null);
+
+  const fetchVehicles = useCallback(async () => {
+    setLoading(true);
     try {
-      const query = new URLSearchParams({
-        page: String(movPage),
-        limit: String(movPageSize),
-        sortField: 'enquiryNumber',
-        sortOrder: 'desc',
-      });
-
-      if (movSearch.trim()) query.set('search', movSearch.trim());
-      if (movCompanyId) query.set('companyId', movCompanyId);
-      if (movClientId) query.set('clientId', movClientId);
-      if (movVendorId) query.set('vendorId', movVendorId);
-      if (movLoadingType) query.set('loadingType', movLoadingType);
-      if (movDateRange && movDateRange[0] && movDateRange[1]) {
-        query.set('dateFrom', movDateRange[0]);
-        query.set('dateTo', movDateRange[1]);
-      }
-
-      const res = await apiClient.get<any>(`/operations/movements?${query.toString()}`);
+      const res = await axios.get('/api/vehicles?limit=500');
       if (res.data?.success && res.data?.data) {
-        setMovData(res.data.data.items || []);
-        setMovTotal(res.data.data.total || 0);
+        const items: VehicleRecord[] = res.data.data.items || [];
+        setVehicles(items);
+
+        // If URL has vehicleId query param, auto-open details
+        if (highlightVehicleId) {
+          const match = items.find((v) => v.id === highlightVehicleId || v.vehicleNumber === highlightVehicleId);
+          if (match) {
+            setSelectedVehicle(match);
+            setDetailsModalOpen(true);
+          }
+        }
+      } else {
+        message.error(res.data?.message || 'Failed to fetch vehicles');
       }
     } catch {
-      message.error('Error fetching vehicle movements');
+      message.error('Error connecting to backend for vehicles');
     } finally {
-      setMovLoading(false);
+      setLoading(false);
     }
-  }, [movPage, movPageSize, movSearch, movCompanyId, movClientId, movVendorId, movLoadingType, movDateRange]);
+  }, [highlightVehicleId]);
 
   useEffect(() => {
-    fetchMovements();
-  }, [fetchMovements]);
+    fetchVehicles();
+  }, [fetchVehicles]);
 
-  const handleOpenEdit = (record: MovementRow) => {
-    setSelectedMovRecord(record);
-    const mov = record.movement || {};
-    const timeKeys = ['companyInTime', 'companyOutTime', 'printInTime', 'printOutTime', 'portInTime', 'portOutTime'];
-    const initialVals: Record<string, any> = {
-      movementStatus: mov.movementStatus || 'NOT_MOVED',
-      shippingStatus: mov.shippingStatus || 'PENDING',
-    };
+  // Check validity status for any date
+  const checkValidity = (dateStr?: string) => {
+    if (!dateStr || dateStr === '-' || dateStr.trim() === '') {
+      return { status: 'none', days: 0, text: 'Not Available' };
+    }
+    const d = dayjs(dateStr);
+    if (!d.isValid()) {
+      return { status: 'none', days: 0, text: dateStr };
+    }
+    const today = dayjs().startOf('day');
+    const target = d.startOf('day');
+    const diffDays = target.diff(today, 'day');
 
-    timeKeys.forEach((key) => {
-      const val = mov[key as keyof typeof mov];
+    if (diffDays < 0) {
+      return { status: 'expired', days: diffDays, text: `Expired (${Math.abs(diffDays)}d ago)` };
+    }
+    if (diffDays <= 3) {
+      return { status: 'critical', days: diffDays, text: `Expiring in ${diffDays} day(s)` };
+    }
+    if (diffDays <= 30) {
+      return { status: 'warning', days: diffDays, text: `${diffDays} days left` };
+    }
+    return { status: 'ok', days: diffDays, text: 'Valid' };
+  };
+
+  // Check if a vehicle has any critical/expired validity
+  const getVehicleAlerts = (v: VehicleRecord) => {
+    const alerts: Array<{ label: string; dateStr: string; status: string; days: number; text: string }> = [];
+    VALIDITY_FIELDS.forEach((f) => {
+      const val = v[f.key as keyof VehicleRecord] as string | undefined;
       if (val) {
-        initialVals[key] = dayjs(val, 'DD-MM-YYYY hh:mm A').isValid()
-          ? dayjs(val, 'DD-MM-YYYY hh:mm A')
-          : dayjs(val).isValid()
-          ? dayjs(val)
-          : undefined;
+        const res = checkValidity(val);
+        if (res.status === 'expired' || res.status === 'critical') {
+          alerts.push({
+            label: f.label,
+            dateStr: val,
+            status: res.status,
+            days: res.days,
+            text: res.text,
+          });
+        }
       }
     });
-
-    movForm.setFieldsValue(initialVals);
-    setEditModalOpen(true);
+    return alerts;
   };
 
-  const handleSetNow = (fieldName: string) => {
-    movForm.setFieldsValue({ [fieldName]: dayjs() });
+  // Filtered vehicles
+  const filteredVehicles = useMemo(() => {
+    return vehicles.filter((v) => {
+      if (statusFilter !== 'ALL') {
+        const stat = (v.vehicleStatus || (v.active ? 'ACTIVE' : 'INACTIVE')).toUpperCase();
+        if (statusFilter === 'ACTIVE' && stat !== 'ACTIVE') return false;
+        if (statusFilter === 'INACTIVE' && stat !== 'INACTIVE') return false;
+      }
+
+      if (expiryFilter === 'ALERTS') {
+        const alerts = getVehicleAlerts(v);
+        if (alerts.length === 0) return false;
+      } else if (expiryFilter === 'EXPIRED') {
+        const alerts = getVehicleAlerts(v);
+        if (!alerts.some((a) => a.status === 'expired')) return false;
+      }
+
+      if (searchText.trim()) {
+        const q = searchText.toLowerCase().trim();
+        const num = String(v.vehicleNumber || '').toLowerCase();
+        const owner = String(v.ownerName || '').toLowerCase();
+        const auth = String(v.registeringAuthority || '').toLowerCase();
+        const vClass = String(v.vehicleClass || '').toLowerCase();
+        if (!num.includes(q) && !owner.includes(q) && !auth.includes(q) && !vClass.includes(q)) {
+          return false;
+        }
+      }
+
+      if (dateRange && dateRange[0] && dateRange[1]) {
+        const d = dayjs(v.registrationDate);
+        if (d.isValid()) {
+          if (d.isBefore(dateRange[0].startOf('day')) || d.isAfter(dateRange[1].endOf('day'))) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    });
+  }, [vehicles, searchText, statusFilter, expiryFilter, dateRange]);
+
+  // Overall Statistics
+  const stats = useMemo(() => {
+    let active = 0;
+    let totalAlerts = 0;
+    let expiredCount = 0;
+
+    vehicles.forEach((v) => {
+      const stat = (v.vehicleStatus || (v.active ? 'ACTIVE' : 'INACTIVE')).toUpperCase();
+      if (stat === 'ACTIVE') active++;
+      const alerts = getVehicleAlerts(v);
+      if (alerts.length > 0) totalAlerts++;
+      if (alerts.some((a) => a.status === 'expired')) expiredCount++;
+    });
+
+    return {
+      total: vehicles.length,
+      active,
+      totalAlerts,
+      expiredCount,
+    };
+  }, [vehicles]);
+
+  // Handle Open Create Modal
+  const handleOpenCreate = () => {
+    setIsEditing(false);
+    setSelectedVehicle(null);
+    form.resetFields();
+    form.setFieldsValue({
+      vehicleStatus: 'ACTIVE',
+      fuelType: 'DIESEL',
+      hypothecated: 'No',
+      emissionNorm: 'BS-IV',
+    });
+    setFormModalOpen(true);
   };
 
-  const handleSaveMovement = async (values: any) => {
-    if (!selectedMovRecord) return;
-    setSubmittingMov(true);
+  // Handle Open Edit Modal
+  const handleOpenEdit = (v: VehicleRecord) => {
+    setIsEditing(true);
+    setSelectedVehicle(v);
+    form.resetFields();
+    form.setFieldsValue({
+      vehicleNumber: v.vehicleNumber,
+      ownerName: v.ownerName,
+      registeringAuthority: v.registeringAuthority,
+      vehicleClass: v.vehicleClass || 'Articulated Vehicle(HGV)',
+      fuelType: v.fuelType || 'DIESEL',
+      emissionNorm: v.emissionNorm || 'Not Available',
+      vehicleAge: v.vehicleAge,
+      hypothecated: v.hypothecated || 'No',
+      vehicleStatus: v.vehicleStatus || (v.active ? 'ACTIVE' : 'INACTIVE'),
+      registrationDate: v.registrationDate ? dayjs(v.registrationDate) : undefined,
+      fitnessValidUpTo: v.fitnessValidUpTo ? dayjs(v.fitnessValidUpTo) : undefined,
+      taxValidUpTo: v.taxValidUpTo ? dayjs(v.taxValidUpTo) : undefined,
+      insuranceValidUpTo: v.insuranceValidUpTo ? dayjs(v.insuranceValidUpTo) : undefined,
+      puccValidUpTo: v.puccValidUpTo ? dayjs(v.puccValidUpTo) : undefined,
+      permitValidUpTo: v.permitValidUpTo ? dayjs(v.permitValidUpTo) : undefined,
+      nationalPermitValidUpTo: v.nationalPermitValidUpTo ? dayjs(v.nationalPermitValidUpTo) : undefined,
+    });
+    setFormModalOpen(true);
+  };
+
+  // Handle Save (Create or Update)
+  const handleSaveVehicle = async (values: any) => {
+    setSaving(true);
     try {
       const payload: Record<string, any> = {
-        movementStatus: values.movementStatus,
-        shippingStatus: values.shippingStatus,
+        vehicleNumber: String(values.vehicleNumber || '').toUpperCase().trim(),
+        ownerName: values.ownerName || '',
+        registeringAuthority: values.registeringAuthority || '',
+        vehicleClass: values.vehicleClass || 'Articulated Vehicle(HGV)',
+        fuelType: values.fuelType || 'DIESEL',
+        emissionNorm: values.emissionNorm || 'Not Available',
+        vehicleAge: values.vehicleAge || '',
+        hypothecated: values.hypothecated || 'No',
+        vehicleStatus: values.vehicleStatus || 'ACTIVE',
+        active: values.vehicleStatus === 'ACTIVE',
+        registrationDate: values.registrationDate ? dayjs(values.registrationDate).format('YYYY-MM-DD') : '',
+        fitnessValidUpTo: values.fitnessValidUpTo ? dayjs(values.fitnessValidUpTo).format('YYYY-MM-DD') : '',
+        taxValidUpTo: values.taxValidUpTo ? dayjs(values.taxValidUpTo).format('YYYY-MM-DD') : '',
+        insuranceValidUpTo: values.insuranceValidUpTo ? dayjs(values.insuranceValidUpTo).format('YYYY-MM-DD') : '',
+        puccValidUpTo: values.puccValidUpTo ? dayjs(values.puccValidUpTo).format('YYYY-MM-DD') : '',
+        permitValidUpTo: values.permitValidUpTo ? dayjs(values.permitValidUpTo).format('YYYY-MM-DD') : '',
+        nationalPermitValidUpTo: values.nationalPermitValidUpTo ? dayjs(values.nationalPermitValidUpTo).format('YYYY-MM-DD') : '',
       };
 
-      const timeKeys = ['companyInTime', 'companyOutTime', 'printInTime', 'printOutTime', 'portInTime', 'portOutTime'];
-      timeKeys.forEach((k) => {
-        if (values[k] && dayjs.isDayjs(values[k])) {
-          payload[k] = values[k].format('DD-MM-YYYY hh:mm A');
+      if (isEditing && selectedVehicle) {
+        const res = await axios.put(`/api/vehicles/${selectedVehicle.id}`, payload);
+        if (res.data?.success) {
+          message.success(`Vehicle ${payload.vehicleNumber} updated successfully!`);
+          setFormModalOpen(false);
+          fetchVehicles();
         } else {
-          payload[k] = '';
+          message.error(res.data?.message || 'Failed to update vehicle');
         }
-      });
-
-      const res = await apiClient.patch<any>(`/enquiries/${selectedMovRecord.id}/movement`, payload);
-      if (res.data?.success) {
-        message.success('Gate times & movement status updated successfully!');
-        setEditModalOpen(false);
-        fetchMovements();
       } else {
-        message.error(res.data?.message || 'Failed to update movement status');
-      }
-    } catch {
-      message.error('Error updating movement');
-    } finally {
-      setSubmittingMov(false);
-    }
-  };
-
-  // ==========================================
-  // TAB 2: PENDING JOBS STATE
-  // ==========================================
-  const [pendingData, setPendingData] = useState<PendingRow[]>([]);
-  const [pendingLoading, setPendingLoading] = useState(false);
-  const [pendingTotal, setPendingTotal] = useState(0);
-  const [pendingPage, setPendingPage] = useState(1);
-  const [pendingPageSize, setPendingPageSize] = useState(20);
-  const [pendingSearch, setPendingSearch] = useState('');
-  const [pendingCompanyId, setPendingCompanyId] = useState<string | undefined>();
-  const [pendingClientId, setPendingClientId] = useState<string | undefined>();
-  const [pendingStage, setPendingStage] = useState<string | undefined>();
-
-  // Complete job modal
-  const [completeModalOpen, setCompleteModalOpen] = useState(false);
-  const [selectedPendingRecord, setSelectedPendingRecord] = useState<PendingRow | null>(null);
-  const [portOutTime, setPortOutTime] = useState<dayjs.Dayjs | null>(dayjs());
-  const [completing, setCompleting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const fetchPendingJobs = useCallback(async () => {
-    setPendingLoading(true);
-    try {
-      const query = new URLSearchParams({
-        page: String(pendingPage),
-        limit: String(pendingPageSize),
-        sortField: 'enquiryNumber',
-        sortOrder: 'desc',
-      });
-
-      if (pendingSearch.trim()) query.set('search', pendingSearch.trim());
-      if (pendingCompanyId) query.set('companyId', pendingCompanyId);
-      if (pendingClientId) query.set('clientId', pendingClientId);
-      if (pendingStage) query.set('stage', pendingStage);
-
-      const res = await apiClient.get<any>(`/operations/pending?${query.toString()}`);
-      if (res.data?.success && res.data?.data) {
-        setPendingData(res.data.data.items || []);
-        setPendingTotal(res.data.data.total || 0);
-      }
-    } catch {
-      message.error('Error fetching pending jobs');
-    } finally {
-      setPendingLoading(false);
-    }
-  }, [pendingPage, pendingPageSize, pendingSearch, pendingCompanyId, pendingClientId, pendingStage]);
-
-  useEffect(() => {
-    if (activeTab === 'pending') {
-      fetchPendingJobs();
-    }
-  }, [activeTab, fetchPendingJobs]);
-
-  const handleInitiateComplete = (record: PendingRow) => {
-    setSelectedPendingRecord(record);
-    setErrorMessage(null);
-
-    const hasPortOut = Boolean(record.movement?.portOutTime);
-    if (hasPortOut && record.stage === 'PORT_MOVEMENT') {
-      Modal.confirm({
-        title: `Mark Job Completed: ${record.transactionNumber}?`,
-        icon: <CheckCircleOutlined style={{ color: '#3F6F4A' }} />,
-        content: `Port Gate-Out recorded at ${record.movement?.portOutTime}. Completing will auto-sync expenses and mark ready for billing.`,
-        okText: 'Yes, Complete Job',
-        okType: 'primary',
-        onOk: async () => {
-          try {
-            const res = await apiClient.post<any>(`/enquiries/${record.id}/stage`, {
-              toStage: 'COMPLETED',
-              remarks: 'Marked Completed via Vehicle Management Control',
-            });
-            if (res.data?.success) {
-              message.success(`Job ${record.transactionNumber} marked as COMPLETED!`);
-              fetchPendingJobs();
-              fetchMovements();
-            } else {
-              message.error(res.data?.message || 'Failed to complete job');
-            }
-          } catch {
-            message.error('Failed to complete job');
-          }
-        },
-      });
-    } else {
-      setPortOutTime(dayjs());
-      setCompleteModalOpen(true);
-    }
-  };
-
-  const handleConfirmCompleteWithPortOut = async () => {
-    if (!selectedPendingRecord) return;
-    setCompleting(true);
-    setErrorMessage(null);
-
-    try {
-      if (portOutTime) {
-        const timeFormatted = portOutTime.format('DD-MM-YYYY hh:mm A');
-        await apiClient.patch<any>(`/enquiries/${selectedPendingRecord.id}/movement`, {
-          portOutTime: timeFormatted,
-          shippingStatus: 'COMPLETED',
-          movementStatus: 'MOVED',
-        });
-      }
-
-      const stageChain = ['ENQUIRY_CREATED', 'VEHICLE_ASSIGNED', 'CONTAINER_MOVEMENT', 'PORT_MOVEMENT', 'COMPLETED'];
-      const currentIdx = stageChain.indexOf(selectedPendingRecord.stage);
-
-      if (currentIdx < 0) {
-        throw new Error(`Current stage ${selectedPendingRecord.stage} cannot be completed.`);
-      }
-
-      for (let i = currentIdx + 1; i < stageChain.length; i++) {
-        const targetStage = stageChain[i];
-        const stepRes = await apiClient.post<any>(`/enquiries/${selectedPendingRecord.id}/stage`, {
-          toStage: targetStage,
-          remarks: `Advanced to ${targetStage} via Vehicle Management Control`,
-        });
-
-        if (!stepRes.data?.success) {
-          throw new Error(stepRes.data?.message || `Failed to transition to ${targetStage}`);
+        const res = await axios.post('/api/vehicles', payload);
+        if (res.data?.success) {
+          message.success(`Vehicle ${payload.vehicleNumber} added successfully!`);
+          setFormModalOpen(false);
+          fetchVehicles();
+        } else {
+          message.error(res.data?.message || 'Failed to add vehicle');
         }
       }
-
-      message.success(`Job ${selectedPendingRecord.transactionNumber} marked as COMPLETED!`);
-      setCompleteModalOpen(false);
-      fetchPendingJobs();
-      fetchMovements();
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || err.message || 'Failed to complete job');
+      message.error(err.response?.data?.message || 'Error saving vehicle');
     } finally {
-      setCompleting(false);
+      setSaving(false);
     }
   };
 
-  // ==========================================
-  // TAB 3: COMPLETED JOBS STATE
-  // ==========================================
-  const [compData, setCompData] = useState<CompletedRow[]>([]);
-  const [compLoading, setCompLoading] = useState(false);
-  const [compTotal, setCompTotal] = useState(0);
-  const [compPage, setCompPage] = useState(1);
-  const [compPageSize, setCompPageSize] = useState(20);
-  const [compSearch, setCompSearch] = useState('');
-  const [compCompanyId, setCompCompanyId] = useState<string | undefined>();
-  const [compClientId, setCompClientId] = useState<string | undefined>();
-
-  const fetchCompletedJobs = useCallback(async () => {
-    setCompLoading(true);
+  // Handle Deactivate / Delete
+  const handleDeleteVehicle = async (v: VehicleRecord) => {
     try {
-      const query = new URLSearchParams({
-        page: String(compPage),
-        limit: String(compPageSize),
-        sortField: 'completedAt',
-        sortOrder: 'desc',
-      });
-
-      if (compSearch.trim()) query.set('search', compSearch.trim());
-      if (compCompanyId) query.set('companyId', compCompanyId);
-      if (compClientId) query.set('clientId', compClientId);
-
-      const res = await apiClient.get<any>(`/operations/completed?${query.toString()}`);
-      if (res.data?.success && res.data?.data) {
-        setCompData(res.data.data.items || []);
-        setCompTotal(res.data.data.total || 0);
+      const res = await axios.delete(`/api/vehicles/${v.id}`);
+      if (res.data?.success) {
+        message.success(`Vehicle ${v.vehicleNumber} deactivated successfully`);
+        fetchVehicles();
+      } else {
+        message.error(res.data?.message || 'Failed to deactivate vehicle');
       }
     } catch {
-      message.error('Error fetching completed jobs');
-    } finally {
-      setCompLoading(false);
+      message.error('Error deactivating vehicle');
     }
-  }, [compPage, compPageSize, compSearch, compCompanyId, compClientId]);
+  };
 
-  useEffect(() => {
-    if (activeTab === 'completed') {
-      fetchCompletedJobs();
+  // Export handlers
+  const handleExportFiltered = () => {
+    if (filteredVehicles.length === 0) {
+      message.warning('No filtered vehicle records to export');
+      return;
     }
-  }, [activeTab, fetchCompletedJobs]);
+    const cols = [
+      { key: 'vehicleNumber', title: 'Vehicle Number' },
+      { key: 'ownerName', title: 'Owner Name' },
+      { key: 'registeringAuthority', title: 'Registering Authority' },
+      { key: 'vehicleClass', title: 'Vehicle Class' },
+      { key: 'fuelType', title: 'Fuel Type' },
+      { key: 'emissionNorm', title: 'Emission Norm' },
+      { key: 'vehicleAge', title: 'Vehicle Age' },
+      { key: 'hypothecated', title: 'Hypothecated' },
+      { key: 'vehicleStatus', title: 'Status' },
+      { key: 'registrationDate', title: 'Registration Date' },
+      { key: 'fitnessValidUpTo', title: 'Fitness Valid UpTo' },
+      { key: 'taxValidUpTo', title: 'Tax Valid UpTo' },
+      { key: 'insuranceValidUpTo', title: 'Insurance Valid UpTo' },
+      { key: 'puccValidUpTo', title: 'PUCC Valid UpTo' },
+      { key: 'permitValidUpTo', title: 'Permit Valid UpTo' },
+      { key: 'nationalPermitValidUpTo', title: 'National Permit Valid UpTo' },
+    ];
+    exportToExcel(filteredVehicles, cols, `TMS_Vehicles_Filtered_${dayjs().format('YYYY-MM-DD')}`);
+    message.success(`Exported ${filteredVehicles.length} vehicles to Excel!`);
+  };
 
-  // Movement Columns
-  const movColumns: ColumnsType<MovementRow> = [
+  const handleExportAll = () => {
+    if (vehicles.length === 0) {
+      message.warning('No vehicle records to export');
+      return;
+    }
+    const cols = [
+      { key: 'vehicleNumber', title: 'Vehicle Number' },
+      { key: 'ownerName', title: 'Owner Name' },
+      { key: 'registeringAuthority', title: 'Registering Authority' },
+      { key: 'vehicleClass', title: 'Vehicle Class' },
+      { key: 'fuelType', title: 'Fuel Type' },
+      { key: 'emissionNorm', title: 'Emission Norm' },
+      { key: 'vehicleAge', title: 'Vehicle Age' },
+      { key: 'hypothecated', title: 'Hypothecated' },
+      { key: 'vehicleStatus', title: 'Status' },
+      { key: 'registrationDate', title: 'Registration Date' },
+      { key: 'fitnessValidUpTo', title: 'Fitness Valid UpTo' },
+      { key: 'taxValidUpTo', title: 'Tax Valid UpTo' },
+      { key: 'insuranceValidUpTo', title: 'Insurance Valid UpTo' },
+      { key: 'puccValidUpTo', title: 'PUCC Valid UpTo' },
+      { key: 'permitValidUpTo', title: 'Permit Valid UpTo' },
+      { key: 'nationalPermitValidUpTo', title: 'National Permit Valid UpTo' },
+    ];
+    exportToExcel(vehicles, cols, `TMS_Vehicles_ALL_${dayjs().format('YYYY-MM-DD')}`);
+    message.success(`Exported all ${vehicles.length} vehicles to Excel!`);
+  };
+
+  // Table Columns
+  const columns: ColumnsType<VehicleRecord> = [
     {
-      title: 'Enquiry / TXN',
-      key: 'job',
+      title: 'Vehicle Number',
+      dataIndex: 'vehicleNumber',
+      key: 'vehicleNumber',
+      width: 140,
+      fixed: 'left',
+      render: (num: string, record) => (
+        <Button
+          type="link"
+          style={{ padding: 0, fontWeight: 700, fontSize: 13, color: '#17324D' }}
+          onClick={() => {
+            setSelectedVehicle(record);
+            setDetailsModalOpen(true);
+          }}
+        >
+          {num || record.id}
+        </Button>
+      ),
+    },
+    {
+      title: 'Owner Name',
+      dataIndex: 'ownerName',
+      key: 'ownerName',
       width: 160,
-      render: (_, rec) => (
-        <div>
-          <Link href={`/enquiries/${rec.id}`} style={{ fontWeight: 600 }}>
-            {rec.id}
-          </Link>
-          <div style={{ fontSize: 12, color: '#666' }}>{rec.transactionNumber}</div>
-        </div>
-      ),
+      render: (val: string) => <Text strong>{val || '-'}</Text>,
     },
     {
-      title: 'Date',
-      dataIndex: 'date',
-      key: 'date',
-      width: 100,
-      render: (d) => formatDate(d),
+      title: 'Registering Authority',
+      dataIndex: 'registeringAuthority',
+      key: 'registeringAuthority',
+      width: 200,
+      ellipsis: true,
+      render: (val: string) => val || '-',
     },
     {
-      title: 'Client & Company',
-      key: 'parties',
-      width: 240,
-      render: (_, rec) => (
-        <div style={{ minWidth: 200, wordBreak: 'break-word', whiteSpace: 'normal' }}>
-          <Text strong style={{ display: 'block', color: '#1f1f1f', fontSize: 13 }}>
-            {rec.clientName || rec.clientId || '-'}
-          </Text>
-          <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-            {rec.companyName || rec.companyId || '-'}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Vehicle & Driver',
-      key: 'vehicle',
+      title: 'Vehicle Class',
+      dataIndex: 'vehicleClass',
+      key: 'vehicleClass',
       width: 180,
-      render: (_, rec) => (
-        <div>
-          <Tag color="blue">{rec.vehicleNumber || 'Unassigned'}</Tag>
-          {rec.driverInfo && <div style={{ fontSize: 12, color: '#666' }}>{rec.driverInfo}</div>}
-        </div>
-      ),
+      render: (val: string) => <Tag color="blue">{val || 'Articulated Vehicle(HGV)'}</Tag>,
     },
     {
-      title: 'Vehicle Status',
-      key: 'vehicleStatus',
+      title: 'Fuel Type',
+      dataIndex: 'fuelType',
+      key: 'fuelType',
+      width: 100,
+      align: 'center',
+      render: (val: string) => <Tag color="geekblue">{val || 'DIESEL'}</Tag>,
+    },
+    {
+      title: 'Registration Date',
+      dataIndex: 'registrationDate',
+      key: 'registrationDate',
       width: 130,
-      align: 'center' as const,
-      render: (_, rec) => (
-        <VehicleStatusToggle
-          vehicleNumber={rec.vehicleNumber}
-          enquiryId={rec.id}
-        />
-      ),
+      align: 'center',
+      render: (d: string) => (d ? dayjs(d).format('DD-MMM-YYYY') : '-'),
     },
     {
-      title: 'Container & Seal',
-      key: 'container',
-      width: 160,
-      render: (_, rec) => (
-        <div>
-          <div>{rec.containerNumber || '-'}</div>
-          {rec.sealNumber && <div style={{ fontSize: 12, color: '#666' }}>Seal: {rec.sealNumber}</div>}
-        </div>
-      ),
-    },
-    {
-      title: 'Gate Status',
-      key: 'gateTimes',
+      title: 'Validity Alerts',
+      key: 'validityAlerts',
       width: 220,
-      render: (_, rec) => {
-        const mov = rec.movement || {};
+      render: (_, record) => {
+        const alerts = getVehicleAlerts(record);
+        if (alerts.length === 0) {
+          return <Tag color="success">All Valid</Tag>;
+        }
         return (
-          <Space direction="vertical" size={2} style={{ fontSize: 12 }}>
-            <div>
-              <Text type="secondary">Co: </Text>
-              <span>{mov.companyInTime ? 'In' : '-'} / {mov.companyOutTime ? 'Out' : '-'}</span>
-            </div>
-            <div>
-              <Text type="secondary">Port: </Text>
-              <span>{mov.portInTime ? 'In' : '-'} / {mov.portOutTime ? 'Out' : '-'}</span>
-            </div>
+          <Space direction="vertical" size={2}>
+            {alerts.slice(0, 2).map((a, idx) => (
+              <Tag key={idx} color={a.status === 'expired' ? 'error' : 'warning'}>
+                {a.label.replace(' Valid UpTo', '')}: {a.text}
+              </Tag>
+            ))}
+            {alerts.length > 2 && (
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                +{alerts.length - 2} more
+              </Text>
+            )}
           </Space>
         );
       },
     },
     {
-      title: 'Movement Status',
-      key: 'movementStatus',
-      width: 130,
-      align: 'center',
-      render: (_, rec) => (
-        <Tag color={rec.movement?.movementStatus === 'MOVED' ? 'green' : 'orange'}>
-          {rec.movement?.movementStatus || 'NOT_MOVED'}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Stage',
-      dataIndex: 'stage',
-      key: 'stage',
-      width: 150,
-      render: (st: string) => (
-        <Tag color={STAGE_TAG_COLORS[st] || 'default'}>{STAGE_LABELS[st] || st}</Tag>
-      ),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 110,
-      align: 'center',
-      render: (_, record) => (
-        <Space size="small">
-          <Tooltip title="Update Gate Times">
-            <Button
-              type="text"
-              icon={<EditOutlined style={{ color: '#365A73' }} />}
-              onClick={() => handleOpenEdit(record)}
-            />
-          </Tooltip>
-          <Tooltip title="View Consignment Details">
-            <Link href={`/enquiries/${record.id}`}>
-              <Button type="text" icon={<EyeOutlined />} />
-            </Link>
-          </Tooltip>
-        </Space>
-      ),
-    },
-  ];
-
-  // Pending Columns
-  const pendingColumns: ColumnsType<PendingRow> = [
-    {
-      title: 'Enquiry / TXN',
-      key: 'job',
-      width: 160,
-      render: (_, rec) => (
-        <div>
-          <Link href={`/enquiries/${rec.id}`} style={{ fontWeight: 600 }}>
-            {rec.id}
-          </Link>
-          <div style={{ fontSize: 12, color: '#666' }}>{rec.transactionNumber}</div>
-        </div>
-      ),
-    },
-    {
-      title: 'Date',
-      dataIndex: 'date',
-      key: 'date',
-      width: 100,
-      render: (d) => formatDate(d),
-    },
-    {
-      title: 'Client & Company',
-      key: 'parties',
-      width: 240,
-      render: (_, rec) => (
-        <div style={{ minWidth: 200, wordBreak: 'break-word', whiteSpace: 'normal' }}>
-          <Text strong style={{ display: 'block', color: '#1f1f1f', fontSize: 13 }}>
-            {rec.clientName || rec.clientId || '-'}
-          </Text>
-          <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-            {rec.companyName || rec.companyId || '-'}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Vehicle',
-      dataIndex: 'vehicleNumber',
-      key: 'vehicleNumber',
-      width: 130,
-      render: (v) => <Tag color="blue">{v || 'N/A'}</Tag>,
-    },
-    {
-      title: 'Vehicle Status',
-      key: 'vehicleStatus',
-      width: 130,
+      title: 'Work Status',
+      key: 'workStatus',
+      width: 120,
       align: 'center' as const,
-      render: (_, rec) => (
+      render: (_, record) => (
         <VehicleStatusToggle
-          vehicleNumber={rec.vehicleNumber}
-          enquiryId={rec.id}
+          vehicleNumber={record.vehicleNumber}
+          vehicleId={record.id}
+          initialStatus={record.active !== false}
         />
       ),
     },
     {
-      title: 'Container',
-      dataIndex: 'containerNumber',
-      key: 'containerNumber',
-      width: 130,
-      render: (c) => c || '-',
-    },
-    {
-      title: 'Current Stage',
-      dataIndex: 'stage',
-      key: 'stage',
-      width: 160,
-      render: (st: string) => (
-        <Tag color={STAGE_TAG_COLORS[st] || 'default'}>{STAGE_LABELS[st] || st}</Tag>
-      ),
+      title: 'Status',
+      dataIndex: 'vehicleStatus',
+      key: 'vehicleStatus',
+      width: 100,
+      align: 'center',
+      render: (val: string, record) => {
+        const isActive = val ? val.toUpperCase() === 'ACTIVE' : Boolean(record.active);
+        return <Tag color={isActive ? 'green' : 'default'}>{isActive ? 'ACTIVE' : 'INACTIVE'}</Tag>;
+      },
     },
     {
       title: 'Actions',
       key: 'actions',
-      width: 150,
+      width: 180,
+      fixed: 'right',
       align: 'center',
       render: (_, record) => (
         <Space size="small">
-          <ActionConfirmPopover
-            title="Mark Consignment Completed?"
-            description={`Advance consignment ${record.transactionNumber || record.id} to COMPLETED state and finalize movement.`}
-            okText="Yes, Complete"
-            cancelText="No, Cancel"
-            onConfirm={() => handleInitiateComplete(record)}
-          >
+          <Tooltip title="View Vehicle RC Details">
             <Button
-              type="primary"
+              type="text"
               size="small"
-              icon={<CheckCircleOutlined />}
-            >
-              Complete
-            </Button>
-          </ActionConfirmPopover>
-          <Tooltip title="View Consignment">
-            <Link href={`/enquiries/${record.id}`}>
-              <Button type="text" size="small" icon={<EyeOutlined />} />
-            </Link>
+              icon={<EyeOutlined style={{ color: '#17324D' }} />}
+              onClick={() => {
+                setSelectedVehicle(record);
+                setDetailsModalOpen(true);
+              }}
+            />
           </Tooltip>
-          <Tooltip title="Edit Consignment">
-            <Link href={`/enquiries/${record.id}`}>
-              <Button type="text" size="small" icon={<EditOutlined style={{ color: '#365A73' }} />} />
-            </Link>
-          </Tooltip>
-        </Space>
-      ),
-    },
-  ];
 
-  // Completed Columns
-  const compColumns: ColumnsType<CompletedRow> = [
-    {
-      title: 'Enquiry / TXN',
-      key: 'job',
-      width: 160,
-      render: (_, rec) => (
-        <div>
-          <Link href={`/enquiries/${rec.id}`} style={{ fontWeight: 600 }}>
-            {rec.id}
-          </Link>
-          <div style={{ fontSize: 12, color: '#666' }}>{rec.transactionNumber}</div>
-        </div>
-      ),
-    },
-    {
-      title: 'Completed Date',
-      dataIndex: 'completedAt',
-      key: 'completedAt',
-      width: 120,
-      render: (d) => (d ? formatDate(d) : '-'),
-    },
-    {
-      title: 'Client & Company',
-      key: 'parties',
-      width: 240,
-      render: (_, rec) => (
-        <div style={{ minWidth: 200, wordBreak: 'break-word', whiteSpace: 'normal' }}>
-          <Text strong style={{ display: 'block', color: '#1f1f1f', fontSize: 13 }}>
-            {rec.clientName || rec.clientId || '-'}
-          </Text>
-          <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-            {rec.companyName || rec.companyId || '-'}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Vehicle',
-      dataIndex: 'vehicleNumber',
-      key: 'vehicleNumber',
-      width: 130,
-      render: (v) => (
-        <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontFamily: 'monospace', fontWeight: 600 }}>
-          {v || 'N/A'}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Container',
-      dataIndex: 'containerNumber',
-      key: 'containerNumber',
-      width: 130,
-      render: (c) => c || '-',
-    },
-    {
-      title: 'Billing Status',
-      key: 'billing',
-      width: 130,
-      align: 'center',
-      render: (_, rec) =>
-        rec.billId ? (
-          <Tag style={{ background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #B8DCBE', fontWeight: 500 }}>Billed</Tag>
-        ) : (
-          <Tag style={{ background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #F0D59E', fontWeight: 500 }}>Pending Bill</Tag>
-        ),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 110,
-      align: 'center',
-      render: (_, record) => (
-        <Space size="small">
-          <Tooltip title="View Consignment">
-            <Link href={`/enquiries/${record.id}`}>
-              <Button type="text" size="small" icon={<EyeOutlined />} />
-            </Link>
+          <Tooltip title="Edit Vehicle Details">
+            <Button
+              type="text"
+              size="small"
+              icon={<EditOutlined style={{ color: '#365A73' }} />}
+              onClick={() => handleOpenEdit(record)}
+            />
           </Tooltip>
-          <Tooltip title="Edit Consignment">
-            <Link href={`/enquiries/${record.id}`}>
-              <Button type="text" size="small" icon={<EditOutlined style={{ color: '#365A73' }} />} />
-            </Link>
+
+          <Tooltip title="Add Documents">
+            <Button
+              type="text"
+              size="small"
+              icon={<UploadOutlined style={{ color: '#3F6F4A' }} />}
+              onClick={() => {
+                setDocVehicle(record);
+                setDocModalOpen(true);
+              }}
+            />
           </Tooltip>
+
+          <Popconfirm
+            title="Deactivate this vehicle?"
+            onConfirm={() => handleDeleteVehicle(record)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button type="text" size="small" icon={<DeleteOutlined style={{ color: '#A8473C' }} />} />
+          </Popconfirm>
         </Space>
       ),
     },
   ];
 
   return (
-    <div style={{ padding: '24px 0' }}>
+    <div style={{ padding: '4px 0 24px' }}>
       {/* Top Header */}
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24, gap: 12 }}>
-        <Col>
-          <Title level={2} style={{ margin: 0, color: '#1E2933' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 20,
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
+        <div>
+          <Title level={2} style={{ margin: 0, color: '#1E2933', fontSize: 22, fontWeight: 600 }}>
             <CarOutlined style={{ marginRight: 8, color: '#17324D' }} />
-            Vehicle Management
+            Vehicle Fleet & RC Management
           </Title>
-          <Text type="secondary">
-            Operational vehicle tracking, gate timestamps, pending operational consignments, and completed jobs
+          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
+            Comprehensive fleet registry, registration certificates (RC), and automated document renewal alerts
           </Text>
+        </div>
+
+        <Space wrap>
+          <Button icon={<ReloadOutlined />} onClick={fetchVehicles} loading={loading}>
+            Refresh
+          </Button>
+          <Button icon={<DownloadOutlined />} onClick={handleExportAll}>
+            Export All
+          </Button>
+          <Button
+            icon={<UploadOutlined />}
+            onClick={() => {
+              setDocVehicle(vehicles[0] || null);
+              setDocModalOpen(true);
+            }}
+          >
+            Add Documents
+          </Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
+            Add Vehicle
+          </Button>
+        </Space>
+      </div>
+
+      {/* KPI Cards Row */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col xs={24} sm={12} md={6}>
+          <Card size="small" className="spt-kpi-card spt-kpi-steel">
+            <Statistic
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Total Registered Fleet</span>}
+              value={stats.total}
+              prefix={<CarOutlined style={{ color: '#365A73' }} />}
+              valueStyle={{ color: '#17324D', fontWeight: 700 }}
+            />
+          </Card>
         </Col>
-        <Col>
-          <Space wrap>
-            <Link href="/enquiries/new">
-              <Button type="primary" icon={<PlusOutlined />}>
-                Add Enquiry
-              </Button>
-            </Link>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={() => {
-                if (activeTab === 'movement') fetchMovements();
-                else if (activeTab === 'pending') fetchPendingJobs();
-                else if (activeTab === 'completed') fetchCompletedJobs();
-              }}
-            >
-              Refresh
-            </Button>
-          </Space>
+
+        <Col xs={24} sm={12} md={6}>
+          <Card size="small" className="spt-kpi-card spt-kpi-green">
+            <Statistic
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Active Vehicles</span>}
+              value={stats.active}
+              prefix={<CheckCircleOutlined style={{ color: '#3F6F4A' }} />}
+              valueStyle={{ color: '#3F6F4A', fontWeight: 700 }}
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24} sm={12} md={6}>
+          <Card
+            size="small"
+            className="spt-kpi-card spt-kpi-amber"
+            style={{ cursor: 'pointer' }}
+            onClick={() => setExpiryFilter(expiryFilter === 'ALERTS' ? 'ALL' : 'ALERTS')}
+          >
+            <Statistic
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Expiring Soon (&le;3 Days)</span>}
+              value={stats.totalAlerts}
+              prefix={<WarningOutlined style={{ color: '#C58A2A' }} />}
+              valueStyle={{ color: '#C58A2A', fontWeight: 700 }}
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24} sm={12} md={6}>
+          <Card
+            size="small"
+            className="spt-kpi-card spt-kpi-red"
+            style={{ cursor: 'pointer' }}
+            onClick={() => setExpiryFilter(expiryFilter === 'EXPIRED' ? 'ALL' : 'EXPIRED')}
+          >
+            <Statistic
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Expired Documents</span>}
+              value={stats.expiredCount}
+              prefix={<ExclamationCircleOutlined style={{ color: '#A8473C' }} />}
+              valueStyle={{ color: '#A8473C', fontWeight: 700 }}
+            />
+          </Card>
         </Col>
       </Row>
 
-      {/* Main Tabs */}
-      <Tabs
-        activeKey={activeTab}
-        onChange={handleTabChange}
-        type="card"
-        items={[
-          {
-            key: 'movement',
-            label: (
-              <span>
-                <CarOutlined style={{ marginRight: 6 }} />
-                Current / All Movement ({movTotal})
-              </span>
-            ),
-            children: (
-              <div>
-                {/* Movement Filters */}
-                <Card bordered={false} style={{ marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                  <Row gutter={[16, 16]} align="middle">
-                    <Col xs={24} sm={12} md={6}>
-                      <Input
-                        placeholder="Search vehicle, container, driver..."
-                        prefix={<SearchOutlined />}
-                        value={movSearch}
-                        onChange={(e) => setMovSearch(e.target.value)}
-                        allowClear
-                      />
-                    </Col>
-                    <Col xs={24} sm={12} md={5}>
-                      <AsyncMasterSelect
-                        entity="companies"
-                        entityLabel="Company"
-                        placeholder="Filter Company"
-                        value={movCompanyId}
-                        onChange={(val) => setMovCompanyId(val)}
-                      />
-                    </Col>
-                    <Col xs={24} sm={12} md={5}>
-                      <AsyncMasterSelect
-                        entity="clients"
-                        entityLabel="Client"
-                        placeholder="Filter Client"
-                        value={movClientId}
-                        onChange={(val) => setMovClientId(val)}
-                      />
-                    </Col>
-                    <Col xs={24} sm={12} md={4}>
-                      <Select
-                        placeholder="Loading Type"
-                        style={{ width: '100%' }}
-                        allowClear
-                        value={movLoadingType}
-                        onChange={(val) => setMovLoadingType(val)}
-                      >
-                        <Select.Option value="Import">Import</Select.Option>
-                        <Select.Option value="Export">Export</Select.Option>
-                      </Select>
-                    </Col>
-                    <Col xs={24} sm={12} md={4}>
-                      <Button
-                        onClick={() => {
-                          setMovSearch('');
-                          setMovCompanyId(undefined);
-                          setMovClientId(undefined);
-                          setMovVendorId(undefined);
-                          setMovLoadingType(undefined);
-                          setMovDateRange(null);
-                        }}
-                      >
-                        Reset
-                      </Button>
-                    </Col>
-                  </Row>
-                </Card>
+      {/* Filter Toolbar */}
+      <Card style={{ marginBottom: 16, borderRadius: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <Space wrap>
+          <Input
+            placeholder="Search Vehicle No, Owner, RTO..."
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 260 }}
+            allowClear
+          />
 
-                {/* Table */}
-                <Card bordered={false} style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                  <Table
-                    columns={movColumns}
-                    dataSource={movData}
-                    rowKey="id"
-                    loading={movLoading}
-                    scroll={{ x: 1550 }}
-                    pagination={{
-                      current: movPage,
-                      pageSize: movPageSize,
-                      total: movTotal,
-                      showSizeChanger: true,
-                      pageSizeOptions: ['10', '20', '50'],
-                      onChange: (p, ps) => {
-                        setMovPage(p);
-                        setMovPageSize(ps);
-                      },
-                      showTotal: (total) => `Total ${total} active vehicle movements`,
-                    }}
-                  />
-                </Card>
-              </div>
-            ),
-          },
-          {
-            key: 'pending',
-            label: (
-              <span>
-                <ClockCircleOutlined style={{ marginRight: 6 }} />
-                Pending Jobs ({pendingTotal})
-              </span>
-            ),
-            children: (
-              <div>
-                {/* Pending Filters */}
-                <Card bordered={false} style={{ marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                  <Row gutter={[16, 16]} align="middle">
-                    <Col xs={24} sm={12} md={6}>
-                      <Input
-                        placeholder="Search vehicle, enquiry, container..."
-                        prefix={<SearchOutlined />}
-                        value={pendingSearch}
-                        onChange={(e) => setPendingSearch(e.target.value)}
-                        allowClear
-                      />
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                      <AsyncMasterSelect
-                        entity="companies"
-                        entityLabel="Company"
-                        placeholder="Filter Company"
-                        value={pendingCompanyId}
-                        onChange={(val) => setPendingCompanyId(val)}
-                      />
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                      <AsyncMasterSelect
-                        entity="clients"
-                        entityLabel="Client"
-                        placeholder="Filter Client"
-                        value={pendingClientId}
-                        onChange={(val) => setPendingClientId(val)}
-                      />
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                      <Button
-                        onClick={() => {
-                          setPendingSearch('');
-                          setPendingCompanyId(undefined);
-                          setPendingClientId(undefined);
-                          setPendingStage(undefined);
-                        }}
-                      >
-                        Reset
-                      </Button>
-                    </Col>
-                  </Row>
-                </Card>
-
-                {/* Table */}
-                <Card bordered={false} style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                  <Table
-                    columns={pendingColumns}
-                    dataSource={pendingData}
-                    rowKey="id"
-                    loading={pendingLoading}
-                    scroll={{ x: 1250 }}
-                    pagination={{
-                      current: pendingPage,
-                      pageSize: pendingPageSize,
-                      total: pendingTotal,
-                      showSizeChanger: true,
-                      pageSizeOptions: ['10', '20', '50'],
-                      onChange: (p, ps) => {
-                        setPendingPage(p);
-                        setPendingPageSize(ps);
-                      },
-                      showTotal: (total) => `Total ${total} pending consignments`,
-                    }}
-                  />
-                </Card>
-              </div>
-            ),
-          },
-          {
-            key: 'completed',
-            label: (
-              <span>
-                <FileDoneOutlined style={{ marginRight: 6 }} />
-                Completed Jobs ({compTotal})
-              </span>
-            ),
-            children: (
-              <div>
-                {/* Completed Filters */}
-                <Card bordered={false} style={{ marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                  <Row gutter={[16, 16]} align="middle">
-                    <Col xs={24} sm={12} md={8}>
-                      <Input
-                        placeholder="Search vehicle, enquiry, container..."
-                        prefix={<SearchOutlined />}
-                        value={compSearch}
-                        onChange={(e) => setCompSearch(e.target.value)}
-                        allowClear
-                      />
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                      <AsyncMasterSelect
-                        entity="companies"
-                        entityLabel="Company"
-                        placeholder="Filter Company"
-                        value={compCompanyId}
-                        onChange={(val) => setCompCompanyId(val)}
-                      />
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                      <AsyncMasterSelect
-                        entity="clients"
-                        entityLabel="Client"
-                        placeholder="Filter Client"
-                        value={compClientId}
-                        onChange={(val) => setCompClientId(val)}
-                      />
-                    </Col>
-                    <Col xs={24} sm={12} md={4}>
-                      <Button
-                        onClick={() => {
-                          setCompSearch('');
-                          setCompCompanyId(undefined);
-                          setCompClientId(undefined);
-                        }}
-                      >
-                        Reset
-                      </Button>
-                    </Col>
-                  </Row>
-                </Card>
-
-                {/* Table */}
-                <Card bordered={false} style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                  <Table
-                    columns={compColumns}
-                    dataSource={compData}
-                    rowKey="id"
-                    loading={compLoading}
-                    scroll={{ x: 1450 }}
-                    pagination={{
-                      current: compPage,
-                      pageSize: compPageSize,
-                      total: compTotal,
-                      showSizeChanger: true,
-                      pageSizeOptions: ['10', '20', '50'],
-                      onChange: (p, ps) => {
-                        setCompPage(p);
-                        setCompPageSize(ps);
-                      },
-                      showTotal: (total) => `Total ${total} completed consignments`,
-                    }}
-                  />
-                </Card>
-              </div>
-            ),
-          },
-        ]}
-      />
-
-      {/* Quick Edit Gate Times Modal */}
-      <Modal
-        title={`Update Gate Times & Status — ${selectedMovRecord?.transactionNumber || selectedMovRecord?.id}`}
-        open={editModalOpen}
-        onCancel={() => setEditModalOpen(false)}
-        width={680}
-        footer={[
-          <Button key="cancel" onClick={() => setEditModalOpen(false)}>
-            Cancel
-          </Button>,
-          <ActionConfirmPopover
-            key="save"
-            title="Save Gate Movement Changes?"
-            description="Confirm updating factory, print, and port gate timestamps."
-            okText="Yes, Save"
-            cancelText="No, Cancel"
-            onConfirm={() => movForm.submit()}
-            loading={submittingMov}
+          <Select
+            value={statusFilter}
+            onChange={setStatusFilter}
+            style={{ width: 140 }}
           >
-            <Button type="primary" loading={submittingMov}>
-              Save Gate Times
-            </Button>
-          </ActionConfirmPopover>,
+            <Select.Option value="ALL">All Statuses</Select.Option>
+            <Select.Option value="ACTIVE">Active Only</Select.Option>
+            <Select.Option value="INACTIVE">Inactive Only</Select.Option>
+          </Select>
+
+          <Select
+            value={expiryFilter}
+            onChange={setExpiryFilter}
+            style={{ width: 170 }}
+          >
+            <Select.Option value="ALL">All Validity</Select.Option>
+            <Select.Option value="ALERTS">Expiring Soon / Expired</Select.Option>
+            <Select.Option value="EXPIRED">Expired Only</Select.Option>
+          </Select>
+
+          <DatePicker.RangePicker
+            placeholder={['Reg Start Date', 'Reg End Date']}
+            format="DD/MM/YYYY"
+            value={dateRange}
+            onChange={(d) => setDateRange(d as any)}
+            style={{ width: 230 }}
+          />
+
+          <Button
+            onClick={() => {
+              setSearchText('');
+              setStatusFilter('ALL');
+              setExpiryFilter('ALL');
+              setDateRange(null);
+            }}
+          >
+            Reset
+          </Button>
+
+          <Button icon={<DownloadOutlined />} onClick={handleExportFiltered}>
+            Export Filtered
+          </Button>
+        </Space>
+      </Card>
+
+      {/* Main Vehicles Table */}
+      <Card style={{ borderRadius: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <Table<VehicleRecord>
+          columns={columns}
+          dataSource={filteredVehicles}
+          rowKey="id"
+          loading={loading}
+          scroll={{ x: 1350 }}
+          pagination={{
+            pageSize: 15,
+            showSizeChanger: true,
+            pageSizeOptions: ['15', '30', '50', '100'],
+            showTotal: (tot) => `Total ${tot} vehicle records`,
+          }}
+        />
+      </Card>
+
+      {/* VEHICLE DETAILS MODAL (Designed like uploaded RC Card) */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 32 }}>
+            <span style={{ fontSize: 16, fontWeight: 700 }}>
+              Vehicle Registration &amp; Validity Details — {selectedVehicle?.vehicleNumber}
+            </span>
+            <Tag color={selectedVehicle?.vehicleStatus === 'ACTIVE' || selectedVehicle?.active ? 'green' : 'default'}>
+              {selectedVehicle?.vehicleStatus || (selectedVehicle?.active ? 'ACTIVE' : 'INACTIVE')}
+            </Tag>
+          </div>
+        }
+        open={detailsModalOpen}
+        onCancel={() => setDetailsModalOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setDetailsModalOpen(false)}>
+            Close
+          </Button>,
+          <Button
+            key="docs"
+            icon={<UploadOutlined />}
+            onClick={() => {
+              setDocVehicle(selectedVehicle);
+              setDocModalOpen(true);
+            }}
+          >
+            Add Documents
+          </Button>,
+          <Button
+            key="edit"
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => {
+              if (selectedVehicle) {
+                setDetailsModalOpen(false);
+                handleOpenEdit(selectedVehicle);
+              }
+            }}
+          >
+            Edit Vehicle
+          </Button>,
         ]}
+        width={720}
+        destroyOnClose
       >
-        <Form form={movForm} layout="vertical" onFinish={handleSaveMovement} style={{ marginTop: 16 }}>
+        {selectedVehicle && (
+          <div style={{ padding: '8px 4px' }}>
+            {/* Upper Vehicle Specification Card */}
+            <div
+              style={{
+                background: isDark ? '#141416' : '#F8FAFC',
+                border: isDark ? '1px solid #27272A' : '1px solid #E2E8F0',
+                borderRadius: 8,
+                padding: '16px 20px',
+                marginBottom: 16,
+              }}
+            >
+              <Row gutter={[16, 12]}>
+                <Col span={12}>
+                  <Text type="secondary" style={{ fontSize: 12, color: isDark ? '#A1A1AA' : undefined }}>Vehicle Number</Text>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#FFFFFF' : '#17324D' }}>
+                    {selectedVehicle.vehicleNumber}
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <Text type="secondary" style={{ fontSize: 12, color: isDark ? '#A1A1AA' : undefined }}>Owner Name</Text>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: isDark ? '#FFFFFF' : '#17324D' }}>
+                    {selectedVehicle.ownerName || '-'}
+                  </div>
+                </Col>
+
+                <Col span={12}>
+                  <Text type="secondary" style={{ fontSize: 12, color: isDark ? '#A1A1AA' : undefined }}>Registering Authority</Text>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: isDark ? '#FFFFFF' : '#17324D' }}>
+                    {selectedVehicle.registeringAuthority || '-'}
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <Text type="secondary" style={{ fontSize: 12, color: isDark ? '#A1A1AA' : undefined }}>Vehicle Class</Text>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: isDark ? '#FFFFFF' : '#17324D' }}>
+                    {selectedVehicle.vehicleClass || 'Articulated Vehicle(HGV)'}
+                  </div>
+                </Col>
+
+                <Col span={8}>
+                  <Text type="secondary" style={{ fontSize: 12, color: isDark ? '#A1A1AA' : undefined }}>Fuel Type</Text>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: isDark ? '#FFFFFF' : '#17324D' }}>
+                    {selectedVehicle.fuelType || 'DIESEL'}
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <Text type="secondary" style={{ fontSize: 12, color: isDark ? '#A1A1AA' : undefined }}>Emission Norm</Text>
+                  <div style={{ fontSize: 13, color: isDark ? '#FFFFFF' : '#17324D' }}>
+                    {selectedVehicle.emissionNorm || 'Not Available'}
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <Text type="secondary" style={{ fontSize: 12, color: isDark ? '#A1A1AA' : undefined }}>Vehicle Age</Text>
+                  <div style={{ fontSize: 13, color: isDark ? '#FFFFFF' : '#17324D' }}>
+                    {selectedVehicle.vehicleAge || (selectedVehicle.registrationDate ? `${dayjs().diff(dayjs(selectedVehicle.registrationDate), 'year')} Years` : '-')}
+                  </div>
+                </Col>
+
+                <Col span={8}>
+                  <Text type="secondary" style={{ fontSize: 12, color: isDark ? '#A1A1AA' : undefined }}>Hypothecated</Text>
+                  <div style={{ fontSize: 13, color: isDark ? '#FFFFFF' : '#17324D' }}>
+                    {selectedVehicle.hypothecated || 'No'}
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <Text type="secondary" style={{ fontSize: 12, color: isDark ? '#A1A1AA' : undefined }}>Vehicle Status</Text>
+                  <div>
+                    <Tag color="green">{selectedVehicle.vehicleStatus || 'ACTIVE'}</Tag>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <Text type="secondary" style={{ fontSize: 12, color: isDark ? '#A1A1AA' : undefined }}>Registration Date</Text>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: isDark ? '#FFFFFF' : '#17324D' }}>
+                    {selectedVehicle.registrationDate ? dayjs(selectedVehicle.registrationDate).format('DD-MMM-YYYY') : '-'}
+                  </div>
+                </Col>
+              </Row>
+            </div>
+
+            {/* Tap to check status link */}
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <Button type="link" style={{ fontSize: 13, color: isDark ? '#38BDF8' : '#1677ff' }} onClick={() => message.info('No impound/seizure records recorded for this vehicle.')}>
+                Tap to Check the impound/seizure document status
+              </Button>
+            </div>
+
+            {/* Document Validity Matrix with Highlighted Red Boxes for ≤3 Days or Expired */}
+            <Title level={5} style={{ marginBottom: 12, fontSize: 14, color: isDark ? '#FFFFFF' : '#111827' }}>
+              Document Validity Dates &amp; Compliance Status
+            </Title>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {VALIDITY_FIELDS.map((f) => {
+                const val = selectedVehicle[f.key as keyof VehicleRecord] as string | undefined;
+                const validity = checkValidity(val);
+                const isCritical = validity.status === 'expired' || validity.status === 'critical';
+
+                return (
+                  <div
+                    key={f.key}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '10px 14px',
+                      borderRadius: 6,
+                      background: isCritical
+                        ? (isDark ? '#2D1214' : '#FEF2F2')
+                        : (isDark ? '#141416' : '#FFFFFF'),
+                      border: isCritical
+                        ? '2px solid #EF4444'
+                        : (isDark ? '1px solid #27272A' : '1px solid #E2E8F0'),
+                      boxShadow: isCritical
+                        ? (isDark ? '0 0 10px rgba(239, 68, 68, 0.35)' : '0 0 8px rgba(239, 68, 68, 0.2)')
+                        : 'none',
+                    }}
+                  >
+                    <div>
+                      <Text
+                        strong
+                        style={{
+                          fontSize: 13,
+                          color: isCritical
+                            ? (isDark ? '#FCA5A5' : '#991B1B')
+                            : (isDark ? '#FFFFFF' : '#111827'),
+                        }}
+                      >
+                        {f.label}
+                      </Text>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: isCritical
+                            ? (isDark ? '#FECACA' : '#B91C1C')
+                            : (isDark ? '#A1A1AA' : '#64748B'),
+                          fontWeight: 500,
+                        }}
+                      >
+                        {val ? dayjs(val).format('DD-MMM-YYYY') : 'Not Configured'}
+                      </div>
+                    </div>
+
+                    <div>
+                      {isCritical ? (
+                        <Tag
+                          color="error"
+                          style={{
+                            padding: '4px 10px',
+                            fontWeight: 700,
+                            fontSize: 12,
+                            borderRadius: 4,
+                            border: '1px solid #DC2626',
+                          }}
+                        >
+                          {validity.status === 'expired' ? 'EXPIRED — MANDATORY RENEWAL' : `RENEW NOW (${validity.days}D LEFT)`}
+                        </Tag>
+                      ) : val ? (
+                        <Tag color="success" style={{ fontWeight: 600 }}>
+                          Valid ({dayjs(val).format('DD-MMM-YYYY')})
+                        </Tag>
+                      ) : (
+                        <Tag color="default">N/A</Tag>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ADD / EDIT VEHICLE MODAL */}
+      <Modal
+        title={isEditing ? `Edit Vehicle — ${selectedVehicle?.vehicleNumber}` : 'Add New Vehicle to Fleet'}
+        open={formModalOpen}
+        onCancel={() => setFormModalOpen(false)}
+        footer={null}
+        width={700}
+        destroyOnClose
+      >
+        <Form form={form} layout="vertical" onFinish={handleSaveVehicle} style={{ marginTop: 16 }}>
           <Row gutter={16}>
-            <Col xs={24} sm={12}>
-              <Form.Item label="Factory / Company Gate-In">
-                <Space.Compact style={{ width: '100%' }}>
-                  <Form.Item name="companyInTime" noStyle>
-                    <DatePicker showTime format="DD-MM-YYYY hh:mm A" style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Button onClick={() => handleSetNow('companyInTime')}>Now</Button>
-                </Space.Compact>
+            <Col span={12}>
+              <Form.Item
+                name="vehicleNumber"
+                label="Vehicle Number"
+                rules={[{ required: true, message: 'Please enter Vehicle Number (e.g. TN04T5189)' }]}
+              >
+                <Input placeholder="e.g. TN04T5189" style={{ textTransform: 'uppercase' }} />
               </Form.Item>
             </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item label="Factory / Company Gate-Out">
-                <Space.Compact style={{ width: '100%' }}>
-                  <Form.Item name="companyOutTime" noStyle>
-                    <DatePicker showTime format="DD-MM-YYYY hh:mm A" style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Button onClick={() => handleSetNow('companyOutTime')}>Now</Button>
-                </Space.Compact>
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item label="Print Gate-In">
-                <Space.Compact style={{ width: '100%' }}>
-                  <Form.Item name="printInTime" noStyle>
-                    <DatePicker showTime format="DD-MM-YYYY hh:mm A" style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Button onClick={() => handleSetNow('printInTime')}>Now</Button>
-                </Space.Compact>
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item label="Print Gate-Out">
-                <Space.Compact style={{ width: '100%' }}>
-                  <Form.Item name="printOutTime" noStyle>
-                    <DatePicker showTime format="DD-MM-YYYY hh:mm A" style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Button onClick={() => handleSetNow('printOutTime')}>Now</Button>
-                </Space.Compact>
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item label="Port Gate-In">
-                <Space.Compact style={{ width: '100%' }}>
-                  <Form.Item name="portInTime" noStyle>
-                    <DatePicker showTime format="DD-MM-YYYY hh:mm A" style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Button onClick={() => handleSetNow('portInTime')}>Now</Button>
-                </Space.Compact>
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item label="Port Gate-Out">
-                <Space.Compact style={{ width: '100%' }}>
-                  <Form.Item name="portOutTime" noStyle>
-                    <DatePicker showTime format="DD-MM-YYYY hh:mm A" style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Button onClick={() => handleSetNow('portOutTime')}>Now</Button>
-                </Space.Compact>
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item name="movementStatus" label="Movement Status">
-                <Select
-                  options={[
-                    { value: 'NOT_MOVED', label: 'NOT_MOVED' },
-                    { value: 'MOVED', label: 'MOVED' },
-                  ]}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item name="shippingStatus" label="Shipping Status">
-                <Select
-                  options={[
-                    { value: 'PENDING', label: 'PENDING' },
-                    { value: 'IN_PROGRESS', label: 'IN_PROGRESS' },
-                    { value: 'COMPLETED', label: 'COMPLETED' },
-                  ]}
-                />
+            <Col span={12}>
+              <Form.Item name="ownerName" label="Owner Name">
+                <Input placeholder="e.g. K DHARMARAJAN" />
               </Form.Item>
             </Col>
           </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="registeringAuthority" label="Registering Authority">
+                <Input placeholder="e.g. CHENNAI (EAST) RTO, Tamil Nadu" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="vehicleClass" label="Vehicle Class">
+                <Select placeholder="Select Class">
+                  <Select.Option value="Articulated Vehicle(HGV)">Articulated Vehicle(HGV)</Select.Option>
+                  <Select.Option value="Heavy Goods Vehicle (HGV)">Heavy Goods Vehicle (HGV)</Select.Option>
+                  <Select.Option value="Light Commercial Vehicle (LCV)">Light Commercial Vehicle (LCV)</Select.Option>
+                  <Select.Option value="Medium Goods Vehicle (MGV)">Medium Goods Vehicle (MGV)</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="fuelType" label="Fuel Type">
+                <Select>
+                  <Select.Option value="DIESEL">DIESEL</Select.Option>
+                  <Select.Option value="PETROL">PETROL</Select.Option>
+                  <Select.Option value="CNG">CNG</Select.Option>
+                  <Select.Option value="ELECTRIC">ELECTRIC</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="emissionNorm" label="Emission Norm">
+                <Input placeholder="e.g. BS-IV / BS-VI" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="vehicleAge" label="Vehicle Age">
+                <Input placeholder="e.g. 16 Years & 7 months" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="hypothecated" label="Hypothecated">
+                <Select>
+                  <Select.Option value="No">No</Select.Option>
+                  <Select.Option value="Yes">Yes</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="vehicleStatus" label="Vehicle Status">
+                <Select>
+                  <Select.Option value="ACTIVE">ACTIVE</Select.Option>
+                  <Select.Option value="INACTIVE">INACTIVE</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="registrationDate" label="Registration Date">
+                <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Title level={5} style={{ marginTop: 12, marginBottom: 12, fontSize: 13.5 }}>
+            Document Expiry Dates (for automated alerts)
+          </Title>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="fitnessValidUpTo" label="Fitness Valid UpTo">
+                <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="taxValidUpTo" label="Tax Valid UpTo">
+                <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="insuranceValidUpTo" label="Insurance Valid UpTo">
+                <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="puccValidUpTo" label="PUCC Valid UpTo">
+                <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="permitValidUpTo" label="Permit Valid UpTo">
+                <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="nationalPermitValidUpTo" label="National Permit Valid UpTo">
+                <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 16 }}>
+            <Button onClick={() => setFormModalOpen(false)}>Cancel</Button>
+            <Button type="primary" htmlType="submit" loading={saving}>
+              {isEditing ? 'Save Changes' : 'Create Vehicle'}
+            </Button>
+          </div>
         </Form>
       </Modal>
 
-      {/* Quick Complete Pending Job Modal */}
+      {/* UPLOAD DOCUMENTS PLACEHOLDER MODAL */}
       <Modal
-        title={`Complete Consignment: ${selectedPendingRecord?.transactionNumber || selectedPendingRecord?.id}`}
-        open={completeModalOpen}
-        onCancel={() => setCompleteModalOpen(false)}
+        title={<span>Add / Manage Documents — {docVehicle?.vehicleNumber}</span>}
+        open={docModalOpen}
+        onCancel={() => setDocModalOpen(false)}
         footer={[
-          <Button key="cancel" onClick={() => setCompleteModalOpen(false)}>
-            Cancel
+          <Button key="close" onClick={() => setDocModalOpen(false)}>
+            Close
           </Button>,
-          <ActionConfirmPopover
-            key="complete"
-            title="Confirm Job Completion?"
-            description="This will register Port Gate-Out time and advance consignment to COMPLETED state."
-            okText="Yes, Complete Job"
-            cancelText="No, Cancel"
-            onConfirm={handleConfirmCompleteWithPortOut}
-            loading={completing}
-          >
-            <Button type="primary" loading={completing} icon={<CheckCircleOutlined />}>
-              Confirm & Mark Completed
-            </Button>
-          </ActionConfirmPopover>,
         ]}
       >
-        <div style={{ marginTop: 12 }}>
-          {errorMessage && (
-            <Alert
-              message={errorMessage}
-              type="error"
-              showIcon
-              icon={<ExclamationCircleOutlined />}
-              style={{ marginBottom: 16 }}
-            />
-          )}
-
-          <Paragraph>
-            Current Stage: <Tag color="blue">{selectedPendingRecord?.stage}</Tag>
+        <div style={{ textAlign: 'center', padding: '24px 12px' }}>
+          <UploadOutlined style={{ fontSize: 44, color: '#365A73', marginBottom: 12 }} />
+          <Title level={4} style={{ margin: 0 }}>
+            Document Vault for {docVehicle?.vehicleNumber}
+          </Title>
+          <Paragraph type="secondary" style={{ marginTop: 8, fontSize: 13 }}>
+            Upload and link scanned copies of RC, Fitness Certificate, Insurance Policy, State &amp; National Permits.
           </Paragraph>
-
-          <Form layout="vertical">
-            <Form.Item label="Port Gate-Out Timestamp" required>
-              <Space.Compact style={{ width: '100%' }}>
-                <DatePicker
-                  showTime
-                  format="DD-MM-YYYY hh:mm A"
-                  value={portOutTime}
-                  onChange={(d) => setPortOutTime(d)}
-                  style={{ width: '100%' }}
-                />
-                <Button onClick={() => setPortOutTime(dayjs())}>Now</Button>
-              </Space.Compact>
-            </Form.Item>
-          </Form>
-
           <Alert
-            message="Auto-Advancement to COMPLETED"
-            description="Saving will register Port Gate-Out time and advance the consignment through prerequisites to COMPLETED, updating auto-synced diesel and halting expense entries."
+            message="Feature Ready"
+            description="The 'Add Documents' interface button is established. Document upload and storage specification will be activated with your provided cloud document configuration."
             type="info"
             showIcon
+            style={{ textAlign: 'left', marginTop: 16 }}
           />
         </div>
       </Modal>

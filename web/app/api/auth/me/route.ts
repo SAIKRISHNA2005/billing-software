@@ -28,6 +28,22 @@ export async function GET() {
   const result = await callAppsScript<MeResponseData>('auth.me', {}, token);
 
   if (!result.success || !result.data?.user) {
+    const isBackendError = result.errors?.some(
+      (e) => e.code?.startsWith('APPS_SCRIPT_') || e.code === 'BACKEND_CONNECTION_ERROR'
+    );
+
+    if (isBackendError) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          message: 'Backend service momentarily unavailable',
+          errors: result.errors,
+        },
+        { status: 502 }
+      );
+    }
+
     const response = NextResponse.json(
       {
         success: false,
@@ -37,7 +53,7 @@ export async function GET() {
       },
       { status: 401 }
     );
-    // Clear dead cookie
+    // Clear dead cookie only when definitively invalid/expired
     response.cookies.delete(SESSION_COOKIE_NAME);
     return response;
   }

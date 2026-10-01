@@ -38,7 +38,13 @@ export async function POST(req: NextRequest) {
     }
 
     const payload = await req.json();
-    const result = await callAppsScript('bill.create', payload, sessionToken);
+    const result = (await callAppsScript('bill.create', payload, sessionToken)) as any;
+    if (result.success && result.data && (result.data.status === 'PROCESSED' || payload.status === 'PROCESSED')) {
+      const { syncProcessedBillToReports } = await import('@/lib/server/reportSyncService');
+      syncProcessedBillToReports({ ...payload, ...result.data }, sessionToken).catch((err) =>
+        console.error('[LiveSync] Bill create sync failed:', err)
+      );
+    }
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json(

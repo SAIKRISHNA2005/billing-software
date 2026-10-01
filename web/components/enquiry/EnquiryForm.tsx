@@ -74,14 +74,44 @@ export interface ContainerDetail {
 }
 
 const STEPS = [
-  { key: 'basic', title: 'Basic', description: 'Job Details', icon: <InfoCircleOutlined /> },
-  { key: 'client', title: 'Client & Booking', description: 'Client & Address', icon: <UserOutlined /> },
-  { key: 'container', title: 'Container & Vehicle', description: 'Assets & Drivers', icon: <CarOutlined /> },
-  { key: 'movement', title: 'Movement', description: 'Gate Times', icon: <ClockCircleOutlined /> },
-  { key: 'charges', title: 'Charges', description: 'Freight & Expenses', icon: <DollarOutlined /> },
-  { key: 'vendor', title: 'Vendor & Payment', description: 'Fleet Provider', icon: <WalletOutlined /> },
-  { key: 'route', title: 'Route & Documents', description: 'Route & Invoicing', icon: <CompassOutlined /> },
-  { key: 'review', title: 'Review', description: 'Confirm & Submit', icon: <CheckCircleOutlined /> },
+  { key: 'basic', title: 'Basic Details', textTitle: 'Basic Details', icon: <InfoCircleOutlined /> },
+  {
+    key: 'client',
+    textTitle: 'Client / Party',
+    title: (
+      <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.15 }}>
+        <span>Client /</span>
+        <span>Party</span>
+      </span>
+    ),
+    icon: <UserOutlined />,
+  },
+  {
+    key: 'container',
+    textTitle: 'Vehicle & Container',
+    title: (
+      <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.15 }}>
+        <span>Vehicle &amp;</span>
+        <span>Container</span>
+      </span>
+    ),
+    icon: <CarOutlined />,
+  },
+  { key: 'movement', title: 'Gate Movement', textTitle: 'Gate Movement', icon: <ClockCircleOutlined /> },
+  { key: 'charges', title: 'Charges', textTitle: 'Charges', icon: <DollarOutlined /> },
+  { key: 'vendor', title: 'Vendor Details', textTitle: 'Vendor Details', icon: <WalletOutlined /> },
+  {
+    key: 'route',
+    textTitle: 'Route & Invoicing',
+    title: (
+      <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.15 }}>
+        <span>Route &amp;</span>
+        <span>Invoicing</span>
+      </span>
+    ),
+    icon: <CompassOutlined />,
+  },
+  { key: 'review', title: 'Review', textTitle: 'Review', icon: <CheckCircleOutlined /> },
 ];
 
 export const EnquiryForm: React.FC<EnquiryFormProps> = ({
@@ -692,9 +722,9 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <Text strong style={{ fontSize: 14, color: '#17324D', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Step {currentStep + 1} of {STEPS.length}: {STEPS[currentStep].title}
+                Step {currentStep + 1} of {STEPS.length}: {STEPS[currentStep].textTitle || (typeof STEPS[currentStep].title === 'string' ? STEPS[currentStep].title : '')}
               </Text>
-              <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9' }}>{STEPS[currentStep].description}</Tag>
+              <Tag color="blue">{`Step ${currentStep + 1} / ${STEPS.length}`}</Tag>
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
               {STEPS.map((s, idx) => (
@@ -710,7 +740,7 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
                     cursor: idx <= currentStep ? 'pointer' : 'default',
                     transition: 'all 0.3s',
                   }}
-                  title={s.title}
+                  title={s.textTitle || (typeof s.title === 'string' ? s.title : undefined)}
                 />
               ))}
             </div>
@@ -722,7 +752,6 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
             size="small"
             items={STEPS.map((s, idx) => ({
               title: s.title,
-              description: s.description,
               icon: s.icon,
               status: idx === currentStep ? 'process' : idx < currentStep ? 'finish' : 'wait',
             }))}

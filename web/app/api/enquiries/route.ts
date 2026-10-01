@@ -52,8 +52,17 @@ export async function POST(req: NextRequest) {
     const result = (await callAppsScript('enquiry.create', body, sessionToken)) as any;
     if (result.success && result.data) {
       const enquiryData = result.data.enquiry || result.data;
+      const movementData = result.data.movement || {};
+      const mergedEnquiry = {
+        ...body,
+        ...enquiryData,
+        id: enquiryData.id || result.data.id,
+        enquiryNumber: enquiryData.enquiryNumber || result.data.enquiryNumber,
+        transactionNumber: enquiryData.transactionNumber || result.data.transactionNumber,
+        movement: { ...(body.movement || {}), ...movementData },
+      };
       const { syncEnquiryToReports } = await import('@/lib/server/reportSyncService');
-      syncEnquiryToReports(enquiryData, undefined, sessionToken).catch((err) =>
+      syncEnquiryToReports(mergedEnquiry, undefined, sessionToken).catch((err) =>
         console.error('[LiveSync] Enquiry create sync failed:', err)
       );
     }

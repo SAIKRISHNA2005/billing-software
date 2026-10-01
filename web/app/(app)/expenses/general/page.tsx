@@ -29,6 +29,7 @@ import {
   DeleteOutlined,
   ShopOutlined,
   FileDoneOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -40,6 +41,7 @@ import {
   formatINR,
   ExpenseTotals,
 } from '@/lib/utils/expensesHelper';
+import { exportToExcel } from '@/lib/utils/exportHelper';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -105,6 +107,50 @@ export default function GeneralExpensesPage() {
   useEffect(() => {
     fetchExpenses();
   }, [fetchExpenses]);
+
+  const handleResetFilters = () => {
+    setSearchText('');
+    setCategoryFilter(undefined);
+    setDateRange(null);
+    setPage(1);
+  };
+
+  const generalExportColumns = [
+    { key: 'id', title: 'Expense ID' },
+    { key: 'expenseDate', title: 'Date' },
+    { key: 'category', title: 'Category' },
+    { key: 'amount', title: 'Amount (INR)' },
+    { key: 'description', title: 'Description' },
+  ];
+
+  const handleExportFiltered = () => {
+    if (data.length === 0) {
+      message.warning('No general expense records to export');
+      return;
+    }
+    exportToExcel(data, generalExportColumns, `General_Expenses_Filtered_${dayjs().format('YYYY-MM-DD')}`);
+    message.success(`Exported ${data.length} filtered general expense records to Excel`);
+  };
+
+  const handleExportAll = async () => {
+    try {
+      message.loading({ content: 'Fetching all general expenses for export...', key: 'exportGen' });
+      const res = await axios.get('/api/expenses/general?limit=2000');
+      const allItems = res.data?.data?.items || data;
+      if (allItems.length === 0) {
+        message.warning({ content: 'No general expenses available to export', key: 'exportGen' });
+        return;
+      }
+      exportToExcel(allItems, generalExportColumns, `General_Expenses_ALL_${dayjs().format('YYYY-MM-DD')}`);
+      message.success({ content: `Exported all ${allItems.length} general expense records to Excel`, key: 'exportGen' });
+    } catch {
+      if (data.length > 0) {
+        exportToExcel(data, generalExportColumns, `General_Expenses_ALL_${dayjs().format('YYYY-MM-DD')}`);
+      } else {
+        message.error({ content: 'Failed to fetch all general expenses for export', key: 'exportGen' });
+      }
+    }
+  };
 
   const handleOpenDrawer = (item?: GeneralExpenseItem) => {
     if (item) {
@@ -184,13 +230,6 @@ export default function GeneralExpensesPage() {
         message.error('Delete failed');
       }
     }
-  };
-
-  const handleResetFilters = () => {
-    setSearchText('');
-    setCategoryFilter(undefined);
-    setDateRange(null);
-    setPage(1);
   };
 
   const columns: ColumnsType<GeneralExpenseItem> = [
@@ -277,14 +316,19 @@ export default function GeneralExpensesPage() {
             Office, administrative, and overhead expenses tracking and itemized categorization.
           </Text>
         </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          size="large"
-          onClick={() => handleOpenDrawer()}
-        >
-          Record Expense
-        </Button>
+        <Space wrap>
+          <Button icon={<DownloadOutlined />} onClick={handleExportAll}>
+            Export All
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            size="large"
+            onClick={() => handleOpenDrawer()}
+          >
+            Record Expense
+          </Button>
+        </Space>
       </div>
 
       {/* KPI Stats Row */}
@@ -373,12 +417,15 @@ export default function GeneralExpensesPage() {
             />
           </Col>
           <Col xs={24} sm={12} md={4} style={{ textAlign: 'right' }}>
-            <Space>
+            <Space wrap>
               <Button icon={<ReloadOutlined />} onClick={handleResetFilters}>
                 Reset
               </Button>
               <Button type="primary" onClick={fetchExpenses}>
                 Filter
+              </Button>
+              <Button icon={<DownloadOutlined />} onClick={handleExportFiltered}>
+                Export Filtered
               </Button>
             </Space>
           </Col>
