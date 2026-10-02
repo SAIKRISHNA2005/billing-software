@@ -90,15 +90,15 @@ This checklist itemizes every functional and technical requirement from `PROJECT
 | 13.3 | Processed Bills table with financial year, search, filters, and totals | Phase 13 | [x] |
 | 13.4 | Processed Bill edit page with confirmation dialogs and audit notices | Phase 13 | [x] |
 | **Phase 14: Bill PDF Generation** | | | |
-| 14.1 | Google Docs invoice template with merge tags (`{{billNo}}`, `{{clientName}}`, etc.) | Phase 14 | [ ] |
-| 14.2 | Apps Script PDF generator merging bill items, company seal, and signature | Phase 14 | [ ] |
-| 14.3 | Explicit SEAL placeholder box positioned strictly ABOVE "Authorized Signature" | Phase 14 | [ ] |
-| 14.4 | Download PDF and browser preview buttons on Processed Bills views | Phase 14 | [ ] |
+| 14.1 | Google Docs invoice template with merge tags (`{{billNo}}`, `{{clientName}}`, etc.) | Phase 14 | [x] |
+| 14.2 | Apps Script PDF generator merging bill items, company seal, and signature | Phase 14 | [x] |
+| 14.3 | Explicit SEAL placeholder box positioned strictly ABOVE "Authorized Signature" | Phase 14 | [x] |
+| 14.4 | Download PDF and browser preview buttons on Processed Bills views | Phase 14 | [x] |
 | **Phase 15: Client Payment Tracking** | | | |
-| 15.1 | Client payment recording against processed bills with payment modes | Phase 15 | [ ] |
-| 15.2 | Dynamic payment status calculation (`UNPAID`, `PARTIAL`, `PAID`) | Phase 15 | [ ] |
-| 15.3 | Validation preventing payments from exceeding remaining bill balance | Phase 15 | [ ] |
-| 15.4 | Receivables Ageing Report (0-30, 31-60, 61-90, 90+ days) | Phase 15 | [ ] |
+| 15.1 | Client payment recording against processed bills with payment modes | Phase 15 | [x] |
+| 15.2 | Dynamic payment status calculation (`UNPAID`, `PARTIAL`, `PAID`) | Phase 15 | [x] |
+| 15.3 | Validation preventing payments from exceeding remaining bill balance | Phase 15 | [x] |
+| 15.4 | Receivables Ageing Report (0-30, 31-60, 61-90, 90+ days) | Phase 15 | [x] |
 | **Phase 16: Reports** | | | |
 | 16.1 | Daily Report displaying 6 key metrics and daily transaction drilldown | Phase 16 | [x] |
 | 16.2 | Company-wise Report with date range, loading type filters, and trip drilldown | Phase 16 | [x] |
@@ -112,16 +112,17 @@ This checklist itemizes every functional and technical requirement from `PROJECT
 | 18.2 | Company-wise billing bar chart powered by Recharts | Phase 18 | [x] |
 | 18.3 | Recent 10 processed bills list with direct navigation links | Phase 18 | [x] |
 | **Phase 19: Polish & Security Hardening** | | | |
-| 19.1 | End-to-end security review verifying session checks on 100% of actions | Phase 19 | [ ] |
-| 19.2 | Execution quota budget review and batching validation for 5,000+ records | Phase 19 | [ ] |
-| 19.3 | UX polish: responsive layouts, double-click submit prevention, empty states | Phase 19 | [ ] |
+| 19.1 | End-to-end security review verifying session checks on 100% of actions | Phase 19 | [x] |
+| 19.2 | Execution quota budget review and batching validation for 5,000+ records | Phase 19 | [x] |
+| 19.3 | UX polish: responsive layouts, double-click submit prevention, empty states | Phase 19 | [x] |
 | **Phase 20: Comprehensive Testing Suite** | | | |
-| 20.1 | Unit and boundary tests in Vitest for currency, dates, and preview formulas | Phase 20 | [ ] |
-| 20.2 | Apps Script test harness suite running on throwaway TEST spreadsheet | Phase 20 | [ ] |
-| 20.3 | Playwright end-to-end testing suite validating the complete transport lifecycle | Phase 20 | [ ] |
+| 20.1 | Unit and boundary tests in Vitest for currency, dates, and preview formulas | Phase 20 | [x] |
+| 20.2 | Apps Script test harness suite running on throwaway TEST spreadsheet | Phase 20 | [x] |
+| 20.3 | Playwright end-to-end testing suite validating the complete transport lifecycle | Phase 20 | [x] |
 | **Phase 21: Final Audit, Deployment & Documentation** | | | |
-| 21.1 | 100% line-by-line verification against `PROJECT_DETAILS.md` (`FINAL_AUDIT.md`) | Phase 21 | [ ] |
-| 21.2 | Production deployment of Next.js to Render as a Web Service | Phase 21 | [ ] |
-| 21.3 | Production deployment of Apps Script Web App via `clasp deploy` | Phase 21 | [ ] |
-| 21.4 | Automated daily Google Drive spreadsheet backup script (`backup.gs`) | Phase 21 | [ ] |
-| 21.5 | Complete system documentation (`README.md`, `USER_GUIDE.md`, `ARCHITECTURE.md`) | Phase 21 | [ ] |
+| 21.1 | 100% line-by-line verification against `PROJECT_DETAILS.md` (`FINAL_AUDIT.md`) | Phase 21 | [x] |
+| 21.2 | Production deployment of Next.js to Render as a Web Service | Phase 21 | [x] |
+| 21.3 | Production deployment of Apps Script Web App via `clasp deploy` | Phase 21 | [x] |
+| 21.4 | Automated daily Google Drive spreadsheet backup script (`backup.gs`) | Phase 21 | [x] |
+| 21.5 | Complete system documentation (`README.md`, `USER_GUIDE.md`, `ARCHITECTURE.md`) | Phase 21 | [x] |
+

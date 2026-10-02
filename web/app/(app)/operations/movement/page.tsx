@@ -45,6 +45,8 @@ import axios from 'axios';
 import { exportToExcel } from '@/lib/utils/exportHelper';
 import { useTheme } from '@/components/providers/ThemeContext';
 
+import type { ColumnsType } from 'antd/es/table';
+
 const { Title, Text, Paragraph } = Typography;
 
 export interface VehicleRecord {

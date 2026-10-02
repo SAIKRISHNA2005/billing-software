@@ -1108,7 +1108,7 @@ body:not([data-theme='dark']) .recharts-cartesian-axis-tick text {
 }
 
 /* --------------------------------------------------------------------------
-   7. POPUP REFRESH / ACTION CONFIRM BUTTONS
+   7. POPUP REFRESH / ACTION CONFIRM BUTTONS & EXPANDABLE ROWS
    -------------------------------------------------------------------------- */
 [data-theme='dark'] .popover-confirm-no {
   background-color: #27272A !important;
@@ -1119,6 +1119,91 @@ body:not([data-theme='dark']) .recharts-cartesian-axis-tick text {
 [data-theme='dark'] .popover-confirm-no:hover {
   background-color: #3F3F46 !important;
   color: #FFFFFF !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. TAGS & BADGES HIGH-CONTRAST THEME ADAPTATION
+   -------------------------------------------------------------------------- */
+[data-theme='dark'] .ant-tag {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme='dark'] .ant-tag-blue,
+[data-theme='dark'] .ant-tag-processing {
+  background: #1E3A8A !important;
+  color: #93C5FD !important;
+  border-color: #2563EB !important;
+}
+
+[data-theme='dark'] .ant-tag-green,
+[data-theme='dark'] .ant-tag-success {
+  background: #064E3B !important;
+  color: #86EFAC !important;
+  border-color: #059669 !important;
+}
+
+[data-theme='dark'] .ant-tag-red,
+[data-theme='dark'] .ant-tag-error {
+  background: #7F1D1D !important;
+  color: #FCA5A5 !important;
+  border-color: #DC2626 !important;
+}
+
+[data-theme='dark'] .ant-tag-orange,
+[data-theme='dark'] .ant-tag-warning,
+[data-theme='dark'] .ant-tag-gold {
+  background: #78350F !important;
+  color: #FDE68A !important;
+  border-color: #D97706 !important;
+}
+
+[data-theme='dark'] .ant-tag-purple,
+[data-theme='dark'] .ant-tag-geekblue {
+  background: #581C87 !important;
+  color: #E9D5FF !important;
+  border-color: #9333EA !important;
+}
+
+[data-theme='dark'] .ant-tag-default {
+  background: #27272A !important;
+  color: #E4E4E7 !important;
+  border-color: #3F3F46 !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. TABLE PAGINATION & JUMPER CONTROLS
+   -------------------------------------------------------------------------- */
+[data-theme='dark'] .ant-pagination-total-text {
+  color: #E4E4E7 !important;
+}
+
+[data-theme='dark'] .ant-pagination-item {
+  background-color: #18181B !important;
+  border-color: #3F3F46 !important;
+}
+
+[data-theme='dark'] .ant-pagination-item a {
+  color: #FFFFFF !important;
+}
+
+[data-theme='dark'] .ant-pagination-item-active {
+  background-color: #2563EB !important;
+  border-color: #2563EB !important;
+}
+
+[data-theme='dark'] .ant-pagination-item-active a {
+  color: #FFFFFF !important;
+}
+
+[data-theme='dark'] .ant-pagination-prev .ant-pagination-item-link,
+[data-theme='dark'] .ant-pagination-next .ant-pagination-item-link {
+  background-color: #18181B !important;
+  border-color: #3F3F46 !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme='dark'] .ant-pagination-options {
+  color: #E4E4E7 !important;
 }
 
 

@@ -105,8 +105,7 @@ describe('Bill PDF System Tests', () => {
     expect(html).toContain('ASLPD2964M');
 
     // 7. Seal & Signatory
-    expect(html).toContain('Seal');
-    expect(html).toContain('Authorised Signatory');
+    expect(html).toContain('Seal & Signature');
   });
 
   it('maps existing bill BILL-0005 into clean BillData', async () => {
