@@ -918,16 +918,12 @@ html:not([data-theme='dark']) [style*="background:#ECEFEE"] * {
   color: #FCA5A5 !important;
 }
 
-[data-theme='dark'] .ant-alert-error *,
-[data-theme='dark'] .renew-box-critical *,
-[data-theme='dark'] [style*="background: #FEF2F2"] *,
-[data-theme='dark'] [style*="background:#FEF2F2"] *,
-[data-theme='dark'] [style*="background: #2D1214"] * {
+[data-theme='dark'] .ant-alert-error:not(.ant-btn),
+[data-theme='dark'] .renew-box-critical {
   color: #FCA5A5 !important;
 }
 
-[data-theme='dark'] .renew-box-critical .renew-box-date,
-[data-theme='dark'] [style*="background: #2D1214"] [style*="font-size: 11"] {
+[data-theme='dark'] .renew-box-critical .renew-box-date {
   color: #FECACA !important;
 }
 
@@ -940,12 +936,6 @@ html:not([data-theme='dark']) [style*="background: #FBEFEF"],
 html:not([data-theme='dark']) [style*="background:#FBEFEF"] {
   background-color: #FEF2F2 !important;
   border-color: #EF4444 !important;
-  color: #991B1B !important;
-}
-
-html:not([data-theme='dark']) .ant-alert-error *,
-html:not([data-theme='dark']) .renew-box-critical *,
-html:not([data-theme='dark']) [style*="background: #FEF2F2"] * {
   color: #991B1B !important;
 }
 

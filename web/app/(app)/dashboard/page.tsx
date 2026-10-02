@@ -461,25 +461,40 @@ export default function DashboardPage() {
           message={
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
               <Space align="center">
-                <WarningOutlined style={{ fontSize: 18, color: '#DC2626' }} />
-                <span style={{ fontWeight: 700, fontSize: 14, color: isDark ? '#FCA5A5' : '#991B1B' }}>
+                <WarningOutlined style={{ fontSize: 18, color: isDark ? '#EF4444' : '#DC2626' }} />
+                <span style={{ fontWeight: 700, fontSize: 14, color: isDark ? '#FFFFFF' : '#991B1B' }}>
                   Vehicle Compliance Alert ({vehicleAlerts.length} Document{vehicleAlerts.length > 1 ? 's' : ''} Need Immediate Renewal)
                 </span>
               </Space>
 
-              <Space>
+              <Space wrap>
                 <Button
                   size="small"
                   type="primary"
-                  danger
                   icon={<CarOutlined />}
+                  style={{
+                    backgroundColor: isDark ? '#3B82F6' : '#17324D',
+                    borderColor: isDark ? '#3B82F6' : '#17324D',
+                    color: '#FFFFFF',
+                    fontWeight: 600,
+                  }}
                   onClick={() => handleOpenVehicleModal(vehicleAlerts[0])}
                 >
-                  View Fleet Alert Details
+                  <span style={{ color: '#FFFFFF' }}>View Fleet Alert Details</span>
                 </Button>
                 <Link href="/operations/movement?expiryFilter=ALERTS">
-                  <Button size="small" type="default" icon={<ArrowRightOutlined />}>
-                    Manage Fleet ➔
+                  <Button
+                    size="small"
+                    type="default"
+                    icon={<ArrowRightOutlined />}
+                    style={{
+                      backgroundColor: isDark ? '#27272A' : '#FFFFFF',
+                      borderColor: isDark ? '#3F3F46' : '#CBD5E1',
+                      color: isDark ? '#FFFFFF' : '#090D14',
+                      fontWeight: 600,
+                    }}
+                  >
+                    <span style={{ color: isDark ? '#FFFFFF' : '#090D14' }}>Manage Fleet ➔</span>
                   </Button>
                 </Link>
               </Space>
@@ -492,29 +507,30 @@ export default function DashboardPage() {
                   <Col xs={24} sm={12} md={8} key={idx}>
                     <div
                       style={{
-                        padding: '6px 10px',
-                        borderRadius: 4,
-                        background: isDark ? '#2D1214' : '#FFFFFF',
-                        border: isDark ? '1px solid #DC2626' : '1px solid #FCA5A5',
+                        padding: '8px 12px',
+                        borderRadius: 6,
+                        background: isDark ? '#18181B' : '#FFFFFF',
+                        border: isDark ? '1px solid #3F3F46' : '1px solid #FECACA',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
+                        boxShadow: isDark ? '0 1px 3px rgba(0,0,0,0.4)' : '0 1px 2px rgba(0,0,0,0.04)',
                       }}
                     >
                       <div>
-                        <strong style={{ color: isDark ? '#FFFFFF' : '#17324D' }}>{a.vehicleNumber}</strong>:{' '}
-                        <span style={{ fontSize: 12, color: isDark ? '#E4E4E7' : undefined }}>{a.documentLabel}</span>
-                        <div style={{ fontSize: 11, color: isDark ? '#FCA5A5' : '#B91C1C', fontWeight: 600 }}>
+                        <strong style={{ color: isDark ? '#FFFFFF' : '#090D14', fontSize: 13 }}>{a.vehicleNumber}</strong>:{' '}
+                        <span style={{ fontSize: 12, color: isDark ? '#D4D4D8' : '#374151' }}>{a.documentLabel}</span>
+                        <div style={{ fontSize: 11.5, color: a.isExpired ? (isDark ? '#F87171' : '#DC2626') : (isDark ? '#FDE68A' : '#B45309'), fontWeight: 700, marginTop: 2 }}>
                           {a.isExpired ? 'EXPIRED' : `Expires in ${a.daysRemaining} day(s)`} ({dayjs(a.expiryDate).format('DD-MMM-YYYY')})
                         </div>
                       </div>
                       <Button
                         size="small"
                         type="link"
-                        style={{ padding: 0, fontWeight: 600, color: isDark ? '#F87171' : '#DC2626' }}
+                        style={{ padding: 0, fontWeight: 700, color: isDark ? '#60A5FA' : '#1E3A8A' }}
                         onClick={() => handleOpenVehicleModal(a)}
                       >
-                        View Details
+                        <span style={{ color: isDark ? '#60A5FA' : '#1E3A8A' }}>View Details</span>
                       </Button>
                     </div>
                   </Col>
@@ -527,9 +543,9 @@ export default function DashboardPage() {
           style={{
             marginBottom: 20,
             borderRadius: 6,
-            background: '#FEF2F2',
-            border: '1px solid #F87171',
-            boxShadow: '0 2px 6px rgba(239, 68, 68, 0.12)',
+            background: isDark ? '#2D1214' : '#FEF2F2',
+            border: isDark ? '1px solid #EF4444' : '1px solid #F87171',
+            boxShadow: isDark ? '0 2px 8px rgba(0, 0, 0, 0.5)' : '0 2px 6px rgba(239, 68, 68, 0.12)',
           }}
         />
       )}
