@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callAppsScript } from '@/lib/server/appsScriptClient';
 import { getSessionToken } from '@/lib/server/session';
+import { serverCache } from '@/lib/server/cache';
 
 export async function GET(req: NextRequest) {
   try {
     const sessionToken = getSessionToken();
     if (!sessionToken) {
       return NextResponse.json({ success: false, message: 'Unauthorized session' }, { status: 401 });
+    }
+
+    const cacheKey = 'dashboard:summary';
+    const cached = serverCache.get<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
     }
 
     const result = await callAppsScript<any>('dashboard.summary', {}, sessionToken);
@@ -31,6 +38,10 @@ export async function GET(req: NextRequest) {
       } catch (e) {
         // non-blocking
       }
+    }
+
+    if (result.success && result.data) {
+      serverCache.set(cacheKey, result, 20); // 20s TTL
     }
 
     return NextResponse.json(result);

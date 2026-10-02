@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callAppsScript } from '@/lib/server/appsScriptClient';
 import { getSessionToken } from '@/lib/server/session';
+import { serverCache } from '@/lib/server/cache';
 
 export async function GET(req: NextRequest) {
   try {
@@ -30,7 +31,16 @@ export async function GET(req: NextRequest) {
       sortOrder: searchParams.get('sortOrder') || 'desc',
     };
 
+    const cacheKey = `enquiry:list:${JSON.stringify(params)}`;
+    const cached = serverCache.get<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, { status: 200 });
+    }
+
     const result = await callAppsScript('enquiry.list', params, sessionToken);
+    if (result.success && result.data) {
+      serverCache.set(cacheKey, result, 15); // 15s TTL
+    }
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to retrieve enquiries';
@@ -50,21 +60,25 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const result = (await callAppsScript('enquiry.create', body, sessionToken)) as any;
-    if (result.success && result.data) {
-      const enquiryData = result.data.enquiry || result.data;
-      const movementData = result.data.movement || {};
-      const mergedEnquiry = {
-        ...body,
-        ...enquiryData,
-        id: enquiryData.id || result.data.id,
-        enquiryNumber: enquiryData.enquiryNumber || result.data.enquiryNumber,
-        transactionNumber: enquiryData.transactionNumber || result.data.transactionNumber,
-        movement: { ...(body.movement || {}), ...movementData },
-      };
-      const { syncEnquiryToReports } = await import('@/lib/server/reportSyncService');
-      syncEnquiryToReports(mergedEnquiry, undefined, sessionToken).catch((err) =>
-        console.error('[LiveSync] Enquiry create sync failed:', err)
-      );
+    if (result.success) {
+      serverCache.invalidatePattern('enquiry');
+      serverCache.invalidatePattern('dashboard');
+      if (result.data) {
+        const enquiryData = result.data.enquiry || result.data;
+        const movementData = result.data.movement || {};
+        const mergedEnquiry = {
+          ...body,
+          ...enquiryData,
+          id: enquiryData.id || result.data.id,
+          enquiryNumber: enquiryData.enquiryNumber || result.data.enquiryNumber,
+          transactionNumber: enquiryData.transactionNumber || result.data.transactionNumber,
+          movement: { ...(body.movement || {}), ...movementData },
+        };
+        const { syncEnquiryToReports } = await import('@/lib/server/reportSyncService');
+        syncEnquiryToReports(mergedEnquiry, undefined, sessionToken).catch((err) =>
+          console.error('[LiveSync] Enquiry create sync failed:', err)
+        );
+      }
     }
 
     return NextResponse.json(result, { status: result.success ? 201 : 400 });
