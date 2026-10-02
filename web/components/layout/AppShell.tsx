@@ -416,39 +416,31 @@ export default function AppShell({ children }: AppShellProps) {
           </Space>
 
           <Space size={isMobile ? 'small' : 'middle'}>
-            {/* Dark Mode / Light Mode Toggle Switch Button */}
-            <Tooltip title={themeMode === 'dark' ? 'Click to switch to Light Mode' : 'Click to switch to Dark Mode'}>
+            {/* Icon-Only Dark Mode / Light Mode Toggle Button */}
+            <Tooltip title={themeMode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
               <Button
                 onClick={toggleTheme}
+                icon={
+                  themeMode === 'dark' ? (
+                    <SunOutlined style={{ color: '#F59E0B', fontSize: 16 }} />
+                  ) : (
+                    <MoonOutlined style={{ color: '#17324D', fontSize: 16 }} />
+                  )
+                }
                 style={{
+                  width: 34,
                   height: 34,
-                  padding: isMobile ? '0 10px' : '0 14px',
-                  borderRadius: 17,
-                  background: themeMode === 'dark' ? '#27272A' : '#EEF2F6',
-                  border: themeMode === 'dark' ? '1px solid #3F3F46' : '1px solid #CBD5E1',
-                  color: themeMode === 'dark' ? '#FFFFFF' : '#090D14',
-                  fontSize: 12.5,
-                  fontWeight: 600,
+                  borderRadius: 6,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 6,
+                  justifyContent: 'center',
+                  background: themeMode === 'dark' ? '#27272A' : '#EEF2F6',
+                  border: themeMode === 'dark' ? '1px solid #3F3F46' : '1px solid #CBD5E1',
                   cursor: 'pointer',
                   boxShadow: themeMode === 'dark' ? '0 1px 3px rgba(0, 0, 0, 0.5)' : '0 1px 2px rgba(15, 23, 42, 0.08)',
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
-              >
-                {themeMode === 'dark' ? (
-                  <>
-                    <SunOutlined style={{ color: '#F59E0B', fontSize: 15 }} />
-                    {!isMobile && <span>Light Mode</span>}
-                  </>
-                ) : (
-                  <>
-                    <MoonOutlined style={{ color: '#17324D', fontSize: 15 }} />
-                    {!isMobile && <span>Dark Mode</span>}
-                  </>
-                )}
-              </Button>
+              />
             </Tooltip>
 
             <Dropdown menu={{ items: settingsMenuItems }} placement="bottomRight">
