@@ -46,6 +46,7 @@ import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 import { RecordDetailPopover } from '@/components/common/RecordDetailPopover';
 import { VehicleStatusToggle } from '@/components/common/VehicleStatusToggle';
 import { exportToExcel } from '@/lib/utils/exportHelper';
+import { useTheme } from '@/components/providers/ThemeContext';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -83,6 +84,9 @@ export interface DailyReportEnquiryRow {
 }
 
 export default function DailyReportPage() {
+  const { themeMode } = useTheme();
+  const isDark = themeMode === 'dark';
+
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs>(dayjs());
   const [viewMode, setViewMode] = useState<string>('all');
@@ -475,7 +479,7 @@ export default function DailyReportPage() {
       key: 'id',
       render: (id: string, record: any) => (
         <RecordDetailPopover record={record} title={`Enquiry ${id}`}>
-          <Text strong style={{ cursor: 'pointer', color: '#17324D' }}>
+          <Text strong style={{ cursor: 'pointer', color: isDark ? '#60A5FA' : '#17324D' }}>
             {id}
           </Text>
         </RecordDetailPopover>
@@ -487,7 +491,7 @@ export default function DailyReportPage() {
       key: 'transactionNo',
       render: (txn: string, record: any) => (
         <RecordDetailPopover record={record} title={`Transaction ${txn}`}>
-          <Text code style={{ cursor: 'pointer', color: '#17324D' }}>
+          <Text code style={{ cursor: 'pointer', color: isDark ? '#93C5FD' : '#17324D' }}>
             {txn}
           </Text>
         </RecordDetailPopover>
@@ -496,13 +500,33 @@ export default function DailyReportPage() {
     { title: 'Company', dataIndex: 'companyName', key: 'companyName' },
     { title: 'Client', dataIndex: 'clientName', key: 'clientName' },
     { title: 'Vehicle No', dataIndex: 'vehicleNo', key: 'vehicleNo' },
-    { title: 'Stage', dataIndex: 'stage', key: 'stage', render: (st: string) => <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9' }}>{st}</Tag> },
+    {
+      title: 'Stage',
+      dataIndex: 'stage',
+      key: 'stage',
+      render: (st: string) => (
+        <Tag
+          style={{
+            background: isDark ? '#1E293B' : '#EEF3F6',
+            color: isDark ? '#F1F5F9' : '#17324D',
+            border: isDark ? '1px solid #334155' : '1px solid #D4DAD9',
+            fontWeight: 600,
+          }}
+        >
+          {st}
+        </Tag>
+      ),
+    },
     {
       title: 'Freight Amount',
       dataIndex: 'freightAmount',
       key: 'freightAmount',
       align: 'right' as const,
-      render: (amt: number) => <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatCurrencyINR(amt)}</span>,
+      render: (amt: number) => (
+        <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: isDark ? '#34D399' : '#047857' }}>
+          {formatCurrencyINR(amt)}
+        </span>
+      ),
     },
   ];
 
@@ -513,7 +537,7 @@ export default function DailyReportPage() {
       key: 'billNumber',
       render: (num: string, record: any) => (
         <RecordDetailPopover record={record} title={`Invoice ${num}`} type="bill">
-          <Text strong style={{ color: '#17324D', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>
+          <Text strong style={{ color: isDark ? '#60A5FA' : '#17324D', cursor: 'pointer', fontVariantNumeric: 'tabular-nums' }}>
             {num}
           </Text>
         </RecordDetailPopover>
@@ -527,7 +551,7 @@ export default function DailyReportPage() {
       key: 'totalAmount',
       align: 'right' as const,
       render: (amt: number) => (
-        <Text strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
+        <Text strong style={{ color: isDark ? '#34D399' : '#047857', fontVariantNumeric: 'tabular-nums' }}>
           {formatCurrencyINR(amt)}
         </Text>
       ),
@@ -599,7 +623,11 @@ export default function DailyReportPage() {
       width: 90,
       align: 'center',
       render: (val: string) => (
-        <Tag style={val === 'Export' ? { background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #D4DAD9' } : { background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9' }}>
+        <Tag style={
+          val === 'Export'
+            ? { background: isDark ? 'rgba(34, 197, 94, 0.15)' : '#EBF4ED', color: isDark ? '#4ADE80' : '#166534', border: isDark ? '1px solid rgba(74, 222, 128, 0.3)' : '1px solid #BBF7D0', fontWeight: 600 }
+            : { background: isDark ? 'rgba(56, 189, 248, 0.15)' : '#EEF3F6', color: isDark ? '#38BDF8' : '#0369A1', border: isDark ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid #BAE6FD', fontWeight: 600 }
+        }>
           {val || 'Import'}
         </Tag>
       ),
@@ -619,11 +647,11 @@ export default function DailyReportPage() {
       width: 130,
       render: (val: string) =>
         val && val !== '-' ? (
-          <Text strong style={{ color: '#17324D', fontVariantNumeric: 'tabular-nums' }}>
+          <Text strong style={{ color: isDark ? '#60A5FA' : '#1D4ED8', fontVariantNumeric: 'tabular-nums' }}>
             {val}
           </Text>
         ) : (
-          <Tag style={{ background: '#ECEFEE', color: '#5F6B73', border: '1px solid #D4DAD9' }}>Unbilled</Tag>
+          <Tag style={{ background: isDark ? '#262626' : '#F3F4F6', color: isDark ? '#A3A3A3' : '#6B7280', border: isDark ? '1px solid #404040' : '1px solid #E5E7EB' }}>Unbilled</Tag>
         ),
     },
     {
@@ -633,7 +661,7 @@ export default function DailyReportPage() {
       width: 140,
       render: (val: string, record) => (
         <RecordDetailPopover record={record} title={`Consignment ${val || record.id}`}>
-          <Text code style={{ cursor: 'pointer', color: '#17324D', fontWeight: 600 }}>
+          <Text code style={{ cursor: 'pointer', color: isDark ? '#93C5FD' : '#1D4ED8', fontWeight: 600 }}>
             {val || '-'}
           </Text>
         </RecordDetailPopover>
@@ -645,7 +673,11 @@ export default function DailyReportPage() {
       key: 'feet',
       width: 90,
       align: 'center',
-      render: (val: string) => <Tag style={{ background: '#ECEFEE', color: '#34424C', border: '1px solid #D4DAD9' }}>{val || '40 FT'}</Tag>,
+      render: (val: string) => (
+        <Tag style={{ background: isDark ? '#27272A' : '#F4F4F5', color: isDark ? '#E4E4E7' : '#27272A', border: isDark ? '1px solid #3F3F46' : '1px solid #E4E4E7', fontWeight: 600 }}>
+          {val || '40 FT'}
+        </Tag>
+      ),
     },
     {
       title: 'Container Number',
@@ -673,7 +705,7 @@ export default function DailyReportPage() {
       key: 'vehicleNumber',
       width: 130,
       render: (val: string) => (
-        <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontWeight: 600, fontFamily: 'monospace' }}>
+        <Tag style={{ background: isDark ? '#1E293B' : '#F0F9FF', color: isDark ? '#38BDF8' : '#0284C7', border: isDark ? '1px solid #334155' : '1px solid #BAE6FD', fontWeight: 600, fontFamily: 'monospace' }}>
           {val || '-'}
         </Tag>
       ),
@@ -762,7 +794,11 @@ export default function DailyReportPage() {
       width: 130,
       align: 'center',
       render: (val: string) => (
-        <Tag style={val === 'MOVED' ? { background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #D4DAD9' } : { background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #D4DAD9' }}>
+        <Tag style={
+          val === 'MOVED'
+            ? { background: isDark ? 'rgba(34, 197, 94, 0.15)' : '#EBF4ED', color: isDark ? '#4ADE80' : '#166534', border: isDark ? '1px solid rgba(74, 222, 128, 0.3)' : '1px solid #BBF7D0', fontWeight: 600 }
+            : { background: isDark ? 'rgba(234, 179, 8, 0.15)' : '#FEF9C3', color: isDark ? '#FACC15' : '#854D0E', border: isDark ? '1px solid rgba(250, 204, 21, 0.3)' : '1px solid #FEF08A', fontWeight: 600 }
+        }>
           {val || 'NOT_MOVED'}
         </Tag>
       ),
@@ -775,10 +811,10 @@ export default function DailyReportPage() {
       align: 'center',
       render: (val: string) => {
         const style = val === 'COMPLETED'
-          ? { background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #D4DAD9' }
+          ? { background: isDark ? 'rgba(34, 197, 94, 0.15)' : '#EBF4ED', color: isDark ? '#4ADE80' : '#166534', border: isDark ? '1px solid rgba(74, 222, 128, 0.3)' : '1px solid #BBF7D0', fontWeight: 600 }
           : val === 'IN_PROGRESS'
-          ? { background: '#EEF3F6', color: '#365A73', border: '1px solid #D4DAD9' }
-          : { background: '#ECEFEE', color: '#5F6B73', border: '1px solid #D4DAD9' };
+          ? { background: isDark ? 'rgba(56, 189, 248, 0.15)' : '#EFF6FF', color: isDark ? '#38BDF8' : '#1D4ED8', border: isDark ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid #BFDBFE', fontWeight: 600 }
+          : { background: isDark ? '#262626' : '#F3F4F6', color: isDark ? '#A3A3A3' : '#6B7280', border: isDark ? '1px solid #404040' : '1px solid #E5E7EB', fontWeight: 600 };
         return <Tag style={style}>{val || 'PENDING'}</Tag>;
       },
     },
@@ -797,11 +833,11 @@ export default function DailyReportPage() {
       {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <Title level={2} style={{ margin: 0, color: '#17324D', letterSpacing: '-0.01em' }}>
-            <CalendarOutlined style={{ marginRight: 8, color: '#17324D' }} />
+          <Title level={2} style={{ margin: 0, color: isDark ? '#F1F5F9' : '#17324D', letterSpacing: '-0.01em' }}>
+            <CalendarOutlined style={{ marginRight: 8, color: isDark ? '#60A5FA' : '#17324D' }} />
             Daily Operational &amp; Financial Summary
           </Title>
-          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
+          <Text type="secondary" style={{ fontSize: 13, color: isDark ? '#94A3B8' : '#5F6B73' }}>
             {viewMode === 'all'
               ? 'Showing all active consignment operations and synchronized live reporting records'
               : `Consolidated operational records, gate movements, and financials for ${selectedDate.format('DD MMMM YYYY')}`}

@@ -209,6 +209,10 @@ var BillingModule = (function () {
     var now = new Date().toISOString();
     SheetRepoModule.updateRow(BILLS_SHEET, billId, { deletedAt: now });
 
+    if (typeof TrashbinModule !== 'undefined' && TrashbinModule.recordDeletion) {
+      TrashbinModule.recordDeletion('billing', Object.assign({}, bill, { deletedAt: now }));
+    }
+
     // Revert enquiries back to COMPLETED
     var enquiries = SheetRepoModule.getAllRows(ENQUIRIES_SHEET);
     enquiries.forEach(function (e) {

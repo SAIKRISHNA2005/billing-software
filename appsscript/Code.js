@@ -75,6 +75,7 @@ const ACTION_HANDLERS = {
   'vehicles.create': function(payload, sessionToken) { return MasterDataModule.create('vehicles', payload, sessionToken); },
   'vehicles.update': function(payload, sessionToken) { return MasterDataModule.update('vehicles', payload.id, payload.patch || payload, sessionToken); },
   'vehicles.deactivate': function(payload, sessionToken) { return MasterDataModule.deactivate('vehicles', payload.id, sessionToken); },
+  'vehicles.delete': function(payload, sessionToken) { return MasterDataModule.deactivate('vehicles', payload.id, sessionToken); },
   'vehicles.reactivate': function(payload, sessionToken) { return MasterDataModule.reactivate('vehicles', payload.id, sessionToken); },
   'vehicles.lookup': function(payload, sessionToken) { return MasterDataModule.lookup('vehicles', payload, sessionToken); },
   'vehicles.alerts': function(payload, sessionToken) { return MasterDataModule.getVehicleExpiryAlerts(); },
@@ -146,8 +147,29 @@ const ACTION_HANDLERS = {
   'audit.list': function(payload, sessionToken) { return SettingsModule.listAuditLogs(payload); },
   'audit.ensureLocations': function(payload, sessionToken) { return AuditModule.ensureAuditLocations(); },
 
+  // Document Management Actions (Strictly Vehicle Documents)
+  'documents.upload': function(payload, sessionToken) { return DocumentServiceModule.uploadVehicleDocuments(payload, sessionToken); },
+  'documents.list': function(payload, sessionToken) { return DocumentServiceModule.getVehicleDocuments(payload.vehicleId || payload.entityId, sessionToken); },
+  'documents.get': function(payload, sessionToken) { return DocumentServiceModule.getDocument(payload.id || payload.documentId, sessionToken); },
+  'documents.content': function(payload, sessionToken) { return DocumentServiceModule.getDocumentContent(payload.id || payload.documentId, sessionToken); },
+  'documents.delete': function(payload, sessionToken) { return DocumentServiceModule.deleteDocument(payload.id || payload.documentId, sessionToken); },
+  'documents.rename': function(payload, sessionToken) { return DocumentServiceModule.renameDocument(payload.id || payload.documentId, payload.fileName || payload.newName, sessionToken); },
+  'documents.folder': function(payload, sessionToken) { return DocumentServiceModule.getVehicleFolderUrl(payload.vehicleId || payload.entityId, sessionToken); },
+  'documents.auth': function(payload, sessionToken) { return { authorized: DriveServiceModule.isDriveAuthorized() }; },
+  'documents.sync': function(payload, sessionToken) { return DocumentServiceModule.syncPendingDocuments(sessionToken); },
+
   // Dashboard Module Actions (Phase 18)
   'dashboard.summary': function(payload, sessionToken) { return DashboardModule.getDashboardSummary(); },
+
+  // Trashbin Actions
+  'trashbin.list': function(payload, sessionToken) { return TrashbinModule.listTrash(payload, sessionToken); },
+  'trashbin.restore': function(payload, sessionToken) { return TrashbinModule.restore(payload.category, payload.id, sessionToken); },
+  'trashbin.purge': function(payload, sessionToken) { return TrashbinModule.purge(payload.category, payload.id, sessionToken); },
+  'trashbin.ensure': function(payload, sessionToken) { return TrashbinModule.ensureTrashbinSheets(); },
+
+  // Export Module Actions
+  'export.masterXlsx': function(payload, sessionToken) { return ExportModule.exportMasterXlsx(); },
+  'export.reportCsv': function(payload, sessionToken) { return ExportModule.exportReportCsv(payload); },
 
   // Expense Aliases
   'expenses.general.list': function(payload, sessionToken) { return ExpensesModule.listGeneral(payload, sessionToken); },
@@ -205,6 +227,10 @@ const ACTION_HANDLERS = {
 
   // System Seeding & Reset Actions
   'system.resetAndSeedEdgeCases': function(payload, sessionToken) { return seedRealEdgeCaseData(payload); },
+
+  // Trashbin & Data Recovery Vault Actions
+  'trashbin.list': function(payload, sessionToken) { return TrashbinModule.listTrash(payload, sessionToken); },
+  'trashbin.restore': function(payload, sessionToken) { return TrashbinModule.restore(payload.category, payload.id, sessionToken); },
 };
 
 
@@ -414,4 +440,29 @@ function doGet(e) {
 function createJsonResponse(responseObject) {
   return ContentService.createTextOutput(JSON.stringify(responseObject))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Direct authorization helper function.
+ * Script owner can run this function directly in Apps Script editor to grant full Drive write permissions.
+ * NOTE: DriveApp.createFolder is called directly WITHOUT try/catch so Google Apps Script
+ * intercepts it and displays the "Authorization required" permission dialog for full write access!
+ */
+function authorizeDriveAccess() {
+  // 1. Direct createFolder call to trigger full Drive write permission dialog (https://www.googleapis.com/auth/drive)
+  var authTestFolder = DriveApp.createFolder('__auth_test_drive__');
+  authTestFolder.setTrashed(true);
+
+  // 2. Resolve root folder and sync all pending vehicle documents
+  var root = DriveApp.getRootFolder();
+  var appFolder = DriveServiceModule.getRootFolder();
+  var syncResult = DriveServiceModule.syncPendingDocumentsToDrive();
+  Logger.log('SUCCESS: Google Drive full write access authorized! Root: ' + (appFolder ? appFolder.getName() : root.getName()) + '. ' + syncResult.message);
+  return {
+    success: true,
+    message: 'Google Drive authorization is ACTIVE and operational. ' + syncResult.message,
+    rootName: root ? root.getName() : '',
+    appFolderName: appFolder ? appFolder.getName() : '',
+    syncedDocuments: syncResult.count || 0
+  };
 }

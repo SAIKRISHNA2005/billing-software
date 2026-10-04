@@ -43,10 +43,13 @@ import {
 } from '@/lib/utils/expensesHelper';
 import { exportToExcel } from '@/lib/utils/exportHelper';
 
+import { useTheme } from '@/components/providers/ThemeContext';
+
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 export default function GeneralExpensesPage() {
+  const { isDark } = useTheme();
   const [data, setData] = useState<GeneralExpenseItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -232,24 +235,48 @@ export default function GeneralExpensesPage() {
     }
   };
 
+  const getCategoryTagStyle = (cat: string) => {
+    switch (cat) {
+      case 'Office Stationery':
+        return { bg: isDark ? '#1E293B' : '#EFF6FF', text: isDark ? '#60A5FA' : '#1D4ED8', border: isDark ? '#3B82F6' : '#93C5FD' };
+      case 'Internet':
+        return { bg: isDark ? '#134E4A' : '#F0FDFA', text: isDark ? '#2DD4BF' : '#0F766E', border: isDark ? '#14B8A6' : '#99F6E4' };
+      case 'Electricity':
+        return { bg: isDark ? '#451A03' : '#FEFCE8', text: isDark ? '#FBBF24' : '#B45309', border: isDark ? '#F59E0B' : '#FDE047' };
+      case 'Tea/Coffee':
+        return { bg: isDark ? '#27272A' : '#F8FAFC', text: isDark ? '#A1A1AA' : '#475569', border: isDark ? '#52525B' : '#CBD5E1' };
+      case 'Maintenance':
+        return { bg: isDark ? '#1E1B4B' : '#EEF2FF', text: isDark ? '#818CF8' : '#4338CA', border: isDark ? '#6366F1' : '#C7D2FE' };
+      case 'Salary-Related':
+        return { bg: isDark ? '#052E16' : '#F0FDF4', text: isDark ? '#4ADE80' : '#15803D', border: isDark ? '#22C55E' : '#BBF7D0' };
+      case 'Office Repairs':
+        return { bg: isDark ? '#312E81' : '#F5F3FF', text: isDark ? '#A78BFA' : '#6D28D9', border: isDark ? '#8B5CF6' : '#DDD6FE' };
+      default:
+        return { bg: isDark ? '#1E293B' : '#F1F5F9', text: isDark ? '#94A3B8' : '#475569', border: isDark ? '#334155' : '#CBD5E1' };
+    }
+  };
+
   const columns: ColumnsType<GeneralExpenseItem> = [
     {
       title: 'Expense Date',
       dataIndex: 'expenseDate',
       key: 'expenseDate',
       width: 130,
-      render: (val: string) => <Text strong>{val || '-'}</Text>,
+      render: (val: string) => <Text strong style={{ color: isDark ? '#F1F5F9' : '#0F172A' }}>{val || '-'}</Text>,
     },
     {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
       width: 180,
-      render: (cat: string) => (
-        <Tag color={getGeneralCategoryColor(cat)} style={{ fontSize: 13, padding: '2px 8px' }}>
-          {cat}
-        </Tag>
-      ),
+      render: (cat: string) => {
+        const s = getCategoryTagStyle(cat);
+        return (
+          <Tag style={{ backgroundColor: s.bg, color: s.text, borderColor: s.border, fontSize: 13, padding: '2px 8px', fontWeight: 600 }}>
+            {cat}
+          </Tag>
+        );
+      },
     },
     {
       title: 'Amount',
@@ -258,7 +285,7 @@ export default function GeneralExpensesPage() {
       width: 140,
       align: 'right',
       render: (amt: number) => (
-        <span style={{ color: '#1E2933', fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        <span style={{ color: isDark ? '#F8FAFC' : '#0F172A', fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
           {formatINR(amt)}
         </span>
       ),
@@ -268,7 +295,7 @@ export default function GeneralExpensesPage() {
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
-      render: (desc: string) => desc || <Text type="secondary">-</Text>,
+      render: (desc: string) => <span style={{ color: isDark ? '#CBD5E1' : '#334155' }}>{desc || '-'}</span>,
     },
     {
       title: 'Actions',
@@ -281,6 +308,11 @@ export default function GeneralExpensesPage() {
             size="small"
             icon={<EditOutlined />}
             onClick={() => handleOpenDrawer(record)}
+            style={{
+              color: isDark ? '#93C5FD' : '#2563EB',
+              borderColor: isDark ? '#3B82F6' : '#93C5FD',
+              backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+            }}
           />
           <ActionConfirmPopover
             title="Delete Expense Record?"
@@ -290,7 +322,16 @@ export default function GeneralExpensesPage() {
             onConfirm={() => handleDelete(record.id)}
             placement="topRight"
           >
-            <Button size="small" danger icon={<DeleteOutlined />} />
+            <Button
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              style={{
+                color: isDark ? '#F87171' : '#DC2626',
+                borderColor: isDark ? '#7F1D1D' : '#FCA5A5',
+                backgroundColor: isDark ? '#450A0A' : '#FEF2F2',
+              }}
+            />
           </ActionConfirmPopover>
         </Space>
       ),
@@ -309,10 +350,10 @@ export default function GeneralExpensesPage() {
         }}
       >
         <div>
-          <Title level={3} style={{ margin: 0, color: '#17324D', letterSpacing: '-0.01em' }}>
+          <Title level={3} style={{ margin: 0, color: isDark ? '#F8FAFC' : '#17324D', letterSpacing: '-0.01em' }}>
             General Expenses
           </Title>
-          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
+          <Text type="secondary" style={{ fontSize: 13, color: isDark ? '#94A3B8' : '#5F6B73' }}>
             Office, administrative, and overhead expenses tracking and itemized categorization.
           </Text>
         </div>
@@ -336,21 +377,21 @@ export default function GeneralExpensesPage() {
         <Col xs={24} sm={12} md={6}>
           <Card size="small" className="spt-kpi-card spt-kpi-steel">
             <Statistic
-              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total General Expenses</span>}
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: isDark ? '#94A3B8' : '#5F6B73', fontWeight: 600 }}>Total General Expenses</span>}
               value={summaryTotals.totalAmount}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#38BDF8' : '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card size="small" className="spt-kpi-card spt-kpi-steel">
             <Statistic
-              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Recorded Entries</span>}
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: isDark ? '#94A3B8' : '#5F6B73', fontWeight: 600 }}>Recorded Entries</span>}
               value={summaryTotals.count}
-              prefix={<FileDoneOutlined style={{ color: '#365A73' }} />}
-              valueStyle={{ color: '#1E2933', fontWeight: 600 }}
+              prefix={<FileDoneOutlined style={{ color: isDark ? '#60A5FA' : '#365A73' }} />}
+              valueStyle={{ color: isDark ? '#F8FAFC' : '#1E2933', fontWeight: 600 }}
             />
           </Card>
         </Col>
@@ -458,14 +499,22 @@ export default function GeneralExpensesPage() {
             });
             return (
               <Table.Summary fixed>
-                <Table.Summary.Row style={{ background: '#E5E9E8', fontWeight: 600 }}>
+                <Table.Summary.Row
+                  style={{
+                    background: isDark ? '#1E293B' : '#F1F5F9',
+                    borderTop: isDark ? '2px solid #334155' : '2px solid #CBD5E1',
+                    borderBottom: isDark ? '2px solid #334155' : '2px solid #CBD5E1',
+                  }}
+                >
                   <Table.Summary.Cell index={0} colSpan={2}>
-                    Page Total
+                    <span style={{ color: isDark ? '#F8FAFC' : '#0F172A', fontWeight: 700, fontSize: 13 }}>
+                      Page Total
+                    </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={1} align="right">
-                    <Text strong style={{ color: '#17324D', fontFamily: 'monospace' }}>
+                    <span style={{ color: isDark ? '#38BDF8' : '#0284C7', fontFamily: 'monospace', fontWeight: 700, fontSize: 14 }}>
                       {formatINR(pageTotal)}
-                    </Text>
+                    </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={2} colSpan={2} />
                 </Table.Summary.Row>

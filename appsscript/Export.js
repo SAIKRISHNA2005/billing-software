@@ -14,28 +14,47 @@ var ExportModule = (function () {
       throw new Error('SPREADSHEET_ID script property is not configured.');
     }
 
-    var url = 'https://docs.google.com/spreadsheets/d/' + spreadsheetId + '/export?format=xlsx';
-    var options = {
-      headers: {
-        Authorization: 'Bearer ' + ScriptApp.getOAuthToken()
-      },
-      muteHttpExceptions: true
-    };
-
-    var response = UrlFetchApp.fetch(url, options);
-    if (response.getResponseCode() !== 200) {
-      throw new Error('Google Sheets export failed with status code ' + response.getResponseCode());
+    if (typeof TrashbinModule !== 'undefined' && TrashbinModule.placeTestingSheetsAtLast) {
+      TrashbinModule.placeTestingSheetsAtLast();
     }
 
-    var bytes = response.getBlob().getBytes();
-    var base64Data = Utilities.base64Encode(bytes);
+    SpreadsheetApp.flush();
 
-    AuditModule.writeAuditLog('export', spreadsheetId, 'EXPORT_MASTER_XLSX', '', 'Exported .xlsx snapshot');
+    var filename = 'TMS_Master_Database_' + new Date().toISOString().substring(0, 10) + '.xlsx';
+    var exportUrl = 'https://docs.google.com/spreadsheets/d/' + spreadsheetId + '/export?format=xlsx';
+
+    try {
+      var options = {
+        headers: {
+          Authorization: 'Bearer ' + ScriptApp.getOAuthToken()
+        },
+        muteHttpExceptions: true
+      };
+
+      var response = UrlFetchApp.fetch(exportUrl, options);
+      if (response.getResponseCode() === 200) {
+        var bytes = response.getBlob().getBytes();
+        var base64Data = Utilities.base64Encode(bytes);
+
+        AuditModule.writeAuditLog('export', spreadsheetId, 'EXPORT_MASTER_XLSX', '', 'Exported .xlsx snapshot');
+
+        return {
+          filename: filename,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          base64Data: base64Data,
+          downloadUrl: exportUrl
+        };
+      }
+    } catch (err) {
+      Logger.log('ExportModule.exportMasterXlsx fetch fallback: ' + err.message);
+    }
+
+    AuditModule.writeAuditLog('export', spreadsheetId, 'EXPORT_MASTER_XLSX', '', 'Exported via direct download URL');
 
     return {
-      filename: 'TMS_Master_Database_' + new Date().toISOString().substring(0, 10) + '.xlsx',
-      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      base64Data: base64Data
+      filename: filename,
+      downloadUrl: exportUrl,
+      spreadsheetId: spreadsheetId
     };
   }
 

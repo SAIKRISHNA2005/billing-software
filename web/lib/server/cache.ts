@@ -24,11 +24,11 @@ class ServerCache {
   }
 
   invalidatePattern(pattern: string): void {
-    for (const key of this.store.keys()) {
+    Array.from(this.store.keys()).forEach((key) => {
       if (key.includes(pattern)) {
         this.store.delete(key);
       }
-    }
+    });
   }
 
   clear(): void {

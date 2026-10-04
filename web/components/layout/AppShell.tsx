@@ -35,6 +35,7 @@ import {
   MenuUnfoldOutlined,
   SunOutlined,
   MoonOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useTheme } from '@/components/providers/ThemeContext';
@@ -229,6 +230,11 @@ export default function AppShell({ children }: AppShellProps) {
       icon: <CarOutlined />,
       label: <Link href="/operations/movement">Vehicle Management</Link>,
     },
+    {
+      key: '/trashbin',
+      icon: <DeleteOutlined />,
+      label: <Link href="/trashbin">Trashbin</Link>,
+    },
   ];
 
   // Helper to determine active/open keys in menu
@@ -244,6 +250,7 @@ export default function AppShell({ children }: AppShellProps) {
     if (pathname.startsWith('/billing/pending')) return ['/billing/pending'];
     if (pathname.startsWith('/billing/processed')) return ['/billing/processed'];
     if (pathname.startsWith('/operations')) return ['/operations/movement'];
+    if (pathname.startsWith('/trashbin')) return ['/trashbin'];
     return [pathname];
   };
 

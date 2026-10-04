@@ -22,6 +22,7 @@ import {
   Popconfirm,
   Statistic,
   Alert,
+  Checkbox,
 } from 'antd';
 import {
   SearchOutlined,
@@ -35,6 +36,7 @@ import {
   DownloadOutlined,
   DeleteOutlined,
   UploadOutlined,
+  FolderOpenOutlined,
   WarningOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons';
@@ -44,6 +46,7 @@ import dayjs from 'dayjs';
 import axios from 'axios';
 import { exportToExcel } from '@/lib/utils/exportHelper';
 import { useTheme } from '@/components/providers/ThemeContext';
+import { VehicleDocumentVault } from '@/components/documents';
 
 import type { ColumnsType } from 'antd/es/table';
 
@@ -53,6 +56,7 @@ export interface VehicleRecord {
   id: string;
   vehicleNumber: string;
   ownerName?: string;
+  driverName?: string;
   registeringAuthority?: string;
   vehicleClass?: string;
   fuelType?: string;
@@ -104,6 +108,7 @@ function VehicleManagementContent() {
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [openDocsAfterCreate, setOpenDocsAfterCreate] = useState(true);
   const [form] = Form.useForm();
 
   // Documents Placeholder Modal
@@ -325,9 +330,18 @@ function VehicleManagementContent() {
       } else {
         const res = await axios.post('/api/vehicles', payload);
         if (res.data?.success) {
+          const createdVehicle = res.data.data;
           message.success(`Vehicle ${payload.vehicleNumber} added successfully!`);
           setFormModalOpen(false);
           fetchVehicles();
+          if (openDocsAfterCreate) {
+            setDocVehicle(createdVehicle || {
+              id: payload.vehicleNumber,
+              vehicleNumber: payload.vehicleNumber,
+              ownerName: payload.ownerName,
+            });
+            setDocModalOpen(true);
+          }
         } else {
           message.error(res.data?.message || 'Failed to add vehicle');
         }
@@ -409,6 +423,59 @@ function VehicleManagementContent() {
     message.success(`Exported all ${vehicles.length} vehicles to Excel!`);
   };
 
+  // Helper to render validity dates with expiration badges
+  const renderValidityDate = (d?: string) => {
+    if (!d) return <Text type="secondary">-</Text>;
+    const dateObj = dayjs(d);
+    if (!dateObj.isValid()) return <Text type="secondary">{d}</Text>;
+    const now = dayjs().startOf('day');
+    const target = dateObj.startOf('day');
+    const diffDays = target.diff(now, 'day');
+
+    if (diffDays < 0) {
+      return (
+        <Tooltip title={`Expired on ${dateObj.format('DD-MMM-YYYY')} (${Math.abs(diffDays)} days ago)`}>
+          <Tag color="error" style={{ fontWeight: 600 }}>
+            {dateObj.format('DD-MMM-YYYY')}
+          </Tag>
+        </Tooltip>
+      );
+    }
+    if (diffDays <= 30) {
+      return (
+        <Tooltip title={`Expiring in ${diffDays} days (${dateObj.format('DD-MMM-YYYY')})`}>
+          <Tag color="warning" style={{ fontWeight: 600 }}>
+            {dateObj.format('DD-MMM-YYYY')}
+          </Tag>
+        </Tooltip>
+      );
+    }
+    return (
+      <Tag color="success" style={{ fontWeight: 500 }}>
+        {dateObj.format('DD-MMM-YYYY')}
+      </Tag>
+    );
+  };
+
+  // Helper to launch Document Vault from inside the Add/Edit form
+  const handleUploadDocsFromModal = () => {
+    const rawNum = form.getFieldValue('vehicleNumber');
+    const vehNum = String(rawNum || '').trim().toUpperCase();
+    if (!vehNum) {
+      message.warning('Please enter the Vehicle Number above first before uploading documents.');
+      form.scrollToField?.('vehicleNumber');
+      return;
+    }
+    const owner = form.getFieldValue('ownerName') || '';
+    setDocVehicle({
+      id: selectedVehicle?.id || vehNum,
+      vehicleNumber: vehNum,
+      ownerName: owner,
+      driverName: owner,
+    });
+    setDocModalOpen(true);
+  };
+
   // Table Columns
   const columns: ColumnsType<VehicleRecord> = [
     {
@@ -420,7 +487,7 @@ function VehicleManagementContent() {
       render: (num: string, record) => (
         <Button
           type="link"
-          style={{ padding: 0, fontWeight: 700, fontSize: 13, color: '#17324D' }}
+          style={{ padding: 0, fontWeight: 700, fontSize: 13, color: isDark ? '#93C5FD' : '#1D4ED8' }}
           onClick={() => {
             setSelectedVehicle(record);
             setDetailsModalOpen(true);
@@ -438,35 +505,52 @@ function VehicleManagementContent() {
       render: (val: string) => <Text strong>{val || '-'}</Text>,
     },
     {
-      title: 'Registering Authority',
-      dataIndex: 'registeringAuthority',
-      key: 'registeringAuthority',
-      width: 200,
-      ellipsis: true,
-      render: (val: string) => val || '-',
-    },
-    {
-      title: 'Vehicle Class',
-      dataIndex: 'vehicleClass',
-      key: 'vehicleClass',
-      width: 180,
-      render: (val: string) => <Tag color="blue">{val || 'Articulated Vehicle(HGV)'}</Tag>,
-    },
-    {
-      title: 'Fuel Type',
-      dataIndex: 'fuelType',
-      key: 'fuelType',
-      width: 100,
+      title: 'Fitness Valid UpTo',
+      dataIndex: 'fitnessValidUpTo',
+      key: 'fitnessValidUpTo',
+      width: 150,
       align: 'center',
-      render: (val: string) => <Tag color="geekblue">{val || 'DIESEL'}</Tag>,
+      render: (d: string) => renderValidityDate(d),
     },
     {
-      title: 'Registration Date',
-      dataIndex: 'registrationDate',
-      key: 'registrationDate',
-      width: 130,
+      title: 'Tax Valid UpTo',
+      dataIndex: 'taxValidUpTo',
+      key: 'taxValidUpTo',
+      width: 140,
       align: 'center',
-      render: (d: string) => (d ? dayjs(d).format('DD-MMM-YYYY') : '-'),
+      render: (d: string) => renderValidityDate(d),
+    },
+    {
+      title: 'Insurance Valid UpTo',
+      dataIndex: 'insuranceValidUpTo',
+      key: 'insuranceValidUpTo',
+      width: 155,
+      align: 'center',
+      render: (d: string) => renderValidityDate(d),
+    },
+    {
+      title: 'PUCC Valid UpTo',
+      dataIndex: 'puccValidUpTo',
+      key: 'puccValidUpTo',
+      width: 140,
+      align: 'center',
+      render: (d: string) => renderValidityDate(d),
+    },
+    {
+      title: 'Permit Valid UpTo',
+      dataIndex: 'permitValidUpTo',
+      key: 'permitValidUpTo',
+      width: 145,
+      align: 'center',
+      render: (d: string) => renderValidityDate(d),
+    },
+    {
+      title: 'National Permit Valid UpTo',
+      dataIndex: 'nationalPermitValidUpTo',
+      key: 'nationalPermitValidUpTo',
+      width: 175,
+      align: 'center',
+      render: (d: string) => renderValidityDate(d),
     },
     {
       title: 'Validity Alerts',
@@ -507,17 +591,6 @@ function VehicleManagementContent() {
       ),
     },
     {
-      title: 'Status',
-      dataIndex: 'vehicleStatus',
-      key: 'vehicleStatus',
-      width: 100,
-      align: 'center',
-      render: (val: string, record) => {
-        const isActive = val ? val.toUpperCase() === 'ACTIVE' : Boolean(record.active);
-        return <Tag color={isActive ? 'green' : 'default'}>{isActive ? 'ACTIVE' : 'INACTIVE'}</Tag>;
-      },
-    },
-    {
       title: 'Actions',
       key: 'actions',
       width: 180,
@@ -529,7 +602,7 @@ function VehicleManagementContent() {
             <Button
               type="text"
               size="small"
-              icon={<EyeOutlined style={{ color: '#17324D' }} />}
+              icon={<EyeOutlined style={{ color: isDark ? '#60A5FA' : '#1D4ED8' }} />}
               onClick={() => {
                 setSelectedVehicle(record);
                 setDetailsModalOpen(true);
@@ -541,16 +614,16 @@ function VehicleManagementContent() {
             <Button
               type="text"
               size="small"
-              icon={<EditOutlined style={{ color: '#365A73' }} />}
+              icon={<EditOutlined style={{ color: isDark ? '#F59E0B' : '#D97706' }} />}
               onClick={() => handleOpenEdit(record)}
             />
           </Tooltip>
 
-          <Tooltip title="Add Documents">
+          <Tooltip title="View Vehicle Documents">
             <Button
               type="text"
               size="small"
-              icon={<UploadOutlined style={{ color: '#3F6F4A' }} />}
+              icon={<FolderOpenOutlined style={{ color: isDark ? '#38BDF8' : '#0284C7' }} />}
               onClick={() => {
                 setDocVehicle(record);
                 setDocModalOpen(true);
@@ -558,14 +631,18 @@ function VehicleManagementContent() {
             />
           </Tooltip>
 
-          <Popconfirm
-            title="Deactivate this vehicle?"
-            onConfirm={() => handleDeleteVehicle(record)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button type="text" size="small" icon={<DeleteOutlined style={{ color: '#A8473C' }} />} />
-          </Popconfirm>
+          <Tooltip title="Delete Vehicle">
+            <Popconfirm
+              title={`Move vehicle ${record.vehicleNumber} to Trashbin?`}
+              description="This vehicle will be moved to Vehicle Trashbin and can be restored anytime."
+              onConfirm={() => handleDeleteVehicle(record)}
+              okText="Yes, Move to Trash"
+              cancelText="No"
+              okButtonProps={{ danger: true }}
+            >
+              <Button type="text" size="small" icon={<DeleteOutlined style={{ color: isDark ? '#F87171' : '#DC2626' }} />} />
+            </Popconfirm>
+          </Tooltip>
         </Space>
       ),
     },
@@ -600,15 +677,6 @@ function VehicleManagementContent() {
           </Button>
           <Button icon={<DownloadOutlined />} onClick={handleExportAll}>
             Export All
-          </Button>
-          <Button
-            icon={<UploadOutlined />}
-            onClick={() => {
-              setDocVehicle(vehicles[0] || null);
-              setDocModalOpen(true);
-            }}
-          >
-            Add Documents
           </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
             Add Vehicle
@@ -737,7 +805,7 @@ function VehicleManagementContent() {
           dataSource={filteredVehicles}
           rowKey="id"
           loading={loading}
-          scroll={{ x: 1350 }}
+          scroll={{ x: 1650 }}
           pagination={{
             pageSize: 15,
             showSizeChanger: true,
@@ -767,17 +835,18 @@ function VehicleManagementContent() {
           </Button>,
           <Button
             key="docs"
-            icon={<UploadOutlined />}
+            type="primary"
+            icon={<FolderOpenOutlined />}
             onClick={() => {
               setDocVehicle(selectedVehicle);
               setDocModalOpen(true);
             }}
+            style={{ background: '#0284C7', borderColor: '#0284C7' }}
           >
-            Add Documents
+            View Documents
           </Button>,
           <Button
             key="edit"
-            type="primary"
             icon={<EditOutlined />}
             onClick={() => {
               if (selectedVehicle) {
@@ -794,6 +863,40 @@ function VehicleManagementContent() {
       >
         {selectedVehicle && (
           <div style={{ padding: '8px 4px' }}>
+            {/* Quick Access to Documents */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                background: isDark ? '#1E293B' : '#EFF6FF',
+                border: isDark ? '1px solid #334155' : '1px solid #BFDBFE',
+                borderRadius: 8,
+                marginBottom: 16,
+              }}
+            >
+              <div>
+                <span style={{ fontWeight: 600, color: isDark ? '#FFFFFF' : '#1E2933', fontSize: 13 }}>
+                  Vehicle Compliance &amp; Documents Vault
+                </span>
+                <div style={{ fontSize: 12, color: isDark ? '#94A3B8' : '#64748B' }}>
+                  RC, Insurance, Fitness, PUCC &amp; Permits for {selectedVehicle.vehicleNumber}
+                </div>
+              </div>
+              <Button
+                type="primary"
+                icon={<FolderOpenOutlined />}
+                onClick={() => {
+                  setDocVehicle(selectedVehicle);
+                  setDocModalOpen(true);
+                }}
+                style={{ background: '#0284C7', borderColor: '#0284C7' }}
+              >
+                View Documents
+              </Button>
+            </div>
+
             {/* Upper Vehicle Specification Card */}
             <div
               style={{
@@ -1096,43 +1199,82 @@ function VehicleManagementContent() {
             </Col>
           </Row>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 16 }}>
-            <Button onClick={() => setFormModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={saving}>
-              {isEditing ? 'Save Changes' : 'Create Vehicle'}
+          {/* UPLOAD / ATTACH DOCUMENTS OPTION IN ADD/EDIT VEHICLE MODAL */}
+          <div style={{
+            background: isDark ? 'rgba(37, 99, 235, 0.08)' : '#EFF6FF',
+            border: isDark ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid #BFDBFE',
+            borderRadius: 8,
+            padding: '16px',
+            marginTop: 16,
+            marginBottom: 8,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+              <div>
+                <Text strong style={{ fontSize: 13.5, color: isDark ? '#93C5FD' : '#1E40AF', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <FolderOpenOutlined style={{ fontSize: 16 }} />
+                  Vehicle Documents &amp; Compliance Upload
+                </Text>
+                <div style={{ fontSize: 12, color: isDark ? '#94A3B8' : '#475569', marginTop: 2 }}>
+                  Attach RC, Insurance, Fitness, PUCC, Permits, etc. for this vehicle.
+                </div>
+              </div>
+              <Button
+                type="primary"
+                icon={<UploadOutlined />}
+                onClick={handleUploadDocsFromModal}
+                style={{
+                  background: isDark ? '#2563EB' : '#1D4ED8',
+                  borderColor: isDark ? '#3B82F6' : '#1E40AF',
+                  fontWeight: 600,
+                }}
+              >
+                Upload Documents
+              </Button>
+            </div>
+            {!isEditing && (
+              <Checkbox
+                checked={openDocsAfterCreate}
+                onChange={(e) => setOpenDocsAfterCreate(e.target.checked)}
+                style={{ fontWeight: 600, color: isDark ? '#93C5FD' : '#1E40AF' }}
+              >
+                Also open Document Vault immediately upon creating vehicle
+              </Checkbox>
+            )}
+            <div style={{ fontSize: 11.5, color: isDark ? '#94A3B8' : '#64748B', marginTop: 4, marginLeft: !isEditing ? 24 : 0 }}>
+              Google Drive subfolder: <strong>&#123;Vehicle Number&#125; Documents</strong>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+            <Button
+              icon={<UploadOutlined />}
+              onClick={handleUploadDocsFromModal}
+            >
+              Upload Documents
             </Button>
+            <Space>
+              <Button onClick={() => setFormModalOpen(false)}>Cancel</Button>
+              <Button type="primary" htmlType="submit" loading={saving}>
+                {isEditing ? 'Save Changes' : 'Create Vehicle'}
+              </Button>
+            </Space>
           </div>
         </Form>
       </Modal>
 
-      {/* UPLOAD DOCUMENTS PLACEHOLDER MODAL */}
-      <Modal
-        title={<span>Add / Manage Documents — {docVehicle?.vehicleNumber}</span>}
+      {/* PRODUCTION VEHICLE DOCUMENT VAULT (GOOGLE DRIVE POWERED) */}
+      <VehicleDocumentVault
         open={docModalOpen}
-        onCancel={() => setDocModalOpen(false)}
-        footer={[
-          <Button key="close" onClick={() => setDocModalOpen(false)}>
-            Close
-          </Button>,
-        ]}
-      >
-        <div style={{ textAlign: 'center', padding: '24px 12px' }}>
-          <UploadOutlined style={{ fontSize: 44, color: '#365A73', marginBottom: 12 }} />
-          <Title level={4} style={{ margin: 0 }}>
-            Document Vault for {docVehicle?.vehicleNumber}
-          </Title>
-          <Paragraph type="secondary" style={{ marginTop: 8, fontSize: 13 }}>
-            Upload and link scanned copies of RC, Fitness Certificate, Insurance Policy, State &amp; National Permits.
-          </Paragraph>
-          <Alert
-            message="Feature Ready"
-            description="The 'Add Documents' interface button is established. Document upload and storage specification will be activated with your provided cloud document configuration."
-            type="info"
-            showIcon
-            style={{ textAlign: 'left', marginTop: 16 }}
-          />
-        </div>
-      </Modal>
+        vehicleId={docVehicle?.id || ''}
+        vehicleNumber={docVehicle?.vehicleNumber || ''}
+        ownerName={docVehicle?.ownerName}
+        driverName={docVehicle?.driverName || docVehicle?.ownerName}
+        onClose={() => {
+          setDocModalOpen(false);
+          setDocVehicle(null);
+        }}
+        onDocumentsChanged={fetchVehicles}
+      />
     </div>
   );
 }

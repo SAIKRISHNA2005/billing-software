@@ -208,10 +208,28 @@ var DashboardModule = (function () {
       }
     });
 
+    // All-time Daily Revenue & Daily Operations Trend map
+    var allDailyData = {};
+    bills.forEach(function (b) {
+      if (b.status === 'PROCESSED') {
+        var ds = formatDateISO(b.billingDate || b.processedAt || b.createdAt);
+        if (ds) {
+          if (!allDailyData[ds]) {
+            allDailyData[ds] = { date: ds, revenue: 0, billsCount: 0, trips: 0 };
+          }
+          allDailyData[ds].revenue += parseFloat(b.totalAmount) || 0;
+          allDailyData[ds].billsCount += 1;
+        }
+      }
+    });
+
     enquiries.forEach(function (e) {
       var ds = formatDateISO(e.createdAt || e.date);
-      if (dailyTrendMap[ds]) {
-        dailyTrendMap[ds].trips += 1;
+      if (ds) {
+        if (!allDailyData[ds]) {
+          allDailyData[ds] = { date: ds, revenue: 0, billsCount: 0, trips: 0 };
+        }
+        allDailyData[ds].trips += 1;
       }
     });
 
@@ -270,6 +288,7 @@ var DashboardModule = (function () {
       totalLoadingAmount: totalLoadingAmount,
       totalGeneralAmount: totalGeneralAmount,
       dailyRevenueChart: dailyRevenueChart,
+      allDailyTrend: allDailyData,
       recentBills: recentBills,
       recentEnquiries: recentEnquiries
     };

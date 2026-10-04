@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Table, Tag, Button, Typography, Space, Descriptions, Modal, Form, Input, InputNumber, Select, DatePicker, message } from 'antd';
+import { Card, Row, Col, Table, Tag, Button, Typography, Space, Descriptions, Modal, Form, Input, InputNumber, Select, DatePicker, Spin, message } from 'antd';
 import { FileTextOutlined, ArrowLeftOutlined, EditOutlined, DownloadOutlined, EyeOutlined, DollarOutlined } from '@ant-design/icons';
 import { useRouter, useParams } from 'next/navigation';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { formatCurrencyINR } from '@/lib/utils/format';
+import { useTheme } from '@/components/providers/ThemeContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -15,6 +16,8 @@ export default function ProcessedBillDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const { themeMode } = useTheme();
+  const isDark = themeMode === 'dark';
 
   const [loading, setLoading] = useState(false);
   const [bill, setBill] = useState<any>(null);
@@ -22,7 +25,8 @@ export default function ProcessedBillDetailPage() {
   // PDF Modal State
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
   const [pdfGenerating, setPdfGenerating] = useState(false);
-  const [pdfData, setPdfData] = useState<{ pdfUrl?: string; pdfBase64?: string } | null>(null);
+  const [pdfData, setPdfData] = useState<{ pdfUrl?: string; pdfBase64?: string; html?: string } | null>(null);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
 
   // Payment Modal State
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
@@ -56,6 +60,21 @@ export default function ProcessedBillDetailPage() {
       if (res.data && res.data.success) {
         setPdfData(res.data.data);
         if (preview) {
+          if (res.data.data?.pdfBase64) {
+            try {
+              const byteCharacters = atob(res.data.data.pdfBase64);
+              const byteNumbers = new Array(byteCharacters.length);
+              for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+              }
+              const byteArray = new Uint8Array(byteNumbers);
+              const blob = new Blob([byteArray], { type: 'application/pdf' });
+              const blobUrl = URL.createObjectURL(blob);
+              setPreviewBlobUrl(blobUrl);
+            } catch (blobErr) {
+              console.error('Error creating Blob URL:', blobErr);
+            }
+          }
           setPdfModalVisible(true);
         } else if (res.data.data?.pdfBase64) {
           const link = document.createElement('a');
@@ -125,7 +144,7 @@ export default function ProcessedBillDetailPage() {
       key: 'enquiryId',
       render: (enqId: string) =>
         enqId ? (
-          <Button type="link" style={{ padding: 0, color: '#17324D', fontWeight: 600 }} onClick={() => router.push(`/enquiries/${enqId}`)}>
+          <Button type="link" style={{ padding: 0, color: isDark ? '#60A5FA' : '#1D4ED8', fontWeight: 600 }} onClick={() => router.push(`/enquiries/${enqId}`)}>
             {enqId}
           </Button>
         ) : (
@@ -137,7 +156,7 @@ export default function ProcessedBillDetailPage() {
       dataIndex: 'amount',
       key: 'amount',
       align: 'right' as const,
-      render: (amt: number) => <Text strong style={{ color: '#17324D' }}>{formatCurrencyINR(amt)}</Text>,
+      render: (amt: number) => <Text strong style={{ color: isDark ? '#F1F5F9' : '#17324D' }}>{formatCurrencyINR(amt)}</Text>,
     },
   ];
 
@@ -148,8 +167,8 @@ export default function ProcessedBillDetailPage() {
           <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()}>
             Back to Directory
           </Button>
-          <Title level={2} style={{ margin: 0, color: '#1E2933', fontSize: 22, fontWeight: 600 }}>
-            <FileTextOutlined style={{ marginRight: 8, color: '#17324D' }} />
+          <Title level={2} style={{ margin: 0, color: isDark ? '#F1F5F9' : '#1E2933', fontSize: 22, fontWeight: 600 }}>
+            <FileTextOutlined style={{ marginRight: 8, color: isDark ? '#60A5FA' : '#17324D' }} />
             Invoice ({bill.billNumber})
           </Title>
         </Space>
@@ -171,7 +190,7 @@ export default function ProcessedBillDetailPage() {
           </Button>
           <Button
             type="primary"
-            style={{ backgroundColor: '#3F6F4A', borderColor: '#3F6F4A' }}
+            style={{ backgroundColor: isDark ? '#16A34A' : '#3F6F4A', borderColor: isDark ? '#16A34A' : '#3F6F4A' }}
             icon={<DollarOutlined />}
             onClick={() => {
               form.setFieldsValue({
@@ -199,7 +218,7 @@ export default function ProcessedBillDetailPage() {
           <Col span={24}>
             <Descriptions title="Invoice Overview" bordered column={{ xs: 1, sm: 2, md: 3 }}>
               <Descriptions.Item label="Bill Number">
-                <Text strong style={{ color: '#17324D', fontSize: 15 }}>{bill.billNumber}</Text>
+                <Text strong style={{ color: isDark ? '#60A5FA' : '#17324D', fontSize: 15 }}>{bill.billNumber}</Text>
               </Descriptions.Item>
               <Descriptions.Item label="Financial Year">
                 <Tag color="default">{bill.financialYear || bill.fy}</Tag>
@@ -209,9 +228,23 @@ export default function ProcessedBillDetailPage() {
                   style={{
                     fontWeight: 600,
                     borderRadius: 3,
-                    background: bill.paymentStatus === 'PAID' ? '#EBF4ED' : bill.paymentStatus === 'PARTIAL' ? '#FDF6E8' : '#FBEFEF',
-                    color: bill.paymentStatus === 'PAID' ? '#3F6F4A' : bill.paymentStatus === 'PARTIAL' ? '#C58A2A' : '#A8473C',
-                    border: `1px solid ${bill.paymentStatus === 'PAID' ? '#B7D9BF' : bill.paymentStatus === 'PARTIAL' ? '#E8CCA1' : '#E5BDB9'}`,
+                    background: bill.paymentStatus === 'PAID'
+                      ? (isDark ? 'rgba(34, 197, 94, 0.15)' : '#EBF4ED')
+                      : bill.paymentStatus === 'PARTIAL'
+                      ? (isDark ? 'rgba(234, 179, 8, 0.15)' : '#FDF6E8')
+                      : (isDark ? 'rgba(239, 68, 68, 0.15)' : '#FBEFEF'),
+                    color: bill.paymentStatus === 'PAID'
+                      ? (isDark ? '#4ADE80' : '#166534')
+                      : bill.paymentStatus === 'PARTIAL'
+                      ? (isDark ? '#FACC15' : '#854D0E')
+                      : (isDark ? '#F87171' : '#991B1B'),
+                    border: `1px solid ${
+                      bill.paymentStatus === 'PAID'
+                        ? (isDark ? 'rgba(74, 222, 128, 0.3)' : '#B7D9BF')
+                        : bill.paymentStatus === 'PARTIAL'
+                        ? (isDark ? 'rgba(250, 204, 21, 0.3)' : '#E8CCA1')
+                        : (isDark ? 'rgba(248, 113, 113, 0.3)' : '#E5BDB9')
+                    }`,
                   }}
                 >
                   {bill.paymentStatus || 'UNPAID'}
@@ -227,13 +260,13 @@ export default function ProcessedBillDetailPage() {
                 <strong>{bill.clientName}</strong>
               </Descriptions.Item>
               <Descriptions.Item label="Total Amount">
-                <Text strong style={{ color: '#17324D' }}>{formatCurrencyINR(bill.totalAmount)}</Text>
+                <Text strong style={{ color: isDark ? '#F1F5F9' : '#17324D' }}>{formatCurrencyINR(bill.totalAmount)}</Text>
               </Descriptions.Item>
               <Descriptions.Item label="Paid Amount">
-                <Text strong style={{ color: '#3F6F4A' }}>{formatCurrencyINR(bill.paidAmount || 0)}</Text>
+                <Text strong style={{ color: isDark ? '#4ADE80' : '#166534' }}>{formatCurrencyINR(bill.paidAmount || 0)}</Text>
               </Descriptions.Item>
               <Descriptions.Item label="Pending Amount">
-                <Text strong style={{ color: '#A8473C' }}>{formatCurrencyINR(bill.pendingAmount !== undefined ? bill.pendingAmount : (bill.totalAmount - (bill.paidAmount || 0)))}</Text>
+                <Text strong style={{ color: isDark ? '#F87171' : '#A8473C' }}>{formatCurrencyINR(bill.pendingAmount !== undefined ? bill.pendingAmount : (bill.totalAmount - (bill.paidAmount || 0)))}</Text>
               </Descriptions.Item>
               <Descriptions.Item label="Remarks" span={3}>
                 {bill.remarks || 'No remarks provided.'}
@@ -251,8 +284,8 @@ export default function ProcessedBillDetailPage() {
           pagination={false}
           footer={() => (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text strong style={{ fontSize: 14, color: '#34424C' }}>Total Billed Amount:</Text>
-              <Title level={3} style={{ margin: 0, color: '#17324D', fontWeight: 700 }}>
+              <Text strong style={{ fontSize: 14, color: isDark ? '#94A3B8' : '#34424C' }}>Total Billed Amount:</Text>
+              <Title level={3} style={{ margin: 0, color: isDark ? '#F1F5F9' : '#17324D', fontWeight: 700 }}>
                 {formatCurrencyINR(bill.totalAmount)}
               </Title>
             </div>
@@ -262,10 +295,11 @@ export default function ProcessedBillDetailPage() {
 
       {/* PDF Preview Modal */}
       <Modal
-        title={`Invoice PDF Preview - ${bill.billNumber}`}
+        title={`Invoice PDF Preview - ${bill.billNumber || id}`}
         open={pdfModalVisible}
         onCancel={() => setPdfModalVisible(false)}
-        width={900}
+        width={960}
+        style={{ top: 20 }}
         footer={[
           <Button key="close" onClick={() => setPdfModalVisible(false)}>
             Close
@@ -275,6 +309,7 @@ export default function ProcessedBillDetailPage() {
               key="download-pdf"
               type="primary"
               icon={<DownloadOutlined />}
+              style={{ backgroundColor: isDark ? '#2563EB' : '#1D4ED8', borderColor: isDark ? '#2563EB' : '#1D4ED8' }}
               onClick={() => {
                 const link = document.createElement('a');
                 link.href = 'data:application/pdf;base64,' + pdfData.pdfBase64;
@@ -299,17 +334,19 @@ export default function ProcessedBillDetailPage() {
           ),
         ]}
       >
-        {pdfData?.pdfBase64 ? (
-          <iframe
-            src={`data:application/pdf;base64,${pdfData.pdfBase64}`}
-            style={{ width: '100%', height: '550px', border: 'none' }}
-            title="PDF Preview"
-          />
-        ) : (
-          <div style={{ textAlign: 'center', padding: 40 }}>
-            <Text type="secondary">Generating PDF preview...</Text>
-          </div>
-        )}
+        <div style={{ height: '75vh', width: '100%', display: 'flex', flexDirection: 'column' }}>
+          {previewBlobUrl || pdfData?.pdfBase64 ? (
+            <iframe
+              src={previewBlobUrl || `data:application/pdf;base64,${pdfData?.pdfBase64}`}
+              style={{ width: '100%', height: '100%', border: 'none', borderRadius: 4 }}
+              title="PDF Preview"
+            />
+          ) : (
+            <div style={{ textAlign: 'center', padding: 40, margin: 'auto' }}>
+              <Spin tip="Generating PDF preview..." />
+            </div>
+          )}
+        </div>
       </Modal>
 
       {/* Record Payment Modal */}

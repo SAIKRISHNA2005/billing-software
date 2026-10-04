@@ -569,19 +569,54 @@ html:not([data-theme='dark']) .spt-sidebar .ant-menu-item:hover * {
   color: #FFFFFF !important;
 }
 
-/* Light Mode Primary / Danger Buttons have White Text */
-html:not([data-theme='dark']) .ant-btn-primary,
-html:not([data-theme='dark']) .ant-btn-primary *,
-html:not([data-theme='dark']) .ant-btn-dangerous,
-html:not([data-theme='dark']) .ant-btn-dangerous * {
+/* Light Mode Primary Buttons have White Text */
+html:not([data-theme='dark']) .ant-btn-primary:not(.ant-btn-dangerous),
+html:not([data-theme='dark']) .ant-btn-primary:not(.ant-btn-dangerous) * {
   color: #FFFFFF !important;
 }
 
-/* Light Mode Default / Dashed Buttons have Dark Text */
-html:not([data-theme='dark']) .ant-btn-default,
-html:not([data-theme='dark']) .ant-btn-default *,
-html:not([data-theme='dark']) .ant-btn-dashed,
-html:not([data-theme='dark']) .ant-btn-dashed * {
+/* Light Mode Primary Danger Buttons have Solid Red Background and White Text */
+html:not([data-theme='dark']) .ant-btn-primary.ant-btn-dangerous,
+html:not([data-theme='dark']) .ant-btn-primary.ant-btn-dangerous * {
+  background-color: #DC2626 !important;
+  border-color: #DC2626 !important;
+  color: #FFFFFF !important;
+}
+
+/* Light Mode Danger Buttons in Tables and UI - Crisp High Contrast Red */
+html:not([data-theme='dark']) .ant-btn-dangerous:not(.ant-btn-primary),
+html:not([data-theme='dark']) .ant-table .ant-btn-dangerous,
+html:not([data-theme='dark']) .ant-btn-dangerous:not(.ant-btn-primary) .anticon,
+html:not([data-theme='dark']) .ant-table .ant-btn-dangerous .anticon,
+html:not([data-theme='dark']) .ant-btn-dangerous:not(.ant-btn-primary) span,
+html:not([data-theme='dark']) .ant-table .ant-btn-dangerous span {
+  color: #DC2626 !important;
+}
+
+html:not([data-theme='dark']) .ant-btn-dangerous.ant-btn-default,
+html:not([data-theme='dark']) .ant-table .ant-btn-dangerous.ant-btn-default {
+  background-color: #FEF2F2 !important;
+  border-color: #FCA5A5 !important;
+  color: #DC2626 !important;
+}
+
+html:not([data-theme='dark']) .ant-btn-dangerous:not(.ant-btn-primary):hover,
+html:not([data-theme='dark']) .ant-table .ant-btn-dangerous:hover {
+  background-color: #FEE2E2 !important;
+  border-color: #DC2626 !important;
+  color: #991B1B !important;
+}
+
+html:not([data-theme='dark']) .ant-btn-dangerous:not(.ant-btn-primary):hover *,
+html:not([data-theme='dark']) .ant-table .ant-btn-dangerous:hover * {
+  color: #991B1B !important;
+}
+
+/* Light Mode Default / Dashed Buttons have Dark Text (Exclude dangerous) */
+html:not([data-theme='dark']) .ant-btn-default:not(.ant-btn-dangerous),
+html:not([data-theme='dark']) .ant-btn-default:not(.ant-btn-dangerous) *,
+html:not([data-theme='dark']) .ant-btn-dashed:not(.ant-btn-dangerous),
+html:not([data-theme='dark']) .ant-btn-dashed:not(.ant-btn-dangerous) * {
   color: #090D14 !important;
   background-color: #FFFFFF !important;
   border-color: #CBD5E1 !important;
@@ -783,33 +818,68 @@ html:not([data-theme='dark']) .ant-popover-inner .ant-typography-secondary {
 }
 
 /* Dark Mode Buttons */
-[data-theme='dark'] .ant-btn-default {
+[data-theme='dark'] .ant-btn-default:not(.ant-btn-dangerous) {
   background-color: #222226 !important;
   border-color: #3F3F46 !important;
   color: #FFFFFF !important;
 }
 
-[data-theme='dark'] .ant-btn-default:hover {
+[data-theme='dark'] .ant-btn-default:not(.ant-btn-dangerous):hover {
   background-color: #2E2E34 !important;
   border-color: #71717A !important;
   color: #FFFFFF !important;
 }
 
-[data-theme='dark'] .ant-btn-default *,
-[data-theme='dark'] .ant-btn-dashed *,
-[data-theme='dark'] .ant-btn-text * {
+[data-theme='dark'] .ant-btn-default:not(.ant-btn-dangerous) *,
+[data-theme='dark'] .ant-btn-dashed:not(.ant-btn-dangerous) *,
+[data-theme='dark'] .ant-btn-text:not(.ant-btn-dangerous) * {
   color: #FFFFFF !important;
 }
 
-[data-theme='dark'] .ant-btn-primary {
+/* Dark Mode Danger Buttons in Tables and UI - Crisp High Contrast Red */
+[data-theme='dark'] .ant-btn-dangerous:not(.ant-btn-primary),
+[data-theme='dark'] .ant-table .ant-btn-dangerous,
+[data-theme='dark'] .ant-btn-dangerous:not(.ant-btn-primary) .anticon,
+[data-theme='dark'] .ant-table .ant-btn-dangerous .anticon,
+[data-theme='dark'] .ant-btn-dangerous:not(.ant-btn-primary) span,
+[data-theme='dark'] .ant-table .ant-btn-dangerous span {
+  color: #F87171 !important;
+}
+
+[data-theme='dark'] .ant-btn-dangerous.ant-btn-default,
+[data-theme='dark'] .ant-table .ant-btn-dangerous.ant-btn-default {
+  background-color: #450A0A !important;
+  border-color: #7F1D1D !important;
+  color: #F87171 !important;
+}
+
+[data-theme='dark'] .ant-btn-dangerous:not(.ant-btn-primary):hover,
+[data-theme='dark'] .ant-table .ant-btn-dangerous:hover {
+  background-color: #7F1D1D !important;
+  border-color: #DC2626 !important;
+  color: #FCA5A5 !important;
+}
+
+[data-theme='dark'] .ant-btn-dangerous:not(.ant-btn-primary):hover *,
+[data-theme='dark'] .ant-table .ant-btn-dangerous:hover * {
+  color: #FCA5A5 !important;
+}
+
+[data-theme='dark'] .ant-btn-primary:not(.ant-btn-dangerous) {
   background-color: #3B82F6 !important;
   border-color: #3B82F6 !important;
   color: #FFFFFF !important;
 }
 
-[data-theme='dark'] .ant-btn-primary:hover {
+[data-theme='dark'] .ant-btn-primary:not(.ant-btn-dangerous):hover {
   background-color: #60A5FA !important;
   border-color: #60A5FA !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme='dark'] .ant-btn-primary.ant-btn-dangerous {
+  background-color: #DC2626 !important;
+  border-color: #DC2626 !important;
   color: #FFFFFF !important;
 }
 

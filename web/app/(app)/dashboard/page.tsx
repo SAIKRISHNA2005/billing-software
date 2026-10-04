@@ -242,30 +242,168 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Process and sanitize chart data - GUARANTEED CONTINUOUS 14-DAY TIMELINE
-  const sanitizedDailyRevenueChart = useMemo(() => {
-    const raw = Array.isArray(summary?.dailyRevenueChart) ? summary.dailyRevenueChart : [];
-    const rawMap = new Map<string, any>();
-    raw.forEach((item: any) => {
-      if (item.date) {
-        rawMap.set(dayjs(item.date).format('YYYY-MM-DD'), item);
-      }
-    });
+  const [trendTimeframe, setTrendTimeframe] = useState<string>('14d');
 
-    const daysList: any[] = [];
-    for (let i = 13; i >= 0; i--) {
-      const d = dayjs().subtract(i, 'day');
-      const dateKey = d.format('YYYY-MM-DD');
-      const existing = rawMap.get(dateKey);
-      daysList.push({
-        date: dateKey,
-        displayDate: d.format('DD-MMM'),
-        revenue: existing ? Number(existing.revenue) || 0 : 0,
-        billsCount: existing ? Number(existing.billsCount) || 0 : 0,
+  // Process and sanitize chart data based on selected timeframe dropdown
+  const sanitizedDailyRevenueChart = useMemo(() => {
+    const rawMap = new Map<string, { revenue: number; billsCount: number; trips: number }>();
+
+    // 1. Ingest allDailyTrend if provided by backend
+    if (summary?.allDailyTrend) {
+      if (Array.isArray(summary.allDailyTrend)) {
+        summary.allDailyTrend.forEach((item: any) => {
+          if (item?.date) {
+            const key = dayjs(item.date).format('YYYY-MM-DD');
+            rawMap.set(key, {
+              revenue: Number(item.revenue) || 0,
+              billsCount: Number(item.billsCount) || 0,
+              trips: Number(item.trips) || 0,
+            });
+          }
+        });
+      } else if (typeof summary.allDailyTrend === 'object') {
+        Object.entries(summary.allDailyTrend).forEach(([k, item]: [string, any]) => {
+          const key = dayjs(k).format('YYYY-MM-DD');
+          rawMap.set(key, {
+            revenue: Number(item?.revenue) || 0,
+            billsCount: Number(item?.billsCount) || 0,
+            trips: Number(item?.trips) || 0,
+          });
+        });
+      }
+    }
+
+    // 2. Ingest / merge dailyRevenueChart
+    if (Array.isArray(summary?.dailyRevenueChart)) {
+      summary.dailyRevenueChart.forEach((item: any) => {
+        if (item?.date) {
+          const key = dayjs(item.date).format('YYYY-MM-DD');
+          if (!rawMap.has(key)) {
+            rawMap.set(key, {
+              revenue: Number(item.revenue) || 0,
+              billsCount: Number(item.billsCount) || 0,
+              trips: Number(item.trips) || 0,
+            });
+          }
+        }
       });
     }
-    return daysList;
-  }, [summary?.dailyRevenueChart]);
+
+    // 3. Generate points according to selected timeframe
+    // Option: 1 Day
+    if (trendTimeframe === '1d') {
+      const result: any[] = [];
+      for (let i = 1; i >= 0; i--) {
+        const d = dayjs().subtract(i, 'day');
+        const key = d.format('YYYY-MM-DD');
+        const existing = rawMap.get(key);
+        result.push({
+          date: key,
+          displayDate: i === 0 ? `Today (${d.format('DD-MMM')})` : `Yesterday (${d.format('DD-MMM')})`,
+          revenue: existing ? existing.revenue : 0,
+          billsCount: existing ? existing.billsCount : 0,
+          trips: existing ? existing.trips : 0,
+        });
+      }
+      return result;
+    }
+
+    // Option: 1 Week (7 Days), 14 Days, 1 Month (30 Days)
+    if (trendTimeframe === '1w' || trendTimeframe === '14d' || trendTimeframe === '1m') {
+      const daysCount = trendTimeframe === '1w' ? 7 : trendTimeframe === '14d' ? 14 : 30;
+      const result: any[] = [];
+      for (let i = daysCount - 1; i >= 0; i--) {
+        const d = dayjs().subtract(i, 'day');
+        const key = d.format('YYYY-MM-DD');
+        const existing = rawMap.get(key);
+        result.push({
+          date: key,
+          displayDate: d.format('DD-MMM'),
+          revenue: existing ? existing.revenue : 0,
+          billsCount: existing ? existing.billsCount : 0,
+          trips: existing ? existing.trips : 0,
+        });
+      }
+      return result;
+    }
+
+    // Option: 2 Months to 11 Months, 12 Months / 1 Year, 2 Years
+    const monthCountMap: Record<string, number> = {
+      '2m': 2,
+      '3m': 3,
+      '4m': 4,
+      '5m': 5,
+      '6m': 6,
+      '7m': 7,
+      '8m': 8,
+      '9m': 9,
+      '10m': 10,
+      '11m': 11,
+      '1y': 12,
+      '2y': 24,
+    };
+
+    if (monthCountMap[trendTimeframe]) {
+      const months = monthCountMap[trendTimeframe];
+      const result: any[] = [];
+      for (let i = months - 1; i >= 0; i--) {
+        const m = dayjs().subtract(i, 'month');
+        const monthKey = m.format('YYYY-MM');
+        let rev = 0;
+        let bills = 0;
+        let trips = 0;
+        rawMap.forEach((val, dateKey) => {
+          if (dateKey.startsWith(monthKey)) {
+            rev += val.revenue;
+            bills += val.billsCount;
+            trips += val.trips;
+          }
+        });
+        result.push({
+          date: monthKey,
+          displayDate: m.format('MMM YY'),
+          revenue: rev,
+          billsCount: bills,
+          trips: trips,
+        });
+      }
+      return result;
+    }
+
+    // Option: Total / All Time
+    if (trendTimeframe === 'all') {
+      const monthKeys = new Set<string>();
+      rawMap.forEach((_, dateKey) => {
+        if (dateKey && dateKey.length >= 7) {
+          monthKeys.add(dateKey.substring(0, 7));
+        }
+      });
+      monthKeys.add(dayjs().format('YYYY-MM'));
+      const sortedMonths = Array.from(monthKeys).sort();
+
+      return sortedMonths.map((mKey) => {
+        let rev = 0;
+        let bills = 0;
+        let trips = 0;
+        rawMap.forEach((val, dateKey) => {
+          if (dateKey.startsWith(mKey)) {
+            rev += val.revenue;
+            bills += val.billsCount;
+            trips += val.trips;
+          }
+        });
+        return {
+          date: mKey,
+          displayDate: dayjs(mKey + '-01').format('MMM YY'),
+          revenue: rev,
+          billsCount: bills,
+          trips: trips,
+        };
+      });
+    }
+
+    return [];
+  }, [summary?.dailyRevenueChart, summary?.allDailyTrend, trendTimeframe]);
 
   // Company-wise Revenue Billing with guaranteed entries so chart and axes always display
   const sanitizedCompanyBillingChart = useMemo(() => {
@@ -306,36 +444,49 @@ export default function DashboardPage() {
   // Recent Processed Bills Table Columns
   const recentBillsColumns = [
     {
-      title: 'Bill Number',
+      title: <span style={{ whiteSpace: 'nowrap' }}>Bill Number</span>,
       dataIndex: 'billNumber',
       key: 'billNumber',
+      width: 140,
       render: (num: string, r: any) => (
         <Button
           type="link"
-          style={{ padding: 0, fontWeight: 700, color: isDark ? '#60A5FA' : '#17324D' }}
+          style={{ padding: 0, fontWeight: 700, color: isDark ? '#60A5FA' : '#17324D', whiteSpace: 'nowrap' }}
           onClick={() => router.push(`/billing/processed/${r.id}`)}
         >
           {num || r.id}
         </Button>
       ),
     },
-    { title: 'Company', dataIndex: 'companyName', key: 'companyName', ellipsis: true },
-    { title: 'Client', dataIndex: 'clientName', key: 'clientName', ellipsis: true },
     {
-      title: 'Date',
-      dataIndex: 'billingDate',
-      key: 'billingDate',
-      width: 105,
-      render: (d: string) => (d ? dayjs(d).format('DD-MM-YYYY') : '-'),
+      title: <span style={{ whiteSpace: 'nowrap' }}>Company</span>,
+      dataIndex: 'companyName',
+      key: 'companyName',
+      width: 180,
+      render: (c: string) => <Text strong style={{ color: isDark ? '#FFFFFF' : '#17324D' }}>{c || '-'}</Text>,
     },
     {
-      title: 'Amount (₹)',
+      title: <span style={{ whiteSpace: 'nowrap' }}>Client</span>,
+      dataIndex: 'clientName',
+      key: 'clientName',
+      width: 180,
+      render: (c: string) => <span style={{ color: isDark ? '#CBD5E1' : '#334155' }}>{c || '-'}</span>,
+    },
+    {
+      title: <span style={{ whiteSpace: 'nowrap' }}>Date</span>,
+      dataIndex: 'billingDate',
+      key: 'billingDate',
+      width: 110,
+      render: (d: string) => <span style={{ whiteSpace: 'nowrap' }}>{d ? dayjs(d).format('DD-MM-YYYY') : '-'}</span>,
+    },
+    {
+      title: <span style={{ whiteSpace: 'nowrap' }}>Amount (₹)</span>,
       dataIndex: 'totalAmount',
       key: 'totalAmount',
       align: 'right' as const,
-      width: 120,
+      width: 135,
       render: (amt: number) => (
-        <Text strong style={{ color: isDark ? '#FFFFFF' : '#17324D' }}>
+        <Text strong style={{ color: isDark ? '#FFFFFF' : '#17324D', whiteSpace: 'nowrap' }}>
           {formatCurrencyINR(amt)}
         </Text>
       ),
@@ -345,63 +496,64 @@ export default function DashboardPage() {
   // Recently Created Enquiries Table Columns
   const recentEnquiriesColumns = [
     {
-      title: 'Enquiry No',
+      title: <span style={{ whiteSpace: 'nowrap' }}>Enquiry No</span>,
       dataIndex: 'enquiryNumber',
       key: 'enquiryNumber',
-      width: 110,
+      width: 125,
       render: (num: any, r: any) => (
-        <Link href={`/enquiries/${r.id}`} style={{ fontWeight: 700, color: isDark ? '#60A5FA' : '#17324D' }}>
+        <Link href={`/enquiries/${r.id}`} style={{ fontWeight: 700, color: isDark ? '#60A5FA' : '#17324D', whiteSpace: 'nowrap' }}>
           {num || r.id}
         </Link>
       ),
     },
     {
-      title: 'Company',
+      title: <span style={{ whiteSpace: 'nowrap' }}>Company</span>,
       dataIndex: 'companyName',
       key: 'companyName',
-      ellipsis: true,
+      width: 175,
       render: (c: string) => <Text strong style={{ color: isDark ? '#FFFFFF' : '#17324D' }}>{c || '-'}</Text>,
     },
     {
-      title: 'Client',
+      title: <span style={{ whiteSpace: 'nowrap' }}>Client</span>,
       dataIndex: 'clientName',
       key: 'clientName',
-      ellipsis: true,
+      width: 175,
+      render: (c: string) => <span style={{ color: isDark ? '#CBD5E1' : '#334155' }}>{c || '-'}</span>,
     },
     {
-      title: 'Date',
+      title: <span style={{ whiteSpace: 'nowrap' }}>Date</span>,
       dataIndex: 'date',
       key: 'date',
-      width: 105,
-      render: (d: string) => (d ? dayjs(d).format('DD-MM-YYYY') : '-'),
+      width: 110,
+      render: (d: string) => <span style={{ whiteSpace: 'nowrap' }}>{d ? dayjs(d).format('DD-MM-YYYY') : '-'}</span>,
     },
     {
-      title: 'Type',
+      title: <span style={{ whiteSpace: 'nowrap' }}>Type</span>,
       dataIndex: 'loadingType',
       key: 'loadingType',
-      width: 85,
+      width: 90,
       align: 'center' as const,
       render: (t: string) => (
-        <Tag color={t === 'Export' ? 'green' : 'blue'}>{t || 'Import'}</Tag>
+        <Tag color={t === 'Export' ? 'green' : 'blue'} style={{ marginRight: 0 }}>{t || 'Import'}</Tag>
       ),
     },
     {
-      title: 'Vehicle',
+      title: <span style={{ whiteSpace: 'nowrap' }}>Vehicle</span>,
       dataIndex: 'vehicleNumber',
       key: 'vehicleNumber',
-      width: 120,
-      render: (v: string) => (v && v !== '-' ? <Tag color="cyan">{v}</Tag> : '-'),
+      width: 130,
+      render: (v: string) => (v && v !== '-' ? <Tag color="cyan" style={{ marginRight: 0 }}>{v}</Tag> : '-'),
     },
     {
-      title: 'Stage',
+      title: <span style={{ whiteSpace: 'nowrap' }}>Stage</span>,
       dataIndex: 'stage',
       key: 'stage',
-      width: 115,
+      width: 130,
       align: 'center' as const,
       render: (s: string) => {
         const key = (s || 'BOOKED').toUpperCase();
         return (
-          <Tag color={STAGE_TAG_COLORS[key] || 'default'}>
+          <Tag color={STAGE_TAG_COLORS[key] || 'default'} style={{ marginRight: 0 }}>
             {STAGE_LABELS[key] || key}
           </Tag>
         );
@@ -692,17 +844,44 @@ export default function DashboardPage() {
         <Col xs={24} lg={12}>
           <Card
             title={
-              <Space>
-                <DollarOutlined style={{ color: isDark ? '#38BDF8' : '#365A73' }} />
-                <span style={{ fontSize: 14 }}>Daily Reports &amp; Revenue Billing Trend (14 Days)</span>
-              </Space>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, paddingRight: 8 }}>
+                <Space>
+                  <DollarOutlined style={{ color: isDark ? '#38BDF8' : '#365A73' }} />
+                  <span style={{ fontSize: 13.5, fontWeight: 600 }}>Daily Reports &amp; Revenue Billing Trend</span>
+                </Space>
+                <Select
+                  value={trendTimeframe}
+                  onChange={setTrendTimeframe}
+                  size="small"
+                  style={{ width: 165 }}
+                  options={[
+                    { value: '1d', label: '1 Day' },
+                    { value: '1w', label: '1 Week (7 Days)' },
+                    { value: '14d', label: '14 Days' },
+                    { value: '1m', label: '1 Month' },
+                    { value: '2m', label: '2 Months' },
+                    { value: '3m', label: '3 Months' },
+                    { value: '4m', label: '4 Months' },
+                    { value: '5m', label: '5 Months' },
+                    { value: '6m', label: '6 Months' },
+                    { value: '7m', label: '7 Months' },
+                    { value: '8m', label: '8 Months' },
+                    { value: '9m', label: '9 Months' },
+                    { value: '10m', label: '10 Months' },
+                    { value: '11m', label: '11 Months' },
+                    { value: '1y', label: '12 Months / 1 Year' },
+                    { value: '2y', label: '2 Years' },
+                    { value: 'all', label: 'Total (All Time)' },
+                  ]}
+                />
+              </div>
             }
             extra={<Link href="/reports/daily" style={{ fontSize: 12.5, color: isDark ? '#60A5FA' : '#17324D', fontWeight: 500 }}>Daily Report ➔</Link>}
             style={{ height: '100%' }}
           >
             {mounted ? (
-              <div style={{ width: '100%', height: 280, minHeight: 280 }}>
-                <ResponsiveContainer width="100%" height={280} minWidth={300}>
+              <div style={{ width: '100%', minWidth: 0, height: 280, position: 'relative' }}>
+                <ResponsiveContainer width="100%" height={280}>
                   <ComposedChart data={sanitizedDailyRevenueChart} margin={{ top: 15, right: 20, left: 10, bottom: 15 }}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -735,16 +914,16 @@ export default function DashboardPage() {
                       itemStyle={chartTooltipItemStyle}
                       formatter={(val: any, name: string) => [
                         name.includes('Revenue') ? formatCurrencyINR(Number(val)) : val,
-                        name.includes('Revenue') ? 'Daily Revenue' : 'Processed Bills',
+                        name.includes('Revenue') ? 'Revenue' : 'Processed Bills',
                       ]}
-                      labelFormatter={(label) => `Date: ${label}`}
+                      labelFormatter={(label) => `Period: ${label}`}
                     />
-                    <Legend />
+                    <Legend wrapperStyle={{ color: isDark ? '#F1F5F9' : '#1E293B', fontSize: 12, paddingTop: 6 }} formatter={(value) => <span style={{ color: isDark ? '#F1F5F9' : '#1E293B' }}>{value}</span>} />
                     <Area
                       yAxisId="left"
                       type="monotone"
                       dataKey="revenue"
-                      name="Daily Revenue (₹)"
+                      name="Revenue (₹)"
                       stroke={isDark ? '#38BDF8' : '#2563EB'}
                       strokeWidth={2}
                       fillOpacity={1}
@@ -756,6 +935,7 @@ export default function DashboardPage() {
                       name="Processed Bills"
                       fill={isDark ? '#4ADE80' : '#16A34A'}
                       barSize={14}
+                      minPointSize={4}
                       radius={[3, 3, 0, 0]}
                     />
                   </ComposedChart>
@@ -778,8 +958,8 @@ export default function DashboardPage() {
             style={{ height: '100%' }}
           >
             {mounted ? (
-              <div style={{ width: '100%', height: 280, minHeight: 280 }}>
-                <ResponsiveContainer width="100%" height={280} minWidth={300}>
+              <div style={{ width: '100%', minWidth: 0, height: 280, position: 'relative' }}>
+                <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={sanitizedCompanyBillingChart} margin={{ top: 15, right: 20, left: 10, bottom: 25 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} opacity={0.6} />
                     <XAxis dataKey="companyName" stroke={chartTickColor} tick={{ fill: chartTickColor }} style={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" />
@@ -791,8 +971,8 @@ export default function DashboardPage() {
                       tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
                     />
                     <RechartsTooltip contentStyle={chartTooltipStyle} itemStyle={chartTooltipItemStyle} formatter={(val: any) => formatCurrencyINR(Number(val))} />
-                    <Legend />
-                    <Bar dataKey="totalBilling" name="Billed Revenue (₹)" fill={isDark ? '#60A5FA' : '#1D4ED8'} radius={[3, 3, 0, 0]} />
+                    <Legend wrapperStyle={{ color: isDark ? '#F1F5F9' : '#1E293B', fontSize: 12, paddingTop: 6 }} formatter={(value) => <span style={{ color: isDark ? '#F1F5F9' : '#1E293B' }}>{value}</span>} />
+                    <Bar dataKey="totalBilling" name="Billed Revenue (₹)" fill={isDark ? '#60A5FA' : '#1D4ED8'} minPointSize={4} radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -824,8 +1004,8 @@ export default function DashboardPage() {
             <Row gutter={16} align="middle">
               <Col xs={24} sm={14}>
                 {mounted ? (
-                  <div style={{ width: '100%', height: 250, minHeight: 250 }}>
-                    <ResponsiveContainer width="100%" height={250} minWidth={250}>
+                  <div style={{ width: '100%', minWidth: 0, height: 250, position: 'relative' }}>
+                    <ResponsiveContainer width="100%" height={250}>
                       <BarChart
                         data={[
                           {
@@ -851,7 +1031,7 @@ export default function DashboardPage() {
                           tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
                         />
                         <RechartsTooltip contentStyle={chartTooltipStyle} itemStyle={chartTooltipItemStyle} formatter={(val: any) => formatCurrencyINR(Number(val))} />
-                        <Bar dataKey="amount" name="Expense Amount (₹)" radius={[3, 3, 0, 0]}>
+                        <Bar dataKey="amount" name="Expense Amount (₹)" minPointSize={6} radius={[3, 3, 0, 0]}>
                           <Cell fill={isDark ? '#FBBF24' : '#D97706'} />
                           <Cell fill={isDark ? '#38BDF8' : '#2563EB'} />
                         </Bar>
@@ -896,8 +1076,8 @@ export default function DashboardPage() {
             style={{ height: '100%' }}
           >
             {mounted ? (
-              <div style={{ width: '100%', height: 250, minHeight: 250 }}>
-                <ResponsiveContainer width="100%" height={250} minWidth={250}>
+              <div style={{ width: '100%', minWidth: 0, height: 250, position: 'relative' }}>
+                <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={sanitizedPendingCompanyChart} margin={{ top: 15, right: 20, left: 10, bottom: 25 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} opacity={0.6} />
                     <XAxis dataKey="companyName" stroke={chartTickColor} tick={{ fill: chartTickColor }} style={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" />
@@ -927,9 +1107,9 @@ export default function DashboardPage() {
                         name.includes('Amount') ? 'Est. Amount' : 'Pending Jobs Count',
                       ]}
                     />
-                    <Legend />
-                    <Bar yAxisId="left" dataKey="amount" name="Pending Amount (₹)" fill={isDark ? '#FBBF24' : '#D97706'} radius={[3, 3, 0, 0]} />
-                    <Bar yAxisId="right" dataKey="count" name="Unbilled Jobs Count" fill={isDark ? '#2DD4BF' : '#0D9488'} radius={[3, 3, 0, 0]} />
+                    <Legend wrapperStyle={{ color: isDark ? '#F1F5F9' : '#1E293B', fontSize: 12, paddingTop: 6 }} formatter={(value) => <span style={{ color: isDark ? '#F1F5F9' : '#1E293B' }}>{value}</span>} />
+                    <Bar yAxisId="left" dataKey="amount" name="Pending Amount (₹)" fill={isDark ? '#FBBF24' : '#D97706'} minPointSize={4} radius={[3, 3, 0, 0]} />
+                    <Bar yAxisId="right" dataKey="count" name="Unbilled Jobs Count" fill={isDark ? '#2DD4BF' : '#0D9488'} minPointSize={4} radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -976,7 +1156,7 @@ export default function DashboardPage() {
               loading={loading}
               pagination={false}
               size="middle"
-              scroll={{ x: 600 }}
+              scroll={{ x: 935 }}
             />
           </Card>
         </Col>
@@ -995,7 +1175,7 @@ export default function DashboardPage() {
               loading={loading}
               pagination={false}
               size="middle"
-              scroll={{ x: 500 }}
+              scroll={{ x: 745 }}
             />
           </Card>
         </Col>

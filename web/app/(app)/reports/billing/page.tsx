@@ -44,11 +44,14 @@ import type { ColumnsType } from 'antd/es/table';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { formatCurrencyINR } from '@/lib/utils/format';
+import { useTheme } from '@/components/providers/ThemeContext';
 
 const { Title, Text, Paragraph } = Typography;
 const { RangePicker } = DatePicker;
 
 export default function ConsolidatedBillingReportPage() {
+  const { themeMode } = useTheme();
+  const isDark = themeMode === 'dark';
   const [activeTab, setActiveTab] = useState('invoices');
 
   // ==========================================
@@ -350,6 +353,22 @@ export default function ConsolidatedBillingReportPage() {
     }
   };
 
+  // Handle Delete Invoice
+  const handleDeleteInvoice = async (id: string) => {
+    try {
+      const res = await axios.delete(`/api/billing/bills/${id}`);
+      if (res.data?.success) {
+        message.success('Invoice record deleted successfully');
+        fetchBillingReport();
+        fetchAgeingReport();
+      } else {
+        message.error(res.data?.message || 'Failed to delete invoice');
+      }
+    } catch {
+      message.error('Error deleting invoice');
+    }
+  };
+
   // Export Billing Invoices helper
   const exportInvoicesToCSV = (rows: any[], filename: string) => {
     const headers = ['Bill Number', 'Financial Year', 'Billing Date', 'Company', 'Client', 'Status', 'Total Amount'];
@@ -408,7 +427,7 @@ export default function ConsolidatedBillingReportPage() {
       key: 'billNumber',
       width: 140,
       render: (num: string, record: any) => (
-        <Link href={`/billing/processed/${record.id}`} style={{ fontWeight: 600, color: '#17324D', fontVariantNumeric: 'tabular-nums' }}>
+        <Link href={`/billing/processed/${record.id}`} style={{ fontWeight: 600, color: isDark ? '#60A5FA' : '#1D4ED8', fontVariantNumeric: 'tabular-nums' }}>
           {num || 'DRAFT'}
         </Link>
       ),
@@ -419,7 +438,16 @@ export default function ConsolidatedBillingReportPage() {
       key: 'financialYear',
       width: 90,
       align: 'center',
-      render: (fy: string) => <Tag style={{ background: '#ECEFEE', color: '#17324D', border: '1px solid #D4DAD9' }}>{fy || '-'}</Tag>,
+      render: (fy: string) => (
+        <Tag style={{
+          background: isDark ? '#27272A' : '#F4F4F5',
+          color: isDark ? '#E4E4E7' : '#27272A',
+          border: isDark ? '1px solid #3F3F46' : '1px solid #E4E4E7',
+          fontWeight: 600
+        }}>
+          {fy || '-'}
+        </Tag>
+      ),
     },
     {
       title: 'Billing Date',
@@ -437,7 +465,11 @@ export default function ConsolidatedBillingReportPage() {
       width: 110,
       align: 'center',
       render: (st: string) => (
-        <Tag style={st === 'PROCESSED' ? { background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #D4DAD9' } : { background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #D4DAD9' }}>
+        <Tag style={
+          st === 'PROCESSED'
+            ? { background: isDark ? 'rgba(34, 197, 94, 0.15)' : '#EBF4ED', color: isDark ? '#4ADE80' : '#166534', border: isDark ? '1px solid rgba(74, 222, 128, 0.3)' : '1px solid #BBF7D0', fontWeight: 600 }
+            : { background: isDark ? 'rgba(234, 179, 8, 0.15)' : '#FEF9C3', color: isDark ? '#FACC15' : '#854D0E', border: isDark ? '1px solid rgba(250, 204, 21, 0.3)' : '1px solid #FEF08A', fontWeight: 600 }
+        }>
           {st || 'DRAFT'}
         </Tag>
       ),
@@ -449,7 +481,7 @@ export default function ConsolidatedBillingReportPage() {
       align: 'right',
       width: 140,
       render: (amt: number) => (
-        <Text strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
+        <Text strong style={{ color: isDark ? '#4ADE80' : '#166534', fontVariantNumeric: 'tabular-nums' }}>
           {formatCurrencyINR(amt)}
         </Text>
       ),
@@ -457,23 +489,40 @@ export default function ConsolidatedBillingReportPage() {
     {
       title: 'Actions',
       key: 'actions',
-      width: 120,
+      width: 140,
       align: 'center',
       render: (_, record: any) => (
         <Space size="small">
           <Tooltip title="View Invoice">
             <Link href={`/billing/processed/${record.id}`}>
-              <Button type="text" size="small" icon={<EyeOutlined style={{ color: '#365A73' }} />} />
+              <Button type="text" size="small" icon={<EyeOutlined style={{ color: isDark ? '#60A5FA' : '#1D4ED8' }} />} />
             </Link>
           </Tooltip>
           <Tooltip title="Edit Invoice Details">
             <Button
               type="text"
               size="small"
-              icon={<EditOutlined style={{ color: '#17324D' }} />}
+              icon={<EditOutlined style={{ color: isDark ? '#F59E0B' : '#D97706' }} />}
               onClick={() => handleOpenEditInvoice(record)}
             />
           </Tooltip>
+          <Popconfirm
+            title="Delete Invoice?"
+            description={`Are you sure you want to delete invoice ${record.billNumber || record.id}?`}
+            onConfirm={() => handleDeleteInvoice(record.id)}
+            okText="Yes, Delete"
+            cancelText="Cancel"
+            okButtonProps={{ danger: true }}
+          >
+            <Tooltip title="Delete Invoice">
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined style={{ color: isDark ? '#F87171' : '#DC2626', fontSize: 14 }} />}
+              />
+            </Tooltip>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -494,7 +543,7 @@ export default function ConsolidatedBillingReportPage() {
       key: 'billNumber',
       width: 130,
       render: (num: string, record: any) => (
-        <Link href={`/billing/processed/${record.billId}`} style={{ color: '#17324D', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        <Link href={`/billing/processed/${record.billId}`} style={{ color: isDark ? '#60A5FA' : '#1D4ED8', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
           {num || record.billId}
         </Link>
       ),
@@ -519,7 +568,7 @@ export default function ConsolidatedBillingReportPage() {
       align: 'right',
       width: 130,
       render: (amt: number) => (
-        <Text strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
+        <Text strong style={{ color: isDark ? '#4ADE80' : '#166534', fontVariantNumeric: 'tabular-nums' }}>
           {formatCurrencyINR(amt)}
         </Text>
       ),
@@ -529,19 +578,16 @@ export default function ConsolidatedBillingReportPage() {
       dataIndex: 'paymentMode',
       key: 'paymentMode',
       width: 120,
-      render: (mode: string) => {
-        const color =
-          mode === 'Cash'
-            ? 'green'
-            : mode === 'Bank Transfer'
-            ? 'blue'
-            : mode === 'UPI'
-            ? 'purple'
-            : mode === 'Cheque'
-            ? 'orange'
-            : 'default';
-        return <Tag color={color}>{mode}</Tag>;
-      },
+      render: (mode: string) => (
+        <Tag style={{
+          background: isDark ? '#27272A' : '#F4F4F5',
+          color: isDark ? '#E4E4E7' : '#27272A',
+          border: isDark ? '1px solid #3F3F46' : '1px solid #E4E4E7',
+          fontWeight: 600
+        }}>
+          {mode}
+        </Tag>
+      ),
     },
     {
       title: 'Reference',
@@ -568,7 +614,7 @@ export default function ConsolidatedBillingReportPage() {
             <Button
               type="text"
               size="small"
-              icon={<EditOutlined style={{ color: '#365A73' }} />}
+              icon={<EditOutlined style={{ color: isDark ? '#60A5FA' : '#1D4ED8' }} />}
               onClick={() => handleOpenEditPayment(record)}
             />
           </Tooltip>
@@ -581,7 +627,12 @@ export default function ConsolidatedBillingReportPage() {
             okButtonProps={{ danger: true }}
           >
             <Tooltip title="Delete Payment">
-              <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined style={{ color: isDark ? '#F87171' : '#DC2626', fontSize: 14 }} />}
+              />
             </Tooltip>
           </Popconfirm>
         </Space>

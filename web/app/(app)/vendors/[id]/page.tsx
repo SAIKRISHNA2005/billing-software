@@ -43,6 +43,7 @@ import {
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { checkOverpayment } from '@/lib/utils/vendorHelper';
+import { useTheme } from '@/components/providers/ThemeContext';
 
 const { Title, Text } = Typography;
 
@@ -55,6 +56,8 @@ const PAYMENT_MODES = ['Cash', 'Bank Transfer', 'Cheque', 'UPI', 'Other'];
 export default function VendorDetailPage({ params }: VendorDetailProps) {
   const { id: vendorId } = params;
   const router = useRouter();
+  const { themeMode } = useTheme();
+  const isDark = themeMode === 'dark';
 
   const [loading, setLoading] = useState(true);
   const [vendor, setVendor] = useState<any>(null);
@@ -251,7 +254,7 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       dataIndex: 'transactionNo',
       key: 'transactionNo',
       render: (tNo: string, record: any) => (
-        <Link href={`/enquiries/${record.id}`} style={{ fontWeight: 600, color: '#17324D' }}>
+        <Link href={`/enquiries/${record.id}`} style={{ fontWeight: 600, color: isDark ? '#60A5FA' : '#1D4ED8' }}>
           {tNo || record.id}
         </Link>
       ),
@@ -261,7 +264,13 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       dataIndex: 'vehicleNumber',
       key: 'vehicleNumber',
       render: (v: string) => (
-        <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontFamily: 'monospace', fontWeight: 600 }}>
+        <Tag style={{
+          background: isDark ? '#1E293B' : '#F0F9FF',
+          color: isDark ? '#38BDF8' : '#0284C7',
+          border: isDark ? '1px solid #334155' : '1px solid #BAE6FD',
+          fontFamily: 'monospace',
+          fontWeight: 600,
+        }}>
           {v || 'N/A'}
         </Tag>
       ),
@@ -313,7 +322,7 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       key: 'totalPayable',
       align: 'right',
       render: (amt: number) => (
-        <Text strong style={{ color: '#17324D', fontVariantNumeric: 'tabular-nums' }}>
+        <Text strong style={{ color: isDark ? '#F1F5F9' : '#17324D', fontVariantNumeric: 'tabular-nums' }}>
           ₹{(amt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -331,7 +340,7 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       key: 'pending',
       align: 'right',
       render: (amt: number) => (
-        <Text strong style={{ color: (amt || 0) > 0 ? '#C58A2A' : '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
+        <Text strong style={{ color: (amt || 0) > 0 ? (isDark ? '#FBBF24' : '#C58A2A') : (isDark ? '#4ADE80' : '#166534'), fontVariantNumeric: 'tabular-nums' }}>
           ₹{(amt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -342,10 +351,15 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       align: 'center',
       render: (_, record: any) => (
         <Button
-          type="link"
+          type="primary"
           size="small"
           icon={<PlusOutlined />}
-          style={{ color: '#365A73' }}
+          style={{
+            backgroundColor: isDark ? '#2563EB' : '#1D4ED8',
+            borderColor: isDark ? '#2563EB' : '#1D4ED8',
+            color: '#FFFFFF',
+            fontWeight: 600,
+          }}
           onClick={() => openAddPayment(record.id)}
         >
           Pay
@@ -373,9 +387,9 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       dataIndex: 'enquiryId',
       key: 'enquiryId',
       render: (eId: string, record: any) => {
-        if (!eId) return <Tag style={{ background: '#ECEFEE', color: '#5F6B73', border: '1px solid #D4DAD9' }}>Unallocated Payment</Tag>;
+        if (!eId) return <Tag style={{ background: isDark ? '#262626' : '#F3F4F6', color: isDark ? '#A3A3A3' : '#6B7280', border: isDark ? '1px solid #404040' : '1px solid #E5E7EB' }}>Unallocated Payment</Tag>;
         return (
-          <Link href={`/enquiries/${eId}`} style={{ color: '#17324D', fontFamily: 'monospace' }}>
+          <Link href={`/enquiries/${eId}`} style={{ color: isDark ? '#60A5FA' : '#1D4ED8', fontFamily: 'monospace', fontWeight: 600 }}>
             {record.enquiryTransactionNo || eId}
           </Link>
         );
@@ -387,7 +401,7 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       key: 'amount',
       align: 'right',
       render: (amt: number) => (
-        <Text strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
+        <Text strong style={{ color: isDark ? '#4ADE80' : '#166534', fontVariantNumeric: 'tabular-nums' }}>
           ₹{Number(amt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -396,7 +410,16 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
       title: 'Mode',
       dataIndex: 'mode',
       key: 'mode',
-      render: (m: string) => <Tag style={{ background: '#ECEFEE', color: '#34424C', border: '1px solid #D4DAD9' }}>{m}</Tag>,
+      render: (m: string) => (
+        <Tag style={{
+          background: isDark ? '#27272A' : '#F4F4F5',
+          color: isDark ? '#E4E4E7' : '#27272A',
+          border: isDark ? '1px solid #3F3F46' : '1px solid #E4E4E7',
+          fontWeight: 600
+        }}>
+          {m}
+        </Tag>
+      ),
     },
     {
       title: 'Reference',

@@ -19,6 +19,14 @@ var SheetRepo = {
       sheet = ss.getSheetByName('bills');
     }
     if (!sheet) {
+      if (typeof SHEET_SCHEMAS !== 'undefined' && SHEET_SCHEMAS[sheetName]) {
+        sheet = ss.insertSheet(sheetName);
+        var schemaHeaders = SHEET_SCHEMAS[sheetName];
+        sheet.getRange(1, 1, 1, schemaHeaders.length).setValues([schemaHeaders]);
+        sheet.setFrozenRows(1);
+        sheet.getRange(1, 1, 1, schemaHeaders.length).setFontWeight('bold').setBackground('#f3f4f6');
+        return sheet;
+      }
       throw new Error('Sheet not found: "' + sheetName + '". Please run createAllSheets() first.');
     }
     return sheet;
@@ -252,6 +260,47 @@ var SheetRepo = {
    */
   deleteRow(sheetName, id, deletedBy) {
     return this.softDeleteRow(sheetName, id, deletedBy);
+  },
+
+  /**
+   * Hard deletes a record by removing the entire row from the sheet.
+   * Used when permanently deleting or restoring from trashbin sheets.
+   */
+  hardDeleteRow(sheetName, id) {
+    const sheet = this.getSheet(sheetName);
+    const lastRow = sheet.getLastRow();
+    const lastCol = sheet.getLastColumn();
+    if (lastRow < 2 || lastCol < 1) return false;
+
+    const data = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+    const headers = data[0];
+    const idKey = sheetName === 'number_sequences' ? 'sequenceKey' : 'id';
+    const idColIdx = headers.indexOf(idKey);
+    if (idColIdx === -1) return false;
+
+    let deleted = false;
+    for (let r = data.length - 1; r >= 1; r--) {
+      if (String(data[r][idColIdx]) === String(id)) {
+        sheet.deleteRow(r + 1);
+        deleted = true;
+      }
+    }
+    if (deleted) {
+      SpreadsheetApp.flush();
+    }
+    return deleted;
+  },
+
+  /**
+   * Restores a soft-deleted row by clearing deletedAt.
+   */
+  restoreRow(sheetName, id, restoredBy) {
+    const patch = { deletedAt: '' };
+    if (sheetName === 'vehicles') {
+      patch.active = true;
+      patch.vehicleStatus = 'ACTIVE';
+    }
+    return this.updateRow(sheetName, id, patch, restoredBy);
   },
 };
 

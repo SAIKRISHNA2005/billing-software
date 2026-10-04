@@ -194,6 +194,9 @@ const ExpensesModule = {
         .filter((e) => e.enquiryId === enquiryId && e.source === 'ENQUIRY')
         .forEach((exp) => {
           SheetRepo.deleteRow('loading_expenses', exp.id, sessionUserId);
+          if (typeof TrashbinModule !== 'undefined' && TrashbinModule.recordDeletion) {
+            TrashbinModule.recordDeletion('loading-expense', Object.assign({}, exp, { deletedAt: new Date().toISOString() }), sessionUserId);
+          }
         });
     } catch (e) {
       Logger.log('ExpensesModule.deleteEnquiryExpenses error: ' + e.message);
@@ -211,7 +214,7 @@ const ExpensesModule = {
     const session = requireSession(sessionToken);
     params = params || {};
 
-    const allExpenses = SheetRepo.getAllRows('loading_expenses', true);
+    const allExpenses = SheetRepo.getAllRows('loading_expenses', false);
     const allEnquiries = SheetRepo.getAllRows('enquiries', true);
     const allVehicles = SheetRepo.getAllRows('vehicles', true);
 
@@ -443,11 +446,6 @@ const ExpensesModule = {
     const existing = SheetRepo.getRowById('loading_expenses', id);
     if (!existing) throw new Error('Loading expense not found: ' + id);
 
-    // Strict Rule D8: ENQUIRY-sourced rows cannot be edited here
-    if (existing.source === 'ENQUIRY') {
-      throw new Error('Edit this from the enquiry');
-    }
-
     const updates = {};
     if (patch.category !== undefined) {
       if (!this.LOADING_CATEGORIES.includes(patch.category)) {
@@ -511,12 +509,11 @@ const ExpensesModule = {
     const existing = SheetRepo.getRowById('loading_expenses', id);
     if (!existing) throw new Error('Loading expense not found: ' + id);
 
-    // Strict Rule D8: ENQUIRY-sourced rows cannot be deleted here
-    if (existing.source === 'ENQUIRY') {
-      throw new Error('Edit this from the enquiry');
-    }
-
     SheetRepo.deleteRow('loading_expenses', id, session.userId);
+
+    if (typeof TrashbinModule !== 'undefined' && TrashbinModule.recordDeletion) {
+      TrashbinModule.recordDeletion('loading-expense', Object.assign({}, existing, { deletedAt: new Date().toISOString() }), session.userId);
+    }
 
     AuditModule.log({
       action: 'loadingExpense.delete',
@@ -540,7 +537,7 @@ const ExpensesModule = {
     requireSession(sessionToken);
     params = params || {};
 
-    const allExpenses = SheetRepo.getAllRows('general_expenses', true);
+    const allExpenses = SheetRepo.getAllRows('general_expenses', false);
 
     // 1. Filter
     let filtered = allExpenses.filter((exp) => {
@@ -768,6 +765,10 @@ const ExpensesModule = {
     if (!existing) throw new Error('General expense not found: ' + id);
 
     SheetRepo.deleteRow('general_expenses', id, session.userId);
+
+    if (typeof TrashbinModule !== 'undefined' && TrashbinModule.recordDeletion) {
+      TrashbinModule.recordDeletion('general-expense', Object.assign({}, existing, { deletedAt: new Date().toISOString() }), session.userId);
+    }
 
     AuditModule.log({
       action: 'generalExpense.delete',

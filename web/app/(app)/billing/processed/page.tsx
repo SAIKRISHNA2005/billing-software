@@ -33,12 +33,15 @@ import { formatCurrencyINR } from '@/lib/utils/format';
 import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 import { RecordDetailPopover } from '@/components/common/RecordDetailPopover';
 import { exportToExcel } from '@/lib/utils/exportHelper';
+import { useTheme } from '@/components/providers/ThemeContext';
 
 const { Title, Text, Paragraph } = Typography;
 const { RangePicker } = DatePicker;
 
 export default function ProcessedBillsPage() {
   const router = useRouter();
+  const { themeMode } = useTheme();
+  const isDark = themeMode === 'dark';
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 15, total: 0 });
@@ -248,7 +251,7 @@ export default function ProcessedBillsPage() {
       width: 140,
       render: (num: string, record: any) => (
         <RecordDetailPopover record={record} title={`Invoice ${num || record.id}`} type="bill">
-          <Link href={`/billing/processed/${record.id}`} style={{ fontWeight: 600, color: '#17324D' }}>
+          <Link href={`/billing/processed/${record.id}`} style={{ fontWeight: 600, color: isDark ? '#60A5FA' : '#1D4ED8' }}>
             {num || record.id}
           </Link>
         </RecordDetailPopover>
@@ -268,7 +271,7 @@ export default function ProcessedBillsPage() {
       align: 'right',
       width: 140,
       render: (amt: number) => (
-        <Text strong style={{ color: '#17324D' }}>
+        <Text strong style={{ color: isDark ? '#F1F5F9' : '#17324D' }}>
           {formatCurrencyINR(amt)}
         </Text>
       ),
@@ -306,6 +309,12 @@ export default function ProcessedBillsPage() {
             size="small"
             icon={<DownloadOutlined />}
             loading={downloadingId === record.id}
+            style={{
+              backgroundColor: isDark ? '#2563EB' : '#1D4ED8',
+              borderColor: isDark ? '#2563EB' : '#1D4ED8',
+              color: '#FFFFFF',
+              fontWeight: 600,
+            }}
           >
             Download
           </Button>
@@ -342,10 +351,15 @@ export default function ProcessedBillsPage() {
           <Link href={`/billing/processed/${record.id}`}>
             <Button
               type="primary"
-              ghost
               size="small"
               icon={<EyeOutlined />}
-              style={{ borderRadius: 4 }}
+              style={{
+                backgroundColor: isDark ? 'rgba(37, 99, 235, 0.15)' : '#EFF6FF',
+                borderColor: isDark ? '#3B82F6' : '#2563EB',
+                color: isDark ? '#60A5FA' : '#1D4ED8',
+                borderRadius: 4,
+                fontWeight: 600,
+              }}
             >
               View
             </Button>
@@ -354,7 +368,13 @@ export default function ProcessedBillsPage() {
             <Button
               size="small"
               icon={<EditOutlined />}
-              style={{ borderColor: '#3F6F4A', color: '#3F6F4A', borderRadius: 4 }}
+              style={{
+                backgroundColor: isDark ? 'rgba(34, 197, 94, 0.15)' : '#F0FDF4',
+                borderColor: isDark ? '#22C55E' : '#16A34A',
+                color: isDark ? '#4ADE80' : '#166534',
+                borderRadius: 4,
+                fontWeight: 600,
+              }}
             >
               Edit
             </Button>
@@ -369,11 +389,11 @@ export default function ProcessedBillsPage() {
       {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <Title level={2} style={{ margin: 0, color: '#1E2933', fontSize: 22, fontWeight: 600 }}>
-            <AuditOutlined style={{ marginRight: 8, color: '#17324D' }} />
+          <Title level={2} style={{ margin: 0, color: isDark ? '#F1F5F9' : '#1E2933', fontSize: 22, fontWeight: 600 }}>
+            <AuditOutlined style={{ marginRight: 8, color: isDark ? '#60A5FA' : '#17324D' }} />
             Processed Bills Directory
           </Title>
-          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>Issued invoices with assigned financial-year sequence numbers and generated PDFs</Text>
+          <Text type="secondary" style={{ fontSize: 13, color: isDark ? '#94A3B8' : '#5F6B73' }}>Issued invoices with assigned financial-year sequence numbers and generated PDFs</Text>
         </div>
         <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={() => fetchBills(1)}>

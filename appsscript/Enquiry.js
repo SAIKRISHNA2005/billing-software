@@ -674,6 +674,11 @@ const EnquiryModule = {
     }
 
     SheetRepo.softDeleteRow('enquiries', id, session.userId);
+
+    if (typeof TrashbinModule !== 'undefined' && TrashbinModule.recordDeletion) {
+      TrashbinModule.recordDeletion('daily-report', Object.assign({}, enquiry, { deletedAt: new Date().toISOString() }), session.userId);
+    }
+
     writeAuditLog('enquiries', id, 'DELETE', enquiry, { deletedAt: new Date().toISOString() }, session.userId);
 
     // Clean up linked auto-synced expenses (Rule D8)

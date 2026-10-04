@@ -33,6 +33,7 @@ import { formatCurrencyINR, formatDate } from '@/lib/utils/format';
 import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 import { RecordDetailPopover } from '@/components/common/RecordDetailPopover';
 import { exportToExcel } from '@/lib/utils/exportHelper';
+import { useTheme } from '@/components/providers/ThemeContext';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -60,6 +61,8 @@ export interface PendingBillRow {
 
 export default function PendingBillsPage() {
   const router = useRouter();
+  const { themeMode } = useTheme();
+  const isDark = themeMode === 'dark';
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<PendingBillRow[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -317,7 +320,7 @@ export default function PendingBillsPage() {
       align: 'right',
       width: 140,
       render: (amt: number) => (
-        <Text strong style={{ color: '#17324D' }}>
+        <Text strong style={{ color: isDark ? '#F1F5F9' : '#17324D' }}>
           {formatCurrencyINR(amt)}
         </Text>
       ),
@@ -338,10 +341,10 @@ export default function PendingBillsPage() {
       render: (txn: string, record: PendingBillRow) => (
         <RecordDetailPopover record={record} title={`Consignment ${record.enquiryId}`}>
           <div>
-            <Link href={`/enquiries/${record.enquiryId}`} style={{ fontWeight: 600, color: '#17324D' }}>
+            <Link href={`/enquiries/${record.enquiryId}`} style={{ fontWeight: 600, color: isDark ? '#60A5FA' : '#1D4ED8' }}>
               {record.enquiryId}
             </Link>
-            <div style={{ fontSize: 12, color: '#5F6B73' }}>{txn}</div>
+            <div style={{ fontSize: 12, color: isDark ? '#94A3B8' : '#5F6B73' }}>{txn}</div>
           </div>
         </RecordDetailPopover>
       ),
@@ -357,20 +360,36 @@ export default function PendingBillsPage() {
       },
     },
     {
-      title: 'View / Edit',
+      title: 'Action',
       key: 'action',
-      width: 100,
+      width: 140,
       align: 'center',
       render: (_, record: PendingBillRow) => (
         <Space size="small">
+          <Tooltip title="Create invoice for this consignment">
+            <Button
+              type="primary"
+              size="small"
+              icon={<FileAddOutlined />}
+              style={{
+                backgroundColor: isDark ? '#2563EB' : '#1D4ED8',
+                borderColor: isDark ? '#2563EB' : '#1D4ED8',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+              onClick={() => router.push(`/billing/create?enquiryIds=${record.enquiryId}&companyId=${record.companyId}&clientId=${record.clientId}`)}
+            >
+              Bill
+            </Button>
+          </Tooltip>
           <RecordDetailPopover record={record} title={`Consignment ${record.enquiryId}`}>
             <Tooltip title="View Consignment Details">
-              <Button type="text" size="small" icon={<EyeOutlined style={{ color: '#365A73' }} />} />
+              <Button type="text" size="small" icon={<EyeOutlined style={{ color: isDark ? '#60A5FA' : '#365A73' }} />} />
             </Tooltip>
           </RecordDetailPopover>
           <Tooltip title="Edit Consignment">
             <Link href={`/enquiries/${record.enquiryId}`}>
-              <Button type="text" size="small" icon={<EditOutlined style={{ color: '#3F6F4A' }} />} />
+              <Button type="text" size="small" icon={<EditOutlined style={{ color: isDark ? '#4ADE80' : '#3F6F4A' }} />} />
             </Link>
           </Tooltip>
         </Space>
@@ -384,11 +403,11 @@ export default function PendingBillsPage() {
     <div style={{ padding: '4px 0 24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <Title level={2} style={{ margin: 0, color: '#1E2933', fontSize: 22, fontWeight: 600 }}>
+          <Title level={2} style={{ margin: 0, color: isDark ? '#F1F5F9' : '#1E2933', fontSize: 22, fontWeight: 600 }}>
             <FileAddOutlined style={{ marginRight: 8, color: '#C58A2A' }} />
             Pending Bills
           </Title>
-          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>Completed transport jobs waiting to be grouped and issued into client invoices</Text>
+          <Text type="secondary" style={{ fontSize: 13, color: isDark ? '#94A3B8' : '#5F6B73' }}>Completed transport jobs waiting to be grouped and issued into client invoices</Text>
         </div>
         <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={() => fetchPending()}>
@@ -397,23 +416,44 @@ export default function PendingBillsPage() {
           <Button icon={<DownloadOutlined />} onClick={handleExportAll}>
             Export All
           </Button>
-          <ActionConfirmPopover
-            title={`Are you sure you want to create an invoice for ${selectedRows.length} item(s)?`}
-            description={`Selected ${selectedRows.length} consignment(s) totaling ${formatCurrencyINR(totalSelectedAmount)}.`}
-            okText="Yes, Proceed to Billing"
-            cancelText="No, Cancel"
-            disabled={selectedRows.length === 0}
-            onConfirm={handleCreateBill}
-          >
-            <Button
-              type="primary"
-              icon={<CheckCircleOutlined />}
-              size="large"
-              disabled={selectedRows.length === 0}
+          {selectedRows.length > 0 ? (
+            <ActionConfirmPopover
+              title={`Are you sure you want to create an invoice for ${selectedRows.length} item(s)?`}
+              description={`Selected ${selectedRows.length} consignment(s) totaling ${formatCurrencyINR(totalSelectedAmount)}.`}
+              okText="Yes, Proceed to Billing"
+              cancelText="No, Cancel"
+              onConfirm={handleCreateBill}
             >
-              Create Bill ({selectedRows.length})
-            </Button>
-          </ActionConfirmPopover>
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                size="large"
+                style={{
+                  backgroundColor: isDark ? '#2563EB' : '#1D4ED8',
+                  borderColor: isDark ? '#2563EB' : '#1D4ED8',
+                  fontWeight: 600,
+                }}
+              >
+                Create Bill ({selectedRows.length})
+              </Button>
+            </ActionConfirmPopover>
+          ) : (
+            <Tooltip title="Select consignments using the checkboxes on the left to bill in batch, or click to open Bill Creation">
+              <Button
+                type="primary"
+                icon={<FileAddOutlined />}
+                size="large"
+                style={{
+                  backgroundColor: isDark ? '#2563EB' : '#1D4ED8',
+                  borderColor: isDark ? '#2563EB' : '#1D4ED8',
+                  fontWeight: 600,
+                }}
+                onClick={() => router.push('/billing/create')}
+              >
+                Create Bill
+              </Button>
+            </Tooltip>
+          )}
         </Space>
       </div>
 

@@ -21,6 +21,9 @@ import {
   Popconfirm,
   Tooltip,
   message,
+  Modal,
+  Descriptions,
+  Divider,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -28,6 +31,7 @@ import {
   SearchOutlined,
   ReloadOutlined,
   LockOutlined,
+  EyeOutlined,
   EditOutlined,
   DeleteOutlined,
   CarOutlined,
@@ -47,10 +51,13 @@ import {
 } from '@/lib/utils/expensesHelper';
 import { exportToExcel } from '@/lib/utils/exportHelper';
 
+import { useTheme } from '@/components/providers/ThemeContext';
+
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 export default function LoadingExpensesPage() {
+  const { isDark } = useTheme();
   const [data, setData] = useState<LoadingExpenseItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -75,6 +82,15 @@ export default function LoadingExpensesPage() {
   const [editingItem, setEditingItem] = useState<LoadingExpenseItem | null>(null);
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [form] = Form.useForm();
+
+  // View modal state
+  const [viewModalVisible, setViewModalVisible] = useState(false);
+  const [viewingRecord, setViewingRecord] = useState<LoadingExpenseItem | null>(null);
+
+  const handleOpenViewModal = (record: LoadingExpenseItem) => {
+    setViewingRecord(record);
+    setViewModalVisible(true);
+  };
 
   // Enquiry & Vehicle lookups for Drawer
   const [enquiryOptions, setEnquiryOptions] = useState<Array<{ label: string; value: string; vehicleId?: string }>>([]);
@@ -233,10 +249,6 @@ export default function LoadingExpensesPage() {
   const handleOpenDrawer = (item?: LoadingExpenseItem) => {
     loadDrawerLookups();
     if (item) {
-      if (item.source === 'ENQUIRY') {
-        message.warning('This expense is auto-synced from an enquiry. Edit it directly from the enquiry screen.');
-        return;
-      }
       setEditingItem(item);
       form.setFieldsValue({
         expenseDate: item.expenseDate ? dayjs(item.expenseDate, 'DD-MM-YYYY') : dayjs(),
@@ -326,24 +338,45 @@ export default function LoadingExpensesPage() {
     }
   };
 
+  const getLoadingCategoryTagStyle = (cat: string) => {
+    switch (cat) {
+      case 'Diesel':
+        return { bg: isDark ? '#451A03' : '#FEFCE8', text: isDark ? '#FBBF24' : '#B45309', border: isDark ? '#F59E0B' : '#FDE047' };
+      case 'Loading Charges':
+        return { bg: isDark ? '#1E293B' : '#EFF6FF', text: isDark ? '#60A5FA' : '#1D4ED8', border: isDark ? '#3B82F6' : '#93C5FD' };
+      case 'Unloading Charges':
+        return { bg: isDark ? '#134E4A' : '#F0FDFA', text: isDark ? '#2DD4BF' : '#0F766E', border: isDark ? '#14B8A6' : '#99F6E4' };
+      case 'Parking':
+        return { bg: isDark ? '#1E1B4B' : '#EEF2FF', text: isDark ? '#818CF8' : '#4338CA', border: isDark ? '#6366F1' : '#C7D2FE' };
+      case 'Halting':
+        return { bg: isDark ? '#3B0764' : '#FAF5FF', text: isDark ? '#C084FC' : '#7E22CE', border: isDark ? '#A855F7' : '#E9D5FF' };
+      case 'Other Trip Expenses':
+      default:
+        return { bg: isDark ? '#27272A' : '#F8FAFC', text: isDark ? '#A1A1AA' : '#475569', border: isDark ? '#52525B' : '#CBD5E1' };
+    }
+  };
+
   const columns: ColumnsType<LoadingExpenseItem> = [
     {
       title: 'Expense Date',
       dataIndex: 'expenseDate',
       key: 'expenseDate',
       width: 120,
-      render: (val: string) => <Text strong>{val || '-'}</Text>,
+      render: (val: string) => <Text strong style={{ color: isDark ? '#F1F5F9' : '#0F172A' }}>{val || '-'}</Text>,
     },
     {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
       width: 160,
-      render: (cat: string) => (
-        <Tag color={getLoadingCategoryColor(cat)} style={{ fontSize: 13, padding: '2px 8px' }}>
-          {cat}
-        </Tag>
-      ),
+      render: (cat: string) => {
+        const s = getLoadingCategoryTagStyle(cat);
+        return (
+          <Tag style={{ backgroundColor: s.bg, color: s.text, borderColor: s.border, fontSize: 13, padding: '2px 8px', fontWeight: 600 }}>
+            {cat}
+          </Tag>
+        );
+      },
     },
     {
       title: 'Amount',
@@ -352,7 +385,7 @@ export default function LoadingExpensesPage() {
       width: 130,
       align: 'right',
       render: (amt: number) => (
-        <span style={{ color: '#1E2933', fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        <span style={{ color: isDark ? '#F8FAFC' : '#0F172A', fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
           {formatINR(amt)}
         </span>
       ),
@@ -367,7 +400,18 @@ export default function LoadingExpensesPage() {
         const label = record.enquiryNumber || enqId;
         return (
           <Link href={`/enquiries/${enqId}`}>
-            <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', cursor: 'pointer', fontFamily: 'monospace' }} icon={<FileTextOutlined />}>
+            <Tag
+              style={{
+                backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+                color: isDark ? '#60A5FA' : '#1D4ED8',
+                borderColor: isDark ? '#3B82F6' : '#93C5FD',
+                cursor: 'pointer',
+                fontFamily: 'monospace',
+                fontWeight: 600,
+                padding: '2px 8px',
+              }}
+              icon={<FileTextOutlined />}
+            >
               {label}
             </Tag>
           </Link>
@@ -381,7 +425,19 @@ export default function LoadingExpensesPage() {
       width: 140,
       render: (veh: string) =>
         veh ? (
-          <Tag style={{ background: '#ECEFEE', color: '#1E2933', border: '1px solid #D4DAD9', fontFamily: 'monospace' }} icon={<CarOutlined />}>{veh}</Tag>
+          <Tag
+            style={{
+              backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
+              color: isDark ? '#38BDF8' : '#0369A1',
+              borderColor: isDark ? '#334155' : '#CBD5E1',
+              fontFamily: 'monospace',
+              fontWeight: 600,
+              padding: '2px 8px',
+            }}
+            icon={<CarOutlined />}
+          >
+            {veh}
+          </Tag>
         ) : (
           <Text type="secondary">-</Text>
         ),
@@ -391,7 +447,7 @@ export default function LoadingExpensesPage() {
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
-      render: (desc: string) => desc || <Text type="secondary">-</Text>,
+      render: (desc: string) => <span style={{ color: isDark ? '#CBD5E1' : '#334155' }}>{desc || '-'}</span>,
     },
     {
       title: 'Source',
@@ -403,40 +459,66 @@ export default function LoadingExpensesPage() {
         if (source === 'ENQUIRY') {
           return (
             <Tooltip title={`Auto-synced from enquiry ${record.enquiryNumber || record.enquiryId}. Edit from the enquiry.`}>
-              <Tag style={{ background: '#ECEFEE', color: '#365A73', border: '1px solid #D4DAD9' }} icon={<LockOutlined />}>
+              <Tag
+                style={{
+                  backgroundColor: isDark ? '#052E16' : '#F0FDF4',
+                  color: isDark ? '#4ADE80' : '#15803D',
+                  borderColor: isDark ? '#22C55E' : '#BBF7D0',
+                  fontWeight: 600,
+                }}
+                icon={<LockOutlined />}
+              >
                 Enquiry
               </Tag>
             </Tooltip>
           );
         }
-        return <Tag style={{ background: '#F3F4F2', color: '#5F6B73', border: '1px solid #D4DAD9' }}>Manual</Tag>;
+        return (
+          <Tag
+            style={{
+              backgroundColor: isDark ? '#27272A' : '#F8FAFC',
+              color: isDark ? '#94A3B8' : '#475569',
+              borderColor: isDark ? '#3F3F46' : '#E2E8F0',
+              fontWeight: 600,
+            }}
+          >
+            Manual
+          </Tag>
+        );
       },
     },
     {
       title: 'Actions',
       key: 'actions',
-      width: 140,
+      width: 150,
       align: 'center',
       render: (_, record) => {
-        if (record.source === 'ENQUIRY') {
-          return (
-            <Tooltip title="Edit this from the enquiry">
-              <Link href={`/enquiries/${record.enquiryId}`}>
-                <Button size="small" type="link">
-                  Open Job
-                </Button>
-              </Link>
-            </Tooltip>
-          );
-        }
-
         return (
           <Space size="small">
-            <Button
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => handleOpenDrawer(record)}
-            />
+            <Tooltip title="View Expense Details">
+              <Button
+                size="small"
+                icon={<EyeOutlined />}
+                onClick={() => handleOpenViewModal(record)}
+                style={{
+                  color: isDark ? '#38BDF8' : '#0284C7',
+                  borderColor: isDark ? '#0284C7' : '#BAE6FD',
+                  backgroundColor: isDark ? '#082F49' : '#F0F9FF',
+                }}
+              />
+            </Tooltip>
+            <Tooltip title="Edit Expense">
+              <Button
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => handleOpenDrawer(record)}
+                style={{
+                  color: isDark ? '#93C5FD' : '#2563EB',
+                  borderColor: isDark ? '#3B82F6' : '#93C5FD',
+                  backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+                }}
+              />
+            </Tooltip>
             <ActionConfirmPopover
               title="Delete Loading Expense?"
               description="Are you sure you want to permanently delete this loading operational expense?"
@@ -445,7 +527,18 @@ export default function LoadingExpensesPage() {
               onConfirm={() => handleDelete(record.id)}
               placement="topRight"
             >
-              <Button size="small" danger icon={<DeleteOutlined />} />
+              <Tooltip title="Delete Expense">
+                <Button
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                  style={{
+                    color: isDark ? '#F87171' : '#DC2626',
+                    borderColor: isDark ? '#7F1D1D' : '#FCA5A5',
+                    backgroundColor: isDark ? '#450A0A' : '#FEF2F2',
+                  }}
+                />
+              </Tooltip>
             </ActionConfirmPopover>
           </Space>
         );
@@ -465,10 +558,10 @@ export default function LoadingExpensesPage() {
         }}
       >
         <div>
-          <Title level={3} style={{ margin: 0, color: '#17324D', letterSpacing: '-0.01em' }}>
+          <Title level={3} style={{ margin: 0, color: isDark ? '#F8FAFC' : '#17324D', letterSpacing: '-0.01em' }}>
             Loading Expenses
           </Title>
-          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
+          <Text type="secondary" style={{ fontSize: 13, color: isDark ? '#94A3B8' : '#5F6B73' }}>
             Trip and job-associated operational expenses with automatic synchronization from transport enquiries.
           </Text>
         </div>
@@ -492,43 +585,43 @@ export default function LoadingExpensesPage() {
         <Col xs={24} sm={12} md={6}>
           <Card size="small" className="spt-kpi-card spt-kpi-amber">
             <Statistic
-              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Loading Expenses</span>}
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: isDark ? '#94A3B8' : '#5F6B73', fontWeight: 600 }}>Total Loading Expenses</span>}
               value={summaryTotals.totalAmount}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#38BDF8' : '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card size="small" className="spt-kpi-card spt-kpi-steel">
             <Statistic
-              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Recorded Entries</span>}
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: isDark ? '#94A3B8' : '#5F6B73', fontWeight: 600 }}>Recorded Entries</span>}
               value={summaryTotals.count}
-              prefix={<WalletOutlined style={{ color: '#365A73' }} />}
-              valueStyle={{ color: '#1E2933', fontWeight: 600 }}
+              prefix={<WalletOutlined style={{ color: isDark ? '#60A5FA' : '#365A73' }} />}
+              valueStyle={{ color: isDark ? '#F8FAFC' : '#1E2933', fontWeight: 600 }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card size="small" className="spt-kpi-card spt-kpi-amber">
             <Statistic
-              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Diesel Total</span>}
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: isDark ? '#94A3B8' : '#5F6B73', fontWeight: 600 }}>Diesel Total</span>}
               value={summaryTotals.categoryBreakdown['Diesel'] || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#C58A2A', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#FBBF24' : '#C58A2A', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card size="small" className="spt-kpi-card spt-kpi-steel">
             <Statistic
-              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Halting Total</span>}
+              title={<span style={{ fontSize: 12, textTransform: 'uppercase', color: isDark ? '#94A3B8' : '#5F6B73', fontWeight: 600 }}>Halting Total</span>}
               value={summaryTotals.categoryBreakdown['Halting'] || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#365A73', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#A78BFA' : '#365A73', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
@@ -623,14 +716,22 @@ export default function LoadingExpensesPage() {
             });
             return (
               <Table.Summary fixed>
-                <Table.Summary.Row style={{ background: '#E5E9E8', fontWeight: 600 }}>
+                <Table.Summary.Row
+                  style={{
+                    background: isDark ? '#1E293B' : '#F1F5F9',
+                    borderTop: isDark ? '2px solid #334155' : '2px solid #CBD5E1',
+                    borderBottom: isDark ? '2px solid #334155' : '2px solid #CBD5E1',
+                  }}
+                >
                   <Table.Summary.Cell index={0} colSpan={2}>
-                    Page Total
+                    <span style={{ color: isDark ? '#F8FAFC' : '#0F172A', fontWeight: 700, fontSize: 13 }}>
+                      Page Total
+                    </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={1} align="right">
-                    <Text strong style={{ color: '#17324D', fontFamily: 'monospace' }}>
+                    <span style={{ color: isDark ? '#38BDF8' : '#0284C7', fontFamily: 'monospace', fontWeight: 700, fontSize: 14 }}>
                       {formatINR(pageTotal)}
-                    </Text>
+                    </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={2} colSpan={5} />
                 </Table.Summary.Row>
@@ -743,6 +844,168 @@ export default function LoadingExpensesPage() {
           </Form.Item>
         </Form>
       </Drawer>
+
+      {/* View Expense Details Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <EyeOutlined style={{ color: '#0284C7', fontSize: 18 }} />
+            <span style={{ fontWeight: 600 }}>Loading Expense Details</span>
+            {viewingRecord?.category && (
+              <Tag
+                style={{
+                  ...(() => {
+                    const s = getLoadingCategoryTagStyle(viewingRecord.category);
+                    return { backgroundColor: s.bg, color: s.text, borderColor: s.border };
+                  })(),
+                  fontSize: 12,
+                  fontWeight: 600,
+                  marginLeft: 4,
+                }}
+              >
+                {viewingRecord.category}
+              </Tag>
+            )}
+          </div>
+        }
+        open={viewModalVisible}
+        onCancel={() => setViewModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setViewModalVisible(false)}>
+            Close
+          </Button>,
+          <Button
+            key="edit"
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => {
+              const rec = viewingRecord;
+              setViewModalVisible(false);
+              if (rec) handleOpenDrawer(rec);
+            }}
+          >
+            Edit Expense
+          </Button>,
+        ]}
+        width={580}
+      >
+        {viewingRecord && (
+          <div style={{ padding: '8px 0' }}>
+            {/* Amount Banner */}
+            <div
+              style={{
+                background: isDark
+                  ? 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)'
+                  : 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
+                border: isDark ? '1px solid #334155' : '1px solid #BAE6FD',
+                borderRadius: 8,
+                padding: '16px 20px',
+                marginBottom: 20,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div>
+                <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Total Expense Amount
+                </Text>
+                <div
+                  style={{
+                    fontSize: 26,
+                    fontWeight: 700,
+                    color: isDark ? '#38BDF8' : '#0284C7',
+                    fontFamily: 'monospace',
+                    marginTop: 2,
+                  }}
+                >
+                  {formatINR(viewingRecord.amount)}
+                </div>
+              </div>
+              <Tag
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  padding: '4px 10px',
+                  backgroundColor: viewingRecord.source === 'ENQUIRY' ? (isDark ? '#052E16' : '#F0FDF4') : (isDark ? '#27272A' : '#F8FAFC'),
+                  color: viewingRecord.source === 'ENQUIRY' ? (isDark ? '#4ADE80' : '#15803D') : (isDark ? '#94A3B8' : '#475569'),
+                  borderColor: viewingRecord.source === 'ENQUIRY' ? (isDark ? '#22C55E' : '#BBF7D0') : (isDark ? '#3F3F46' : '#E2E8F0'),
+                }}
+              >
+                {viewingRecord.source === 'ENQUIRY' ? 'Auto-synced from Enquiry' : 'Manual Expense'}
+              </Tag>
+            </div>
+
+            {/* Detailed Key-Values */}
+            <Descriptions
+              bordered
+              size="small"
+              column={1}
+              labelStyle={{ width: '38%', fontWeight: 600, color: isDark ? '#94A3B8' : '#475569' }}
+              contentStyle={{ color: isDark ? '#F1F5F9' : '#0F172A' }}
+            >
+              <Descriptions.Item label="Expense ID">
+                <code style={{ fontSize: 12, fontWeight: 700 }}>{viewingRecord.id}</code>
+              </Descriptions.Item>
+              <Descriptions.Item label="Expense Date">
+                <Text strong>{viewingRecord.expenseDate || '-'}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="Category">
+                <Text strong>{viewingRecord.category}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="Vehicle">
+                {viewingRecord.vehicleNumber ? (
+                  <Tag
+                    style={{
+                      fontFamily: 'monospace',
+                      fontWeight: 600,
+                      backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
+                      color: isDark ? '#38BDF8' : '#0369A1',
+                      borderColor: isDark ? '#334155' : '#CBD5E1',
+                    }}
+                    icon={<CarOutlined />}
+                  >
+                    {viewingRecord.vehicleNumber}
+                  </Tag>
+                ) : (
+                  <Text type="secondary">Not assigned</Text>
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item label="Linked Enquiry / Job">
+                {viewingRecord.enquiryId ? (
+                  <Link href={`/enquiries/${viewingRecord.enquiryId}`}>
+                    <Tag
+                      style={{
+                        fontFamily: 'monospace',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        backgroundColor: isDark ? '#1E293B' : '#EFF6FF',
+                        color: isDark ? '#60A5FA' : '#1D4ED8',
+                        borderColor: isDark ? '#3B82F6' : '#93C5FD',
+                      }}
+                      icon={<FileTextOutlined />}
+                    >
+                      {viewingRecord.enquiryNumber || viewingRecord.enquiryId}
+                    </Tag>
+                  </Link>
+                ) : (
+                  <Text type="secondary">None</Text>
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item label="Description / Notes">
+                <span style={{ whiteSpace: 'pre-wrap' }}>{viewingRecord.description || 'No additional remarks provided.'}</span>
+              </Descriptions.Item>
+              {viewingRecord.createdAt && (
+                <Descriptions.Item label="Recorded At">
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {dayjs(viewingRecord.createdAt).format('DD-MMM-YYYY HH:mm')}
+                  </Text>
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

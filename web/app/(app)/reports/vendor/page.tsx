@@ -47,6 +47,7 @@ import { AsyncMasterSelect } from '@/components/common/AsyncMasterSelect';
 import { checkOverpayment } from '@/lib/utils/vendorHelper';
 import { GenericMasterManager } from '@/components/master/GenericMasterManager';
 import { vendorColumns, vendorFields, VendorRecord } from '@/components/master/masterConfig';
+import { useTheme } from '@/components/providers/ThemeContext';
 
 const { Title, Text, Paragraph } = Typography;
 const { RangePicker } = DatePicker;
@@ -97,6 +98,8 @@ export interface VendorPaymentItem {
 const PAYMENT_MODES = ['Cash', 'Bank Transfer', 'Cheque', 'UPI', 'Other'];
 
 export default function ConsolidatedVendorReportPage() {
+  const { themeMode } = useTheme();
+  const isDark = themeMode === 'dark';
   const [activeTab, setActiveTab] = useState('statement');
 
   // ==========================================
@@ -439,7 +442,7 @@ export default function ConsolidatedVendorReportPage() {
       fixed: 'left',
       width: 200,
       render: (name: string, record: VendorReportRow) => (
-        <Link href={`/vendors/${record.vendorId}`} style={{ fontWeight: 600, color: '#17324D' }}>
+        <Link href={`/vendors/${record.vendorId}`} style={{ fontWeight: 600, color: isDark ? '#60A5FA' : '#1D4ED8' }}>
           {name || record.vendorId}
         </Link>
       ),
@@ -450,7 +453,17 @@ export default function ConsolidatedVendorReportPage() {
       key: 'vehiclesCount',
       align: 'center',
       width: 90,
-      render: (count: number) => <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontVariantNumeric: 'tabular-nums' }}>{count || 0}</Tag>,
+      render: (count: number) => (
+        <Tag style={{
+          background: isDark ? '#1E293B' : '#EFF6FF',
+          color: isDark ? '#38BDF8' : '#0369A1',
+          border: isDark ? '1px solid #334155' : '1px solid #BAE6FD',
+          fontWeight: 600,
+          fontVariantNumeric: 'tabular-nums'
+        }}>
+          {count || 0}
+        </Tag>
+      ),
     },
     {
       title: 'Trips',
@@ -507,7 +520,7 @@ export default function ConsolidatedVendorReportPage() {
       align: 'right',
       width: 140,
       render: (v: number) => (
-        <Text strong style={{ color: '#17324D', fontVariantNumeric: 'tabular-nums' }}>
+        <Text strong style={{ color: isDark ? '#F1F5F9' : '#17324D', fontVariantNumeric: 'tabular-nums' }}>
           ₹{Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -519,7 +532,7 @@ export default function ConsolidatedVendorReportPage() {
       align: 'right',
       width: 140,
       render: (v: number) => (
-        <Text strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
+        <Text strong style={{ color: isDark ? '#4ADE80' : '#166534', fontVariantNumeric: 'tabular-nums' }}>
           ₹{Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -531,7 +544,7 @@ export default function ConsolidatedVendorReportPage() {
       align: 'right',
       width: 140,
       render: (v: number) => (
-        <Text strong style={{ color: Number(v || 0) > 0 ? '#C58A2A' : '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
+        <Text strong style={{ color: Number(v || 0) > 0 ? (isDark ? '#FBBF24' : '#C58A2A') : (isDark ? '#4ADE80' : '#166534'), fontVariantNumeric: 'tabular-nums' }}>
           ₹{Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -546,14 +559,14 @@ export default function ConsolidatedVendorReportPage() {
         <Space size="small">
           <Tooltip title="View Trips & Ledger">
             <Link href={`/vendors/${record.vendorId}`}>
-              <Button type="text" size="small" icon={<EyeOutlined style={{ color: '#365A73' }} />} />
+              <Button type="text" size="small" icon={<EyeOutlined style={{ color: isDark ? '#60A5FA' : '#1D4ED8' }} />} />
             </Link>
           </Tooltip>
           <Tooltip title="Record Payment">
             <Button
               type="text"
               size="small"
-              icon={<DollarOutlined style={{ color: '#3F6F4A' }} />}
+              icon={<DollarOutlined style={{ color: isDark ? '#4ADE80' : '#166534' }} />}
               onClick={() => {
                 openAddPaymentDrawer();
                 paymentForm.setFieldsValue({ vendorId: record.vendorId });
@@ -562,7 +575,7 @@ export default function ConsolidatedVendorReportPage() {
           </Tooltip>
           <Tooltip title="View / Edit Vendor">
             <Link href={`/vendors/${record.vendorId}`}>
-              <Button type="text" size="small" icon={<EditOutlined style={{ color: '#17324D' }} />} />
+              <Button type="text" size="small" icon={<EditOutlined style={{ color: isDark ? '#94A3B8' : '#17324D' }} />} />
             </Link>
           </Tooltip>
         </Space>
@@ -591,7 +604,7 @@ export default function ConsolidatedVendorReportPage() {
       dataIndex: 'vendorName',
       key: 'vendorName',
       render: (name: string, record: VendorPaymentItem) => (
-        <Link href={`/vendors/${record.vendorId}`} style={{ fontWeight: 600, color: '#17324D' }}>
+        <Link href={`/vendors/${record.vendorId}`} style={{ fontWeight: 600, color: isDark ? '#60A5FA' : '#1D4ED8' }}>
           {name || record.vendorId}
         </Link>
       ),
@@ -601,10 +614,10 @@ export default function ConsolidatedVendorReportPage() {
       dataIndex: 'enquiryId',
       key: 'enquiryId',
       render: (enquiryId: string, record: VendorPaymentItem) => {
-        if (!enquiryId) return <Tag style={{ background: '#ECEFEE', color: '#5F6B73', border: '1px solid #D4DAD9' }}>Unallocated</Tag>;
+        if (!enquiryId) return <Tag style={{ background: isDark ? '#262626' : '#F3F4F6', color: isDark ? '#A3A3A3' : '#6B7280', border: isDark ? '1px solid #404040' : '1px solid #E5E7EB' }}>Unallocated</Tag>;
         return (
           <Space direction="vertical" size={2}>
-            <Link href={`/enquiries/${enquiryId}`} style={{ color: '#17324D', fontFamily: 'monospace' }}>
+            <Link href={`/enquiries/${enquiryId}`} style={{ color: isDark ? '#60A5FA' : '#1D4ED8', fontFamily: 'monospace', fontWeight: 600 }}>
               {record.enquiryTransactionNo || enquiryId}
             </Link>
             {record.vehicleNumber && (
@@ -623,7 +636,7 @@ export default function ConsolidatedVendorReportPage() {
       align: 'right',
       width: 130,
       render: (amt: number) => (
-        <Text strong style={{ color: '#3F6F4A', fontVariantNumeric: 'tabular-nums' }}>
+        <Text strong style={{ color: isDark ? '#4ADE80' : '#166534', fontVariantNumeric: 'tabular-nums' }}>
           ₹{Number(amt || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
         </Text>
       ),
@@ -634,7 +647,12 @@ export default function ConsolidatedVendorReportPage() {
       key: 'mode',
       width: 120,
       render: (mode: string) => (
-        <Tag style={{ background: '#ECEFEE', color: '#34424C', border: '1px solid #D4DAD9' }}>{mode}</Tag>
+        <Tag style={{
+          background: isDark ? '#27272A' : '#F4F4F5',
+          color: isDark ? '#E4E4E7' : '#27272A',
+          border: isDark ? '1px solid #3F3F46' : '1px solid #E4E4E7',
+          fontWeight: 600,
+        }}>{mode}</Tag>
       ),
     },
     {
@@ -867,7 +885,7 @@ export default function ConsolidatedVendorReportPage() {
                       if (!grandTotals || rows.length === 0) return null;
                       return (
                         <Table.Summary fixed>
-                          <Table.Summary.Row style={{ backgroundColor: '#fafafa', fontWeight: 'bold' }}>
+                          <Table.Summary.Row style={{ backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#fafafa', fontWeight: 'bold' }}>
                             <Table.Summary.Cell index={0}>
                               <Text strong>GRAND TOTAL ({rows.length} Vendors)</Text>
                             </Table.Summary.Cell>

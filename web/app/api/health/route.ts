@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { callAppsScript } from '@/lib/server/appsScriptClient';
 
+export const dynamic = 'force-dynamic';
+
 interface HealthCheckData {
   ok: boolean;
   sheetConnected: boolean;

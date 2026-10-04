@@ -300,10 +300,23 @@ const MasterDataModule = {
     // Check if referenced by active enquiries or bills
     // Note: Deactivation is allowed because active=false preserves history,
     // but hard-deletion is completely prevented.
-    const updated = SheetRepo.updateRow(entity, id, { active: false }, session.userId);
+    const now = new Date().toISOString();
+    const patch = { active: false, deletedAt: now };
+    if (entity === 'vehicles') {
+      patch.vehicleStatus = 'INACTIVE';
+    }
+    const updated = SheetRepo.updateRow(entity, id, patch, session.userId);
+
+    if (typeof TrashbinModule !== 'undefined' && TrashbinModule.recordDeletion) {
+      var trashCategory = entity === 'vehicles' ? 'vehicle' :
+                          entity === 'vendors' ? 'vendor' :
+                          entity === 'drivers' ? 'driver' :
+                          entity === 'containers' ? 'container' : entity;
+      TrashbinModule.recordDeletion(trashCategory, Object.assign({}, oldRecord, patch), session.userId);
+    }
 
     // Audit log
-    writeAuditLog(entity, id, 'DEACTIVATE', oldRecord, { active: false }, session.userId);
+    writeAuditLog(entity, id, 'DEACTIVATE', oldRecord, patch, session.userId);
 
     return {
       success: true,
@@ -325,9 +338,18 @@ const MasterDataModule = {
       throw new Error('Record not found with ID "' + id + '" in ' + entity);
     }
 
-    const updated = SheetRepo.updateRow(entity, id, { active: true }, session.userId);
+    const patch = { active: true };
+    if (entity === 'vehicles') {
+      patch.deletedAt = '';
+      patch.vehicleStatus = 'ACTIVE';
+    }
+    const updated = SheetRepo.updateRow(entity, id, patch, session.userId);
 
-    writeAuditLog(entity, id, 'REACTIVATE', oldRecord, { active: true }, session.userId);
+    if (entity === 'vehicles' && typeof TrashbinModule !== 'undefined') {
+      SheetRepo.hardDeleteRow('vehicle-trashbin', id);
+    }
+
+    writeAuditLog(entity, id, 'REACTIVATE', oldRecord, patch, session.userId);
 
     return {
       success: true,
