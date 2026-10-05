@@ -35,6 +35,7 @@ import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 import { RecordDetailPopover } from '@/components/common/RecordDetailPopover';
 import { exportToExcel } from '@/lib/utils/exportHelper';
 import { useTheme } from '@/components/providers/ThemeContext';
+import { getCachedCompanies, getCachedClients, setCachedCompanies, setCachedClients } from '@/lib/client/masterCache';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -84,6 +85,14 @@ export default function PendingBillsPage() {
       });
       if (res.data && res.data.success) {
         setItems(res.data.data.items || []);
+        if (res.data.data.companies && Array.isArray(res.data.data.companies) && res.data.data.companies.length > 0) {
+          setCompanies(res.data.data.companies);
+          setCachedCompanies(res.data.data.companies);
+        }
+        if (res.data.data.clients && Array.isArray(res.data.data.clients) && res.data.data.clients.length > 0) {
+          setClients(res.data.data.clients);
+          setCachedClients(res.data.data.clients);
+        }
       } else {
         message.error(res.data?.message || 'Failed to fetch pending bills');
       }
@@ -138,19 +147,18 @@ export default function PendingBillsPage() {
 
   const fetchMasters = async () => {
     try {
-      const [compRes, cltRes] = await Promise.all([
-        axios.get('/api/master/companies?limit=100'),
-        axios.get('/api/master/clients?limit=100'),
+      const [comps, clts] = await Promise.all([
+        getCachedCompanies(),
+        getCachedClients(),
       ]);
-      if (compRes.data?.success) setCompanies(compRes.data.data.items || []);
-      if (cltRes.data?.success) setClients(cltRes.data.data.items || []);
+      if (comps && comps.length > 0) setCompanies(comps);
+      if (clts && clts.length > 0) setClients(clts);
     } catch (e) {
       console.error('Failed to load masters:', e);
     }
   };
 
   useEffect(() => {
-    fetchMasters();
     fetchPending();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -105,6 +105,7 @@ export default function EnquiriesListPage() {
   const [stage, setStage] = useState<string | undefined>();
   const [dateRange, setDateRange] = useState<[string, string] | null>(null);
   const [vehicleStatusOverrides, setVehicleStatusOverrides] = useState<Record<string, boolean>>({});
+  const [hasBootstrapped, setHasBootstrapped] = useState(false);
 
   const handleToggleVehicleStatus = async (record: EnquiryRow, newStatus: boolean) => {
     setVehicleStatusOverrides((prev) => ({
@@ -139,6 +140,10 @@ export default function EnquiriesListPage() {
         sortOrder,
       });
 
+      if (!hasBootstrapped) {
+        query.set('bootstrap', 'true');
+      }
+
       if (search.trim()) query.set('search', search.trim());
       if (companyId) query.set('companyId', companyId);
       if (clientId) query.set('clientId', clientId);
@@ -154,6 +159,9 @@ export default function EnquiriesListPage() {
       if (res.data.success && res.data.data) {
         setData(res.data.data.items || []);
         setTotal(res.data.data.total || 0);
+        if (!hasBootstrapped) {
+          setHasBootstrapped(true);
+        }
       } else {
         message.error(res.data.message || 'Failed to load enquiries');
       }
@@ -163,7 +171,7 @@ export default function EnquiriesListPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, sortField, sortOrder, search, companyId, clientId, vendorId, loadingType, stage, dateRange]);
+  }, [page, pageSize, sortField, sortOrder, search, companyId, clientId, vendorId, loadingType, stage, dateRange, hasBootstrapped]);
 
   useEffect(() => {
     fetchEnquiries();

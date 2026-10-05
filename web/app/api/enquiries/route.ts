@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callAppsScript } from '@/lib/server/appsScriptClient';
 import { getSessionToken } from '@/lib/server/session';
-import { serverCache } from '@/lib/server/cache';
 
 export async function GET(req: NextRequest) {
   try {
@@ -31,16 +30,23 @@ export async function GET(req: NextRequest) {
       sortOrder: searchParams.get('sortOrder') || 'desc',
     };
 
-    const cacheKey = `enquiry:list:${JSON.stringify(params)}`;
-    const cached = serverCache.get<any>(cacheKey);
-    if (cached) {
-      return NextResponse.json(cached, { status: 200 });
+    const isBootstrap = searchParams.get('bootstrap') === 'true';
+    const action = isBootstrap ? 'enquiries.bootstrap' : 'enquiry.list';
+
+    const result = (await callAppsScript(action, params, sessionToken)) as any;
+    if (isBootstrap && result.success && result.data?.enquiries) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          items: result.data.enquiries.items || [],
+          total: result.data.enquiries.total || 0,
+          companies: result.data.companies || [],
+          clients: result.data.clients || [],
+          vendors: result.data.vendors || [],
+        },
+      });
     }
 
-    const result = await callAppsScript('enquiry.list', params, sessionToken);
-    if (result.success && result.data) {
-      serverCache.set(cacheKey, result, 15); // 15s TTL
-    }
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to retrieve enquiries';
@@ -61,8 +67,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const result = (await callAppsScript('enquiry.create', body, sessionToken)) as any;
     if (result.success) {
-      serverCache.invalidatePattern('enquiry');
-      serverCache.invalidatePattern('dashboard');
       if (result.data) {
         const enquiryData = result.data.enquiry || result.data;
         const movementData = result.data.movement || {};

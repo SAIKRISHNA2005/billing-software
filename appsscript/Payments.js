@@ -106,10 +106,18 @@ const PaymentsModule = (function () {
         );
       }
 
-      const seq = SequenceRepository.getNextSequence('bill_payments');
-      const paymentId = 'BPAY-' + String(seq).padStart(4, '0');
-
+      const allSequences = SheetRepo.getAllRows('number_sequences', true);
+      let seqRow = allSequences.find(function (s) { return s.sequenceKey === 'bill_payments'; });
+      let nextSeq = 1;
       const now = new Date().toISOString();
+      if (seqRow) {
+        nextSeq = parseInt(seqRow.currentValue, 10) + 1;
+        SheetRepo.updateRow('number_sequences', 'bill_payments', { currentValue: nextSeq, updatedAt: now });
+      } else {
+        SheetRepo.insertRow('number_sequences', { sequenceKey: 'bill_payments', financialYear: 'ALL', currentValue: nextSeq, updatedAt: now });
+      }
+      const paymentId = 'BPAY-' + String(nextSeq).padStart(4, '0');
+
       const paymentRow = {
         id: paymentId,
         billId: payload.billId,

@@ -707,6 +707,7 @@ export default function LoadingExpensesPage() {
       {/* Table */}
       <Card bordered={false} bodyStyle={{ padding: 0 }}>
         <Table<LoadingExpenseItem>
+          scroll={{ x: 'max-content' }}
           columns={columns}
           dataSource={data}
           rowKey="id"

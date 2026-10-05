@@ -102,6 +102,14 @@ const ACTION_HANDLERS = {
   // Enquiry Module Actions
   'enquiry.create': function(payload, sessionToken) { return EnquiryModule.create(payload, sessionToken); },
   'enquiry.list': function(payload, sessionToken) { return EnquiryModule.list(payload, sessionToken); },
+  'enquiries.bootstrap': function(payload, sessionToken) {
+    return {
+      enquiries: EnquiryModule.list(payload, sessionToken),
+      companies: MasterDataModule.lookup('companies', { limit: 100 }, sessionToken),
+      clients: MasterDataModule.lookup('clients', { limit: 100 }, sessionToken),
+      vendors: MasterDataModule.lookup('vendors', { limit: 100 }, sessionToken),
+    };
+  },
   'enquiry.get': function(payload, sessionToken) { return EnquiryModule.get(payload.id, sessionToken); },
   'enquiry.update': function(payload, sessionToken) { return EnquiryModule.update(payload.id, payload.patch || payload, sessionToken); },
   'enquiry.delete': function(payload, sessionToken) { return EnquiryModule.delete(payload.id, sessionToken); },
@@ -186,12 +194,26 @@ const ACTION_HANDLERS = {
 
   // Billing Module Actions (Phase 12)
   'bill.pending': function(payload, sessionToken) { return BillingModule.listPending(payload); },
+  'bill.pending.bootstrap': function(payload, sessionToken) {
+    return {
+      pending: BillingModule.listPending(payload),
+      companies: MasterDataModule.lookup('companies', { limit: 100 }, sessionToken),
+      clients: MasterDataModule.lookup('clients', { limit: 100 }, sessionToken),
+    };
+  },
   'bill.create': function(payload, sessionToken) { return BillingModule.createBill(payload); },
   'bill.deleteDraft': function(payload, sessionToken) { return BillingModule.deleteDraft(payload.id); },
   'bill.process': function(payload, sessionToken) { return BillingModule.processBill(payload); },
   'bill.updateProcessed': function(payload, sessionToken) { return BillingModule.updateProcessed(payload); },
   'bill.get': function(payload, sessionToken) { return BillingModule.getBill(payload.id); },
   'bill.list': function(payload, sessionToken) { return BillingModule.listBills(payload); },
+  'bill.processed.bootstrap': function(payload, sessionToken) {
+    return {
+      bills: BillingModule.listBills(payload),
+      companies: MasterDataModule.lookup('companies', { limit: 100 }, sessionToken),
+      clients: MasterDataModule.lookup('clients', { limit: 100 }, sessionToken),
+    };
+  },
 
   // Reports Module Actions (Phase 16)
   'reports.daily': function(payload, sessionToken) { return ReportsModule.getDailyReport(payload); },

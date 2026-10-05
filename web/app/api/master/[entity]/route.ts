@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callAppsScript } from '@/lib/server/appsScriptClient';
 import { getSessionToken } from '@/lib/server/session';
-import { serverCache } from '@/lib/server/cache';
 
 interface RouteContext {
   params: {
@@ -40,17 +39,8 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
         limit: searchParams.get('limit') || '20',
       };
 
-      const cacheKey = `master:lookup:${entity}:${JSON.stringify(query)}`;
-      const cached = serverCache.get<any>(cacheKey);
-      if (cached) {
-        return NextResponse.json(cached, { status: 200 });
-      }
-
       const action = `${entity}.lookup`;
       const result = await callAppsScript(action, query, sessionToken);
-      if (result.success && result.data) {
-        serverCache.set(cacheKey, result, 120); // 2 minutes TTL for lookups
-      }
       return NextResponse.json(result, { status: result.success ? 200 : 400 });
     }
 
@@ -64,17 +54,8 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       sortOrder: searchParams.get('sortOrder') || undefined,
     };
 
-    const cacheKey = `master:list:${entity}:${JSON.stringify(listParams)}`;
-    const cached = serverCache.get<any>(cacheKey);
-    if (cached) {
-      return NextResponse.json(cached, { status: 200 });
-    }
-
     const action = `${entity}.list`;
     const result = await callAppsScript(action, listParams, sessionToken);
-    if (result.success && result.data) {
-      serverCache.set(cacheKey, result, 30); // 30 seconds TTL for list queries
-    }
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to retrieve master data';
@@ -105,7 +86,6 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
     const result = (await callAppsScript(action, body, sessionToken)) as any;
     if (result.success) {
-      serverCache.invalidatePattern('master');
       if (entity === 'clients' && (body.name || result.data?.name)) {
         const clientName = body.name || result.data?.name;
         const { syncClientCreationToReports } = await import('@/lib/server/reportSyncService');

@@ -490,6 +490,7 @@ export default function GeneralExpensesPage() {
       {/* Table */}
       <Card bordered={false} bodyStyle={{ padding: 0 }}>
         <Table<GeneralExpenseItem>
+          scroll={{ x: 'max-content' }}
           columns={columns}
           dataSource={data}
           rowKey="id"

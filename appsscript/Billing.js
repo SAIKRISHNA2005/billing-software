@@ -85,7 +85,9 @@ var BillingModule = (function () {
 
     return {
       items: items,
-      total: items.length
+      total: items.length,
+      companies: companies.filter(function (c) { return !c.deletedAt && c.status !== 'INACTIVE'; }).map(function (c) { return { id: c.id, name: c.name }; }),
+      clients: clients.filter(function (c) { return !c.deletedAt && c.status !== 'INACTIVE'; }).map(function (c) { return { id: c.id, name: c.name }; })
     };
   }
 
@@ -531,7 +533,9 @@ var BillingModule = (function () {
       grandTotal: grandTotal,
       page: page,
       limit: limit,
-      totalPages: Math.ceil(total / limit) || 1
+      totalPages: Math.ceil(total / limit) || 1,
+      companies: companies.filter(function (c) { return !c.deletedAt && c.status !== 'INACTIVE'; }).map(function (c) { return { id: c.id, name: c.name }; }),
+      clients: clients.filter(function (c) { return !c.deletedAt && c.status !== 'INACTIVE'; }).map(function (c) { return { id: c.id, name: c.name }; })
     };
   }
 

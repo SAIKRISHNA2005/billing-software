@@ -4,19 +4,36 @@
  * STRICT RULES: R13 (LockService for number_sequences), R14 (Batch getValues/setValues, no cell-by-cell loops).
  */
 
+var _cachedSpreadsheetInstance = null;
+var _cachedSheetsMap = {};
+
 var SheetRepo = {
   /**
-   * Helper to get Google Sheet by tab name
+   * Helper to get or reuse the open Spreadsheet instance
+   */
+  getSpreadsheet() {
+    if (!_cachedSpreadsheetInstance) {
+      const spreadsheetId = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+      if (!spreadsheetId) {
+        throw new Error('SPREADSHEET_ID is not configured in Script Properties.');
+      }
+      _cachedSpreadsheetInstance = SpreadsheetApp.openById(spreadsheetId);
+    }
+    return _cachedSpreadsheetInstance;
+  },
+
+  /**
+   * Helper to get Google Sheet by tab name (reuses open instance)
    */
   getSheet(sheetName) {
-    const spreadsheetId = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
-    if (!spreadsheetId) {
-      throw new Error('SPREADSHEET_ID is not configured in Script Properties.');
+    var lookupName = sheetName === 'processed_bills' ? 'bills' : sheetName;
+    if (_cachedSheetsMap[lookupName]) {
+      return _cachedSheetsMap[lookupName];
     }
-    const ss = SpreadsheetApp.openById(spreadsheetId);
-    let sheet = ss.getSheetByName(sheetName);
-    if (!sheet && sheetName === 'processed_bills') {
-      sheet = ss.getSheetByName('bills');
+    const ss = this.getSpreadsheet();
+    let sheet = ss.getSheetByName(lookupName);
+    if (!sheet && lookupName === 'bills') {
+      sheet = ss.getSheetByName('processed_bills');
     }
     if (!sheet) {
       if (typeof SHEET_SCHEMAS !== 'undefined' && SHEET_SCHEMAS[sheetName]) {
@@ -25,10 +42,12 @@ var SheetRepo = {
         sheet.getRange(1, 1, 1, schemaHeaders.length).setValues([schemaHeaders]);
         sheet.setFrozenRows(1);
         sheet.getRange(1, 1, 1, schemaHeaders.length).setFontWeight('bold').setBackground('#f3f4f6');
+        _cachedSheetsMap[sheetName] = sheet;
         return sheet;
       }
       throw new Error('Sheet not found: "' + sheetName + '". Please run createAllSheets() first.');
     }
+    _cachedSheetsMap[sheetName] = sheet;
     return sheet;
   },
 

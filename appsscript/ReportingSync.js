@@ -74,6 +74,8 @@ var ReportingSyncModule = (function () {
     return str.length > 10 ? str.substring(0, 10) : str;
   }
 
+  var _cachedExternalSS = {};
+
   function getSpreadsheet(propName, payloadId) {
     var id = (payloadId || '').trim();
     if (!id) {
@@ -87,7 +89,12 @@ var ReportingSyncModule = (function () {
     if (!id) {
       throw new Error('Spreadsheet ID for ' + propName + ' is not configured.');
     }
-    return SpreadsheetApp.openById(id);
+    if (_cachedExternalSS[id]) {
+      return _cachedExternalSS[id];
+    }
+    var ss = SpreadsheetApp.openById(id);
+    _cachedExternalSS[id] = ss;
+    return ss;
   }
 
   function applyHeaderStyles(sheet, headers) {

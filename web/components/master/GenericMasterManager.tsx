@@ -30,6 +30,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { apiClient } from '@/lib/api/client';
 import { formatDate } from '@/lib/utils/format';
 import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
+import { invalidateMasterCache } from '@/lib/client/masterCache';
 
 const { Text } = Typography;
 
@@ -116,6 +117,7 @@ export function GenericMasterManager<T extends MasterRecord = MasterRecord>({
       setIsDrawerOpen(false);
       form.resetFields();
       setEditingRecord(null);
+      invalidateMasterCache(entity as any);
       queryClient.invalidateQueries({ queryKey: ['master', entity] });
     },
     onError: (err: unknown) => {
@@ -140,6 +142,7 @@ export function GenericMasterManager<T extends MasterRecord = MasterRecord>({
       setIsDrawerOpen(false);
       form.resetFields();
       setEditingRecord(null);
+      invalidateMasterCache(entity as any);
       queryClient.invalidateQueries({ queryKey: ['master', entity] });
     },
     onError: (err: unknown) => {
@@ -160,6 +163,7 @@ export function GenericMasterManager<T extends MasterRecord = MasterRecord>({
     },
     onSuccess: () => {
       message.success(`${entitySingular} deactivated successfully!`);
+      invalidateMasterCache(entity as any);
       queryClient.invalidateQueries({ queryKey: ['master', entity] });
     },
     onError: (err: unknown) => {
@@ -181,6 +185,7 @@ export function GenericMasterManager<T extends MasterRecord = MasterRecord>({
     },
     onSuccess: () => {
       message.success(`${entitySingular} reactivated successfully!`);
+      invalidateMasterCache(entity as any);
       queryClient.invalidateQueries({ queryKey: ['master', entity] });
     },
     onError: (err: unknown) => {

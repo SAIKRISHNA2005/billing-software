@@ -45,6 +45,7 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import { formatCurrencyINR } from '@/lib/utils/format';
 import { useTheme } from '@/components/providers/ThemeContext';
+import { getCachedCompanies, getCachedClients, invalidateMasterCache } from '@/lib/client/masterCache';
 
 const { Title, Text, Paragraph } = Typography;
 const { RangePicker } = DatePicker;
@@ -102,12 +103,12 @@ export default function ConsolidatedBillingReportPage() {
   // Load master companies and clients
   const fetchMasters = async () => {
     try {
-      const [compRes, cltRes] = await Promise.all([
-        axios.get('/api/master/companies?limit=100'),
-        axios.get('/api/master/clients?limit=100'),
+      const [comps, clts] = await Promise.all([
+        getCachedCompanies(),
+        getCachedClients(),
       ]);
-      if (compRes.data?.success) setCompanies(compRes.data.data?.items || (Array.isArray(compRes.data.data) ? compRes.data.data : []));
-      if (cltRes.data?.success) setClients(cltRes.data.data?.items || (Array.isArray(cltRes.data.data) ? cltRes.data.data : []));
+      if (comps && comps.length > 0) setCompanies(comps);
+      if (clts && clts.length > 0) setClients(clts);
     } catch (e) {
       console.error('Failed to load masters:', e);
     }
@@ -722,7 +723,16 @@ export default function ConsolidatedBillingReportPage() {
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setPaymentModalVisible(true)}>
               Record Client Payment
             </Button>
-            <Button icon={<ReloadOutlined />} onClick={fetchBillingReport}>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                invalidateMasterCache();
+                fetchMasters();
+                fetchBillingReport();
+                fetchPayments();
+                fetchAgeingReport();
+              }}
+            >
               Refresh
             </Button>
             <Button icon={<DownloadOutlined />} onClick={handleExportAll}>

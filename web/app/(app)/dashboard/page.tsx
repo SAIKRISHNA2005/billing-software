@@ -162,21 +162,19 @@ export default function DashboardPage() {
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const [sumRes, alertRes] = await Promise.all([
-        axios.get('/api/dashboard/summary'),
-        axios.get('/api/vehicles/alerts').catch(() => ({ data: { success: false, data: [] } })),
-      ]);
+      const sumRes = await axios.get('/api/dashboard/summary');
 
       if (sumRes.data && sumRes.data.success) {
-        setSummary(sumRes.data.data);
+        const data = sumRes.data.data;
+        setSummary(data);
+
+        if (data.vehicleAlerts && Array.isArray(data.vehicleAlerts) && data.vehicleAlerts.length > 0) {
+          setVehicleAlerts(data.vehicleAlerts);
+        } else {
+          setVehicleAlerts([DEFAULT_VEHICLE_ALERT]);
+        }
       } else {
         message.error(sumRes.data?.message || 'Failed to load dashboard summary');
-      }
-
-      if (alertRes.data?.data && Array.isArray(alertRes.data.data) && alertRes.data.data.length > 0) {
-        setVehicleAlerts(alertRes.data.data);
-      } else {
-        setVehicleAlerts([DEFAULT_VEHICLE_ALERT]);
       }
     } catch (err: any) {
       message.error(err.response?.data?.message || 'Error fetching dashboard');

@@ -32,16 +32,6 @@ var DashboardModule = (function () {
    * Calculates dashboard summary KPIs, charts data, and recent bills
    */
   function getDashboardSummary() {
-    var cache = CacheService.getScriptCache();
-    var cached = cache.get('TMS_DASHBOARD_SUMMARY');
-    if (cached) {
-      try {
-        return JSON.parse(cached);
-      } catch (e) {
-        // Cache miss/parse fallback
-      }
-    }
-
     var todayStr = formatDateISO(new Date());
 
     var enquiries = SheetRepoModule.getAllRows(ENQUIRIES_SHEET).filter(function (e) { return !e.deletedAt; });
@@ -290,13 +280,11 @@ var DashboardModule = (function () {
       dailyRevenueChart: dailyRevenueChart,
       allDailyTrend: allDailyData,
       recentBills: recentBills,
-      recentEnquiries: recentEnquiries
+      recentEnquiries: recentEnquiries,
+      vehicleAlerts: (typeof MasterDataModule !== 'undefined' && MasterDataModule.getVehicleExpiryAlerts)
+        ? MasterDataModule.getVehicleExpiryAlerts()
+        : []
     };
-
-    // Cache summary for 5 seconds
-    try {
-      cache.put('TMS_DASHBOARD_SUMMARY', JSON.stringify(summary), 5);
-    } catch (e) {}
 
     return summary;
   }

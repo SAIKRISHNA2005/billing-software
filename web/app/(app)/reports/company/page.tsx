@@ -5,6 +5,7 @@ import { Card, Table, Select, Button, Space, Typography, Tag, Modal, message } f
 import { BankOutlined, SearchOutlined, ReloadOutlined, EyeOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { formatCurrencyINR } from '@/lib/utils/format';
+import { getCachedCompanies, invalidateMasterCache } from '@/lib/client/masterCache';
 
 const { Title, Text } = Typography;
 
@@ -38,8 +39,8 @@ export default function CompanyReportPage() {
 
   const fetchMasters = async () => {
     try {
-      const res = await axios.get('/api/master/companies?limit=100');
-      if (res.data?.success) setCompanies(res.data.data.items || []);
+      const items = await getCachedCompanies();
+      if (items && items.length > 0) setCompanies(items);
     } catch (e) {
       console.error(e);
     }
@@ -113,7 +114,14 @@ export default function CompanyReportPage() {
           </Title>
           <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>Consolidated trip volumes and revenue billed across legal operating companies</Text>
         </div>
-        <Button icon={<ReloadOutlined />} onClick={fetchCompanyReport}>
+        <Button
+          icon={<ReloadOutlined />}
+          onClick={() => {
+            invalidateMasterCache('companies');
+            fetchMasters();
+            fetchCompanyReport();
+          }}
+        >
           Refresh
         </Button>
       </div>
