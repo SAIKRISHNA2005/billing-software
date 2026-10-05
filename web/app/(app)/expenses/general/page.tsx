@@ -42,6 +42,7 @@ import {
   ExpenseTotals,
 } from '@/lib/utils/expensesHelper';
 import { exportToExcel } from '@/lib/utils/exportHelper';
+import { formatDate } from '@/lib/utils/format';
 
 import { useTheme } from '@/components/providers/ThemeContext';
 
@@ -131,7 +132,8 @@ export default function GeneralExpensesPage() {
       message.warning('No general expense records to export');
       return;
     }
-    exportToExcel(data, generalExportColumns, `General_Expenses_Filtered_${dayjs().format('YYYY-MM-DD')}`);
+    const formattedData = data.map((item) => ({ ...item, expenseDate: formatDate(item.expenseDate) }));
+    exportToExcel(formattedData, generalExportColumns, `General_Expenses_Filtered_${dayjs().format('YYYY-MM-DD')}`);
     message.success(`Exported ${data.length} filtered general expense records to Excel`);
   };
 
@@ -144,11 +146,13 @@ export default function GeneralExpensesPage() {
         message.warning({ content: 'No general expenses available to export', key: 'exportGen' });
         return;
       }
-      exportToExcel(allItems, generalExportColumns, `General_Expenses_ALL_${dayjs().format('YYYY-MM-DD')}`);
+      const formattedItems = allItems.map((item: GeneralExpenseItem) => ({ ...item, expenseDate: formatDate(item.expenseDate) }));
+      exportToExcel(formattedItems, generalExportColumns, `General_Expenses_ALL_${dayjs().format('YYYY-MM-DD')}`);
       message.success({ content: `Exported all ${allItems.length} general expense records to Excel`, key: 'exportGen' });
     } catch {
       if (data.length > 0) {
-        exportToExcel(data, generalExportColumns, `General_Expenses_ALL_${dayjs().format('YYYY-MM-DD')}`);
+        const formattedData = data.map((item) => ({ ...item, expenseDate: formatDate(item.expenseDate) }));
+        exportToExcel(formattedData, generalExportColumns, `General_Expenses_ALL_${dayjs().format('YYYY-MM-DD')}`);
       } else {
         message.error({ content: 'Failed to fetch all general expenses for export', key: 'exportGen' });
       }
@@ -158,8 +162,18 @@ export default function GeneralExpensesPage() {
   const handleOpenDrawer = (item?: GeneralExpenseItem) => {
     if (item) {
       setEditingItem(item);
+      let parsedDate = dayjs();
+      if (item.expenseDate) {
+        if (/^\d{2}-\d{2}-\d{4}$/.test(item.expenseDate.trim())) {
+          const [d, m, y] = item.expenseDate.trim().split('-').map(Number);
+          parsedDate = dayjs(new Date(y, m - 1, d));
+        } else {
+          const p = dayjs(item.expenseDate);
+          if (p.isValid()) parsedDate = p;
+        }
+      }
       form.setFieldsValue({
-        expenseDate: item.expenseDate ? dayjs(item.expenseDate, 'DD-MM-YYYY') : dayjs(),
+        expenseDate: parsedDate,
         category: item.category,
         amount: item.amount,
         description: item.description,
@@ -262,7 +276,7 @@ export default function GeneralExpensesPage() {
       dataIndex: 'expenseDate',
       key: 'expenseDate',
       width: 130,
-      render: (val: string) => <Text strong style={{ color: isDark ? '#F1F5F9' : '#0F172A' }}>{val || '-'}</Text>,
+      render: (val: string) => <Text strong style={{ color: isDark ? '#F1F5F9' : '#0F172A' }}>{formatDate(val)}</Text>,
     },
     {
       title: 'Category',

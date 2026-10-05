@@ -129,6 +129,7 @@ export default function ProcessedBillsPage() {
   useEffect(() => {
     fetchMasters();
     fetchBills(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle Download PDF

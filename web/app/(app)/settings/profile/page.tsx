@@ -32,6 +32,7 @@ export default function CompanyProfilePage() {
 
   useEffect(() => {
     fetchSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSave = async (values: any) => {
@@ -178,6 +179,7 @@ export default function CompanyProfilePage() {
                 </Text>
                 {settings?.sealViewUrl ? (
                   <div style={{ textAlign: 'center', border: '1px dashed #d9d9d9', borderRadius: 8, padding: 12 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={settings.sealViewUrl}
                       alt="Company Seal"
@@ -212,6 +214,7 @@ export default function CompanyProfilePage() {
                 </Text>
                 {settings?.signatureViewUrl ? (
                   <div style={{ textAlign: 'center', border: '1px dashed #d9d9d9', borderRadius: 8, padding: 12 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={settings.signatureViewUrl}
                       alt="Authorized Signature"

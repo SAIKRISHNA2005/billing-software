@@ -22,6 +22,7 @@ import {
   CheckCircleOutlined,
   EyeOutlined,
   EditOutlined,
+  DeleteOutlined,
   DownloadOutlined,
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
@@ -93,6 +94,26 @@ export default function PendingBillsPage() {
     }
   };
 
+  const handleDeletePending = async (record: PendingBillRow) => {
+    const targetId = record.enquiryId || record.id;
+    if (!targetId) {
+      message.error('No valid consignment ID found to delete');
+      return;
+    }
+
+    try {
+      const res = await axios.delete(`/api/enquiries/${targetId}`);
+      if (res.data && res.data.success) {
+        message.success(`Consignment ${record.transactionNo || record.enquiryNumber || targetId} deleted successfully`);
+        fetchPending();
+      } else {
+        message.error(res.data?.message || 'Failed to delete pending consignment');
+      }
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Error deleting pending consignment');
+    }
+  };
+
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       if (dateRange && dateRange[0] && dateRange[1]) {
@@ -131,6 +152,7 @@ export default function PendingBillsPage() {
   useEffect(() => {
     fetchMasters();
     fetchPending();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCreateBill = () => {
@@ -362,7 +384,7 @@ export default function PendingBillsPage() {
     {
       title: 'Action',
       key: 'action',
-      width: 140,
+      width: 175,
       align: 'center',
       render: (_, record: PendingBillRow) => (
         <Space size="small">
@@ -392,6 +414,22 @@ export default function PendingBillsPage() {
               <Button type="text" size="small" icon={<EditOutlined style={{ color: isDark ? '#4ADE80' : '#3F6F4A' }} />} />
             </Link>
           </Tooltip>
+          <ActionConfirmPopover
+            title="Delete Consignment?"
+            description={`Are you sure you want to delete pending consignment ${record.transactionNo || record.enquiryId || record.id}? This will move it to the trash bin.`}
+            okText="Yes, Delete"
+            cancelText="No, Keep It"
+            onConfirm={() => handleDeletePending(record)}
+          >
+            <Tooltip title="Delete Consignment">
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined style={{ color: isDark ? '#F87171' : '#DC2626' }} />}
+              />
+            </Tooltip>
+          </ActionConfirmPopover>
         </Space>
       ),
     },

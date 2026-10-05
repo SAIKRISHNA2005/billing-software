@@ -13,10 +13,12 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import { useTheme } from '@/components/providers/ThemeContext';
 
 const { Title, Text } = Typography;
 
 export default function AuditLogPage() {
+  const { isDark } = useTheme();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 });
@@ -54,6 +56,7 @@ export default function AuditLogPage() {
 
   useEffect(() => {
     fetchAuditLogs(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleTableChange = (newPagination: any) => {
@@ -105,8 +108,18 @@ export default function AuditLogPage() {
       key: 'userId',
       width: 130,
       render: (userId: string) => (
-        <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <UserOutlined />
+        <Tag
+          style={{
+            background: isDark ? '#000000' : '#EEF3F6',
+            color: isDark ? '#FFFFFF' : '#17324D',
+            border: isDark ? '1px solid #333333' : '1px solid #D4DAD9',
+            fontWeight: isDark ? 'bold' : 600,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          <UserOutlined style={{ color: isDark ? '#FFFFFF' : undefined }} />
           {userId || 'USR-001'}
         </Tag>
       ),
@@ -128,8 +141,16 @@ export default function AuditLogPage() {
         return (
           <div>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-              <EnvironmentOutlined style={{ color: '#365A73', marginTop: 3, flexShrink: 0 }} />
-              <div style={{ fontSize: 12, lineHeight: 1.35, color: '#1f1f1f', wordBreak: 'break-word' }}>
+              <EnvironmentOutlined style={{ color: isDark ? '#60A5FA' : '#365A73', marginTop: 3, flexShrink: 0 }} />
+              <div
+                style={{
+                  fontSize: 12,
+                  lineHeight: 1.35,
+                  color: isDark ? '#FFFFFF' : '#1f1f1f',
+                  fontWeight: isDark ? 'bold' : 'normal',
+                  wordBreak: 'break-word',
+                }}
+              >
                 {locationText}
               </div>
             </div>
@@ -139,13 +160,13 @@ export default function AuditLogPage() {
                   href={mapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ fontSize: 11, color: '#17324D', fontWeight: 600 }}
+                  style={{ fontSize: 11, color: isDark ? '#60A5FA' : '#17324D', fontWeight: 600 }}
                 >
                   📍 Open in Google Maps
                 </a>
               )}
               {record.ipAddress && record.ipAddress !== '-' && (
-                <span style={{ fontSize: 11, color: '#8c8c8c' }}>
+                <span style={{ fontSize: 11, color: isDark ? '#94A3B8' : '#8c8c8c' }}>
                   IP: {record.ipAddress}
                 </span>
               )}
@@ -207,8 +228,8 @@ export default function AuditLogPage() {
     <div style={{ padding: 24, maxWidth: 1400, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <Title level={2} style={{ margin: 0, color: '#1E2933' }}>
-            <AuditOutlined style={{ marginRight: 8, color: '#17324D' }} />
+          <Title level={2} style={{ margin: 0, color: isDark ? '#F1F5F9' : '#1E2933' }}>
+            <AuditOutlined style={{ marginRight: 8, color: isDark ? '#60A5FA' : '#17324D' }} />
             System Audit &amp; Security Logs
           </Title>
           <Text type="secondary">
@@ -299,8 +320,8 @@ export default function AuditLogPage() {
               </Descriptions.Item>
               <Descriptions.Item label="Physical Location" span={2}>
                 <Space>
-                  <EnvironmentOutlined style={{ color: '#eb2f96', fontSize: 16 }} />
-                  <Text strong style={{ color: '#1f2937' }}>
+                  <EnvironmentOutlined style={{ color: isDark ? '#F472B6' : '#eb2f96', fontSize: 16 }} />
+                  <Text strong style={{ color: isDark ? '#FFFFFF' : '#1f2937' }}>
                     {selectedRecord.location || 'Chennai, Tamil Nadu, India'}
                   </Text>
                   {selectedRecord.ipAddress && (

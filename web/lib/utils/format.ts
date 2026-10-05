@@ -31,8 +31,16 @@ export function formatCurrencyINR(amount: number | null | undefined): string {
  */
 export function formatDate(date: string | number | Date | null | undefined): string {
   if (!date) return '-';
+  if (typeof date === 'string') {
+    const trimmed = date.trim();
+    if (!trimmed) return '-';
+    // If already in DD-MM-YYYY format, return directly
+    if (/^\d{2}-\d{2}-\d{4}$/.test(trimmed)) {
+      return trimmed;
+    }
+  }
   const parsed = dayjs(date).tz(TIMEZONE);
-  if (!parsed.isValid()) return '-';
+  if (!parsed.isValid()) return typeof date === 'string' ? date : '-';
   return parsed.format('DD-MM-YYYY');
 }
 

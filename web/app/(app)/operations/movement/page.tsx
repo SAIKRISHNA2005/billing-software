@@ -87,6 +87,52 @@ const VALIDITY_FIELDS = [
   { key: 'nationalPermitValidUpTo', label: 'National Permit Valid UpTo' },
 ];
 
+// Check validity status for any date
+const checkValidity = (dateStr?: string) => {
+  if (!dateStr || dateStr === '-' || dateStr.trim() === '') {
+    return { status: 'none', days: 0, text: 'Not Available' };
+  }
+  const d = dayjs(dateStr);
+  if (!d.isValid()) {
+    return { status: 'none', days: 0, text: dateStr };
+  }
+  const today = dayjs().startOf('day');
+  const target = d.startOf('day');
+  const diffDays = target.diff(today, 'day');
+
+  if (diffDays < 0) {
+    return { status: 'expired', days: diffDays, text: `Expired (${Math.abs(diffDays)}d ago)` };
+  }
+  if (diffDays <= 3) {
+    return { status: 'critical', days: diffDays, text: `Expiring in ${diffDays} day(s)` };
+  }
+  if (diffDays <= 30) {
+    return { status: 'warning', days: diffDays, text: `${diffDays} days left` };
+  }
+  return { status: 'ok', days: diffDays, text: 'Valid' };
+};
+
+// Check if a vehicle has any critical/expired validity
+const getVehicleAlerts = (v: VehicleRecord) => {
+  const alerts: Array<{ label: string; dateStr: string; status: string; days: number; text: string }> = [];
+  VALIDITY_FIELDS.forEach((f) => {
+    const val = v[f.key as keyof VehicleRecord] as string | undefined;
+    if (val) {
+      const res = checkValidity(val);
+      if (res.status === 'expired' || res.status === 'critical') {
+        alerts.push({
+          label: f.label,
+          dateStr: val,
+          status: res.status,
+          days: res.days,
+          text: res.text,
+        });
+      }
+    }
+  });
+  return alerts;
+};
+
 function VehicleManagementContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -144,52 +190,6 @@ function VehicleManagementContent() {
   useEffect(() => {
     fetchVehicles();
   }, [fetchVehicles]);
-
-  // Check validity status for any date
-  const checkValidity = (dateStr?: string) => {
-    if (!dateStr || dateStr === '-' || dateStr.trim() === '') {
-      return { status: 'none', days: 0, text: 'Not Available' };
-    }
-    const d = dayjs(dateStr);
-    if (!d.isValid()) {
-      return { status: 'none', days: 0, text: dateStr };
-    }
-    const today = dayjs().startOf('day');
-    const target = d.startOf('day');
-    const diffDays = target.diff(today, 'day');
-
-    if (diffDays < 0) {
-      return { status: 'expired', days: diffDays, text: `Expired (${Math.abs(diffDays)}d ago)` };
-    }
-    if (diffDays <= 3) {
-      return { status: 'critical', days: diffDays, text: `Expiring in ${diffDays} day(s)` };
-    }
-    if (diffDays <= 30) {
-      return { status: 'warning', days: diffDays, text: `${diffDays} days left` };
-    }
-    return { status: 'ok', days: diffDays, text: 'Valid' };
-  };
-
-  // Check if a vehicle has any critical/expired validity
-  const getVehicleAlerts = (v: VehicleRecord) => {
-    const alerts: Array<{ label: string; dateStr: string; status: string; days: number; text: string }> = [];
-    VALIDITY_FIELDS.forEach((f) => {
-      const val = v[f.key as keyof VehicleRecord] as string | undefined;
-      if (val) {
-        const res = checkValidity(val);
-        if (res.status === 'expired' || res.status === 'critical') {
-          alerts.push({
-            label: f.label,
-            dateStr: val,
-            status: res.status,
-            days: res.days,
-            text: res.text,
-          });
-        }
-      }
-    });
-    return alerts;
-  };
 
   // Filtered vehicles
   const filteredVehicles = useMemo(() => {

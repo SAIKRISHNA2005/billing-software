@@ -50,6 +50,7 @@ import {
   ExpenseTotals,
 } from '@/lib/utils/expensesHelper';
 import { exportToExcel } from '@/lib/utils/exportHelper';
+import { formatDate } from '@/lib/utils/format';
 
 import { useTheme } from '@/components/providers/ThemeContext';
 
@@ -194,7 +195,8 @@ export default function LoadingExpensesPage() {
       message.warning('No loading expense records to export');
       return;
     }
-    exportToExcel(data, loadingExportColumns, `Loading_Expenses_Filtered_${dayjs().format('YYYY-MM-DD')}`);
+    const formattedData = data.map((item) => ({ ...item, expenseDate: formatDate(item.expenseDate) }));
+    exportToExcel(formattedData, loadingExportColumns, `Loading_Expenses_Filtered_${dayjs().format('YYYY-MM-DD')}`);
     message.success(`Exported ${data.length} filtered loading expense records to Excel`);
   };
 
@@ -207,10 +209,12 @@ export default function LoadingExpensesPage() {
         message.warning({ content: 'No loading expenses available to export', key: 'exportLoading' });
         return;
       }
-      exportToExcel(allItems, loadingExportColumns, `Loading_Expenses_ALL_${dayjs().format('YYYY-MM-DD')}`);
+      const formattedItems = allItems.map((item: LoadingExpenseItem) => ({ ...item, expenseDate: formatDate(item.expenseDate) }));
+      exportToExcel(formattedItems, loadingExportColumns, `Loading_Expenses_ALL_${dayjs().format('YYYY-MM-DD')}`);
       message.success({ content: `Exported all ${allItems.length} loading expense records to Excel`, key: 'exportLoading' });
     } catch {
-      exportToExcel(data, loadingExportColumns, `Loading_Expenses_ALL_${dayjs().format('YYYY-MM-DD')}`);
+      const formattedData = data.map((item) => ({ ...item, expenseDate: formatDate(item.expenseDate) }));
+      exportToExcel(formattedData, loadingExportColumns, `Loading_Expenses_ALL_${dayjs().format('YYYY-MM-DD')}`);
       message.success({ content: `Exported ${data.length} loading expense records to Excel`, key: 'exportLoading' });
     }
   };
@@ -250,8 +254,18 @@ export default function LoadingExpensesPage() {
     loadDrawerLookups();
     if (item) {
       setEditingItem(item);
+      let parsedDate = dayjs();
+      if (item.expenseDate) {
+        if (/^\d{2}-\d{2}-\d{4}$/.test(item.expenseDate.trim())) {
+          const [d, m, y] = item.expenseDate.trim().split('-').map(Number);
+          parsedDate = dayjs(new Date(y, m - 1, d));
+        } else {
+          const p = dayjs(item.expenseDate);
+          if (p.isValid()) parsedDate = p;
+        }
+      }
       form.setFieldsValue({
-        expenseDate: item.expenseDate ? dayjs(item.expenseDate, 'DD-MM-YYYY') : dayjs(),
+        expenseDate: parsedDate,
         category: item.category,
         amount: item.amount,
         description: item.description,
@@ -362,7 +376,7 @@ export default function LoadingExpensesPage() {
       dataIndex: 'expenseDate',
       key: 'expenseDate',
       width: 120,
-      render: (val: string) => <Text strong style={{ color: isDark ? '#F1F5F9' : '#0F172A' }}>{val || '-'}</Text>,
+      render: (val: string) => <Text strong style={{ color: isDark ? '#F1F5F9' : '#0F172A' }}>{formatDate(val)}</Text>,
     },
     {
       title: 'Category',

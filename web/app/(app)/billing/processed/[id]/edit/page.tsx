@@ -46,6 +46,7 @@ export default function EditProcessedBillPage() {
 
   useEffect(() => {
     if (id) fetchBillDetail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleAddItem = () => {

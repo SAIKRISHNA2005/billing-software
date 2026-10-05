@@ -48,6 +48,7 @@ export default function CompanyReportPage() {
   useEffect(() => {
     fetchMasters();
     fetchCompanyReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const columns = [

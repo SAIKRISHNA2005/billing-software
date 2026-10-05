@@ -51,6 +51,7 @@ export default function ProcessedBillDetailPage() {
 
   useEffect(() => {
     if (id) fetchBillDetail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleGeneratePdf = async (preview: boolean = false) => {

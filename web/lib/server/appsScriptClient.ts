@@ -57,12 +57,12 @@ export async function callAppsScript<TResult = unknown, TPayload = unknown>(
   });
 
   let lastError: unknown = null;
-  const maxAttempts = 3;
-  const backoffDelays = [1000, 2500, 5000];
+  const maxAttempts = 4;
+  const backoffDelays = [2000, 4000, 8000];
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      // Send POST with manual redirect handling to reliably capture 302 Location header
+      // Send POST with automatic redirect follow
       let response = await fetch(execUrl, {
         method: 'POST',
         headers: {
@@ -70,11 +70,11 @@ export async function callAppsScript<TResult = unknown, TPayload = unknown>(
           'x-tms-proxy-secret': sharedSecret || '',
         },
         body: requestBody,
-        redirect: 'manual',
+        redirect: 'follow',
         signal: AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined,
       });
 
-      // Follow Google Apps Script 301/302/307/308 redirect to echo endpoint via GET
+      // If manual redirect is returned for any reason, follow location
       if (response.status >= 300 && response.status < 400) {
         const location = response.headers.get('location');
         if (location) {
@@ -86,10 +86,30 @@ export async function callAppsScript<TResult = unknown, TPayload = unknown>(
         }
       }
 
-      const text = await response.text();
+      let text = await response.text();
 
-      // Check if response is HTML (Google authorization prompt or 404 page)
+      // Check if response is HTML (Google authorization prompt or 404 page during warm-up)
       if (text.includes('<html') || text.includes('<!DOCTYPE html>')) {
+        // Fallback: Attempt GET request via doGet which can succeed even if POST endpoint is warming up
+        try {
+          const fallbackUrl = `${execUrl}?action=${encodeURIComponent(action)}&data=${encodeURIComponent(requestBody)}`;
+          const fallbackRes = await fetch(fallbackUrl, {
+            method: 'GET',
+            headers: { 'x-tms-proxy-secret': sharedSecret || '' },
+            redirect: 'follow',
+            signal: AbortSignal.timeout ? AbortSignal.timeout(60000) : undefined,
+          });
+          const fallbackText = await fallbackRes.text();
+          if (fallbackText && !fallbackText.includes('<html') && !fallbackText.includes('<!DOCTYPE html>')) {
+            const fbJson = JSON.parse(fallbackText) as ApiResponse<TResult>;
+            if (fbJson && fbJson.success !== undefined) {
+              return fbJson;
+            }
+          }
+        } catch {
+          // ignore fallback error and proceed to retry
+        }
+
         if (response.status === 404 || text.includes('404 Not Found') || text.includes('The requested URL was not found')) {
           if (attempt < maxAttempts) {
             await new Promise((r) => setTimeout(r, backoffDelays[attempt - 1]));

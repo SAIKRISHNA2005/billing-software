@@ -291,6 +291,7 @@ export default function DailyReportPage() {
 
   useEffect(() => {
     fetchDailyReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Distinct companies present in daily enquiries for filter dropdown

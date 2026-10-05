@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const category = searchParams.get('category') || 'all';
     const search = searchParams.get('search') || '';
 
-    const result = await callAppsScript('trashbin.list', { category, search }, sessionToken);
+    const result: any = await callAppsScript('trashbin.list', { category, search }, sessionToken);
     const inner = result?.data?.data || result?.data || result;
     return NextResponse.json({
       success: true,
