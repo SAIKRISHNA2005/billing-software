@@ -33,7 +33,13 @@ export async function GET(req: NextRequest) {
     const isBootstrap = searchParams.get('bootstrap') === 'true';
     const action = isBootstrap ? 'enquiries.bootstrap' : 'enquiry.list';
 
-    const result = (await callAppsScript(action, params, sessionToken)) as any;
+    let result = (await callAppsScript(action, params, sessionToken)) as any;
+    if (isBootstrap && !result.success && typeof result.message === 'string' && result.message.includes('Action not supported')) {
+      // Graceful fallback if Google Apps Script has not yet been redeployed with enquiries.bootstrap
+      result = (await callAppsScript('enquiry.list', params, sessionToken)) as any;
+      return NextResponse.json(result, { status: result.success ? 200 : 400 });
+    }
+
     if (isBootstrap && result.success && result.data?.enquiries) {
       return NextResponse.json({
         success: true,
