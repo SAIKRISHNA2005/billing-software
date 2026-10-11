@@ -157,7 +157,16 @@ export default function EnquiriesListPage() {
 
       const res = await apiClient.get<any>(`/enquiries?${query.toString()}`);
       if (res.data.success && res.data.data) {
-        setData(res.data.data.items || []);
+        const rawItems = res.data.data.items || [];
+        const sortedItems = [...rawItems].sort((a: any, b: any) => {
+          if (sortField === 'enquiryNumber') {
+            const numA = parseInt(String(a.enquiryNumber || a.id || '').replace(/\D/g, ''), 10) || 0;
+            const numB = parseInt(String(b.enquiryNumber || b.id || '').replace(/\D/g, ''), 10) || 0;
+            if (numA !== numB) return sortOrder === 'asc' ? numA - numB : numB - numA;
+          }
+          return 0;
+        });
+        setData(sortedItems);
         setTotal(res.data.data.total || 0);
         if (!hasBootstrapped) {
           setHasBootstrapped(true);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { callAppsScript } from '@/lib/server/appsScriptClient';
 import { SESSION_COOKIE_NAME } from '@/lib/server/session';
+import { serverCache } from '@/lib/server/cache';
 
 const LoginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -93,6 +94,9 @@ export async function POST(req: NextRequest) {
         { status }
       );
     }
+
+    // Cache authenticated user session in serverCache
+    serverCache.set('user_session_' + result.data.token, result.data.user, 180);
 
     // Set httpOnly secure cookie with the opaque token
     const response = NextResponse.json({

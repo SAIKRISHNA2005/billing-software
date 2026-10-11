@@ -157,9 +157,39 @@ function VehicleManagementContent() {
   const [openDocsAfterCreate, setOpenDocsAfterCreate] = useState(true);
   const [form] = Form.useForm();
 
-  // Documents Placeholder Modal
+  // Documents Modal & Dynamic Document Status
   const [docModalOpen, setDocModalOpen] = useState(false);
   const [docVehicle, setDocVehicle] = useState<VehicleRecord | null>(null);
+  const [vehicleDocsStatusMap, setVehicleDocsStatusMap] = useState<Record<string, boolean>>({});
+  const [hasDocuments, setHasDocuments] = useState(false);
+
+  const checkVehicleDocuments = useCallback(async (v: VehicleRecord | null | string) => {
+    const vehId = typeof v === 'string' ? v : (v?.id || v?.vehicleNumber || '');
+    if (!vehId) {
+      setHasDocuments(false);
+      return;
+    }
+    const cleanKey = vehId.trim().toUpperCase();
+    if (vehicleDocsStatusMap[cleanKey] !== undefined) {
+      setHasDocuments(vehicleDocsStatusMap[cleanKey]);
+      return;
+    }
+    try {
+      const res = await axios.get(`/api/documents?vehicleId=${encodeURIComponent(cleanKey)}`);
+      const docs = res.data?.data?.documents || res.data?.documents || [];
+      const exists = Array.isArray(docs) && docs.length > 0;
+      setHasDocuments(exists);
+      setVehicleDocsStatusMap((prev) => ({ ...prev, [cleanKey]: exists }));
+    } catch {
+      setHasDocuments(false);
+    }
+  }, [vehicleDocsStatusMap]);
+
+  const handleOpenDetails = useCallback((v: VehicleRecord) => {
+    setSelectedVehicle(v);
+    checkVehicleDocuments(v);
+    setDetailsModalOpen(true);
+  }, [checkVehicleDocuments]);
 
   const fetchVehicles = useCallback(async () => {
     setLoading(true);
@@ -173,8 +203,7 @@ function VehicleManagementContent() {
         if (highlightVehicleId) {
           const match = items.find((v) => v.id === highlightVehicleId || v.vehicleNumber === highlightVehicleId);
           if (match) {
-            setSelectedVehicle(match);
-            setDetailsModalOpen(true);
+            handleOpenDetails(match);
           }
         }
       } else {
@@ -185,7 +214,7 @@ function VehicleManagementContent() {
     } finally {
       setLoading(false);
     }
-  }, [highlightVehicleId]);
+  }, [highlightVehicleId, handleOpenDetails]);
 
   useEffect(() => {
     fetchVehicles();
@@ -258,6 +287,7 @@ function VehicleManagementContent() {
   const handleOpenCreate = () => {
     setIsEditing(false);
     setSelectedVehicle(null);
+    setHasDocuments(false);
     form.resetFields();
     form.setFieldsValue({
       vehicleStatus: 'ACTIVE',
@@ -272,6 +302,7 @@ function VehicleManagementContent() {
   const handleOpenEdit = (v: VehicleRecord) => {
     setIsEditing(true);
     setSelectedVehicle(v);
+    checkVehicleDocuments(v);
     form.resetFields();
     form.setFieldsValue({
       vehicleNumber: v.vehicleNumber,
@@ -488,10 +519,7 @@ function VehicleManagementContent() {
         <Button
           type="link"
           style={{ padding: 0, fontWeight: 700, fontSize: 13, color: isDark ? '#93C5FD' : '#1D4ED8' }}
-          onClick={() => {
-            setSelectedVehicle(record);
-            setDetailsModalOpen(true);
-          }}
+          onClick={() => handleOpenDetails(record)}
         >
           {num || record.id}
         </Button>
@@ -603,10 +631,7 @@ function VehicleManagementContent() {
               type="text"
               size="small"
               icon={<EyeOutlined style={{ color: isDark ? '#60A5FA' : '#1D4ED8' }} />}
-              onClick={() => {
-                setSelectedVehicle(record);
-                setDetailsModalOpen(true);
-              }}
+              onClick={() => handleOpenDetails(record)}
             />
           </Tooltip>
 
@@ -836,14 +861,14 @@ function VehicleManagementContent() {
           <Button
             key="docs"
             type="primary"
-            icon={<FolderOpenOutlined />}
+            icon={hasDocuments ? <FolderOpenOutlined /> : <UploadOutlined />}
             onClick={() => {
               setDocVehicle(selectedVehicle);
               setDocModalOpen(true);
             }}
-            style={{ background: '#0284C7', borderColor: '#0284C7' }}
+            style={{ background: hasDocuments ? '#0284C7' : '#2563EB', borderColor: hasDocuments ? '#0284C7' : '#2563EB' }}
           >
-            View Documents
+            {hasDocuments ? 'View Documents' : 'Upload Documents'}
           </Button>,
           <Button
             key="edit"
@@ -878,7 +903,7 @@ function VehicleManagementContent() {
             >
               <div>
                 <span style={{ fontWeight: 600, color: isDark ? '#FFFFFF' : '#1E2933', fontSize: 13 }}>
-                  Vehicle Compliance &amp; Documents Vault
+                  Vehicle Compliance &amp; Documents {hasDocuments ? 'Vault' : 'Upload'}
                 </span>
                 <div style={{ fontSize: 12, color: isDark ? '#94A3B8' : '#64748B' }}>
                   RC, Insurance, Fitness, PUCC &amp; Permits for {selectedVehicle.vehicleNumber}
@@ -886,14 +911,14 @@ function VehicleManagementContent() {
               </div>
               <Button
                 type="primary"
-                icon={<FolderOpenOutlined />}
+                icon={hasDocuments ? <FolderOpenOutlined /> : <UploadOutlined />}
                 onClick={() => {
                   setDocVehicle(selectedVehicle);
                   setDocModalOpen(true);
                 }}
-                style={{ background: '#0284C7', borderColor: '#0284C7' }}
+                style={{ background: hasDocuments ? '#0284C7' : '#2563EB', borderColor: hasDocuments ? '#0284C7' : '#2563EB' }}
               >
-                View Documents
+                {hasDocuments ? 'View Documents' : 'Upload Documents'}
               </Button>
             </div>
 
@@ -1211,16 +1236,16 @@ function VehicleManagementContent() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
               <div>
                 <Text strong style={{ fontSize: 13.5, color: isDark ? '#93C5FD' : '#1E40AF', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <FolderOpenOutlined style={{ fontSize: 16 }} />
-                  Vehicle Documents &amp; Compliance Upload
+                  {hasDocuments ? <FolderOpenOutlined style={{ fontSize: 16 }} /> : <UploadOutlined style={{ fontSize: 16 }} />}
+                  Vehicle Documents &amp; Compliance {hasDocuments ? 'Vault' : 'Upload'}
                 </Text>
                 <div style={{ fontSize: 12, color: isDark ? '#94A3B8' : '#475569', marginTop: 2 }}>
-                  Attach RC, Insurance, Fitness, PUCC, Permits, etc. for this vehicle.
+                  {hasDocuments ? 'Manage and preview RC, Insurance, Fitness, PUCC & Permits.' : 'Attach RC, Insurance, Fitness, PUCC, Permits, etc. for this vehicle.'}
                 </div>
               </div>
               <Button
                 type="primary"
-                icon={<UploadOutlined />}
+                icon={hasDocuments ? <FolderOpenOutlined /> : <UploadOutlined />}
                 onClick={handleUploadDocsFromModal}
                 style={{
                   background: isDark ? '#2563EB' : '#1D4ED8',
@@ -1228,7 +1253,7 @@ function VehicleManagementContent() {
                   fontWeight: 600,
                 }}
               >
-                Upload Documents
+                {hasDocuments ? 'View Documents' : 'Upload Documents'}
               </Button>
             </div>
             {!isEditing && (
@@ -1247,10 +1272,10 @@ function VehicleManagementContent() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
             <Button
-              icon={<UploadOutlined />}
+              icon={hasDocuments ? <FolderOpenOutlined /> : <UploadOutlined />}
               onClick={handleUploadDocsFromModal}
             >
-              Upload Documents
+              {hasDocuments ? 'View Documents' : 'Upload Documents'}
             </Button>
             <Space>
               <Button onClick={() => setFormModalOpen(false)}>Cancel</Button>
@@ -1273,7 +1298,18 @@ function VehicleManagementContent() {
           setDocModalOpen(false);
           setDocVehicle(null);
         }}
-        onDocumentsChanged={fetchVehicles}
+        onDocumentsChanged={() => {
+          fetchVehicles();
+          if (docVehicle) {
+            const cleanKey = (docVehicle.id || docVehicle.vehicleNumber || '').trim().toUpperCase();
+            setVehicleDocsStatusMap((prev) => {
+              const copy = { ...prev };
+              delete copy[cleanKey];
+              return copy;
+            });
+            checkVehicleDocuments(docVehicle);
+          }
+        }}
       />
     </div>
   );

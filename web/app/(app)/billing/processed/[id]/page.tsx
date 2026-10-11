@@ -78,12 +78,24 @@ export default function ProcessedBillDetailPage() {
           }
           setPdfModalVisible(true);
         } else if (res.data.data?.pdfBase64) {
+          const filename = `Invoice_${bill?.billNumber ? String(bill.billNumber).replace(/[\/\\]/g, '-') : id}.pdf`;
+          const byteCharacters = atob(res.data.data.pdfBase64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: 'application/pdf' });
+          const blobUrl = URL.createObjectURL(blob);
+
           const link = document.createElement('a');
-          link.href = 'data:application/pdf;base64,' + res.data.data.pdfBase64;
-          link.download = `Invoice_${bill?.billNumber ? String(bill.billNumber).replace(/\//g, '-') : id}.pdf`;
+          link.href = blobUrl;
+          link.download = filename;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+
           message.success('Invoice PDF downloaded successfully!');
         } else if (res.data.data.pdfUrl) {
           window.open(res.data.data.pdfUrl, '_blank');
@@ -312,12 +324,25 @@ export default function ProcessedBillDetailPage() {
               icon={<DownloadOutlined />}
               style={{ backgroundColor: isDark ? '#2563EB' : '#1D4ED8', borderColor: isDark ? '#2563EB' : '#1D4ED8' }}
               onClick={() => {
+                if (!pdfData?.pdfBase64) return;
+                const filename = `Invoice_${bill?.billNumber ? String(bill.billNumber).replace(/[\/\\]/g, '-') : id}.pdf`;
+                const byteCharacters = atob(pdfData.pdfBase64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'application/pdf' });
+                const blobUrl = URL.createObjectURL(blob);
+
                 const link = document.createElement('a');
-                link.href = 'data:application/pdf;base64,' + pdfData.pdfBase64;
-                link.download = `Invoice_${bill?.billNumber ? String(bill.billNumber).replace(/\//g, '-') : id}.pdf`;
+                link.href = blobUrl;
+                link.download = filename;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+
                 message.success('Invoice PDF downloaded successfully!');
               }}
             >

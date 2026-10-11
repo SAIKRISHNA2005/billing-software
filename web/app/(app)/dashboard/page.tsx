@@ -30,6 +30,7 @@ import {
   WarningOutlined,
   ArrowRightOutlined,
   ExclamationCircleOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -146,8 +147,9 @@ export default function DashboardPage() {
     },
   };
 
-  const [vehicleAlerts, setVehicleAlerts] = useState<VehicleAlertItem[]>([DEFAULT_VEHICLE_ALERT]);
+  const [vehicleAlerts, setVehicleAlerts] = useState<VehicleAlertItem[]>([]);
   const [recentEnquiriesCount, setRecentEnquiriesCount] = useState<number>(5);
+  const [recentBillsCount, setRecentBillsCount] = useState<number>(5);
   const [selectedVehicleModal, setSelectedVehicleModal] = useState<any>(null);
   const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
 
@@ -168,10 +170,10 @@ export default function DashboardPage() {
         const data = sumRes.data.data;
         setSummary(data);
 
-        if (data.vehicleAlerts && Array.isArray(data.vehicleAlerts) && data.vehicleAlerts.length > 0) {
+        if (data.vehicleAlerts && Array.isArray(data.vehicleAlerts)) {
           setVehicleAlerts(data.vehicleAlerts);
         } else {
-          setVehicleAlerts([DEFAULT_VEHICLE_ALERT]);
+          setVehicleAlerts([]);
         }
       } else {
         message.error(sumRes.data?.message || 'Failed to load dashboard summary');
@@ -565,6 +567,51 @@ export default function DashboardPage() {
     return list.slice(0, recentEnquiriesCount);
   }, [summary?.recentEnquiries, recentEnquiriesCount]);
 
+  const displayedRecentBills = useMemo(() => {
+    const list = summary?.recentBills || [];
+    return list.slice(0, recentBillsCount);
+  }, [summary?.recentBills, recentBillsCount]);
+
+  const groupedVehicleAlerts = useMemo(() => {
+    if (!vehicleAlerts || vehicleAlerts.length === 0) return [];
+    const map = new Map<string, {
+      vehicleId: string;
+      vehicleNumber: string;
+      ownerName: string;
+      vehicle?: any;
+      alerts: VehicleAlertItem[];
+      expiredCount: number;
+      expiringCount: number;
+    }>();
+
+    vehicleAlerts.forEach((a) => {
+      const vKey = a.vehicleNumber || a.vehicleId || 'Unknown';
+      if (!map.has(vKey)) {
+        map.set(vKey, {
+          vehicleId: a.vehicleId,
+          vehicleNumber: a.vehicleNumber || vKey,
+          ownerName: a.ownerName || '',
+          vehicle: a.vehicle,
+          alerts: [],
+          expiredCount: 0,
+          expiringCount: 0,
+        });
+      }
+      const entry = map.get(vKey)!;
+      entry.alerts.push(a);
+      if (a.isExpired) {
+        entry.expiredCount += 1;
+      } else {
+        entry.expiringCount += 1;
+      }
+      if (!entry.vehicle && a.vehicle) {
+        entry.vehicle = a.vehicle;
+      }
+    });
+
+    return Array.from(map.values());
+  }, [vehicleAlerts]);
+
   return (
     <div style={{ padding: '4px 0 24px' }}>
       {/* Top Header Bar */}
@@ -606,99 +653,176 @@ export default function DashboardPage() {
         </Space>
       </div>
 
-      {/* VEHICLE EXPIRY ALERT BANNER (Item 5 Alert System) */}
-      {vehicleAlerts.length > 0 && (
-        <Alert
-          message={
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-              <Space align="center">
-                <WarningOutlined style={{ fontSize: 18, color: isDark ? '#EF4444' : '#DC2626' }} />
-                <span style={{ fontWeight: 700, fontSize: 14, color: isDark ? '#FFFFFF' : '#991B1B' }}>
-                  Vehicle Compliance Alert ({vehicleAlerts.length} Document{vehicleAlerts.length > 1 ? 's' : ''} Need Immediate Renewal)
-                </span>
-              </Space>
-
-              <Space wrap>
-                <Button
-                  size="small"
-                  type="primary"
-                  icon={<CarOutlined />}
-                  style={{
-                    backgroundColor: isDark ? '#3B82F6' : '#17324D',
-                    borderColor: isDark ? '#3B82F6' : '#17324D',
-                    color: '#FFFFFF',
-                    fontWeight: 600,
-                  }}
-                  onClick={() => handleOpenVehicleModal(vehicleAlerts[0])}
-                >
-                  <span style={{ color: '#FFFFFF' }}>View Fleet Alert Details</span>
-                </Button>
-                <Link href="/operations/movement?expiryFilter=ALERTS">
-                  <Button
-                    size="small"
-                    type="default"
-                    icon={<ArrowRightOutlined />}
-                    style={{
-                      backgroundColor: isDark ? '#27272A' : '#FFFFFF',
-                      borderColor: isDark ? '#3F3F46' : '#CBD5E1',
-                      color: isDark ? '#FFFFFF' : '#090D14',
-                      fontWeight: 600,
-                    }}
-                  >
-                    <span style={{ color: isDark ? '#FFFFFF' : '#090D14' }}>Manage Fleet ➔</span>
-                  </Button>
-                </Link>
-              </Space>
-            </div>
-          }
-          description={
-            <div style={{ marginTop: 8 }}>
-              <Row gutter={[12, 8]}>
-                {vehicleAlerts.slice(0, 3).map((a, idx) => (
-                  <Col xs={24} sm={12} md={8} key={idx}>
-                    <div
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: 6,
-                        background: isDark ? '#18181B' : '#FFFFFF',
-                        border: isDark ? '1px solid #3F3F46' : '1px solid #FECACA',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        boxShadow: isDark ? '0 1px 3px rgba(0,0,0,0.4)' : '0 1px 2px rgba(0,0,0,0.04)',
-                      }}
-                    >
-                      <div>
-                        <strong style={{ color: isDark ? '#FFFFFF' : '#090D14', fontSize: 13 }}>{a.vehicleNumber}</strong>:{' '}
-                        <span style={{ fontSize: 12, color: isDark ? '#D4D4D8' : '#374151' }}>{a.documentLabel}</span>
-                        <div style={{ fontSize: 11.5, color: a.isExpired ? (isDark ? '#F87171' : '#DC2626') : (isDark ? '#FDE68A' : '#B45309'), fontWeight: 700, marginTop: 2 }}>
-                          {a.isExpired ? 'EXPIRED' : `Expires in ${a.daysRemaining} day(s)`} ({dayjs(a.expiryDate).format('DD-MMM-YYYY')})
-                        </div>
-                      </div>
-                      <Button
-                        size="small"
-                        type="link"
-                        style={{ padding: 0, fontWeight: 700, color: isDark ? '#60A5FA' : '#1E3A8A' }}
-                        onClick={() => handleOpenVehicleModal(a)}
-                      >
-                        <span style={{ color: isDark ? '#60A5FA' : '#1E3A8A' }}>View Details</span>
-                      </Button>
-                    </div>
-                  </Col>
-                ))}
-              </Row>
-            </div>
-          }
-          type="error"
-          showIcon={false}
+      {/* VEHICLE EXPIRY COMPLIANCE ALERTS CONTAINER */}
+      {!loading && groupedVehicleAlerts.length > 0 && (
+        <div
           style={{
             marginBottom: 20,
-            borderRadius: 6,
-            background: isDark ? '#2D1214' : '#FEF2F2',
-            border: isDark ? '1px solid #EF4444' : '1px solid #F87171',
-            boxShadow: isDark ? '0 2px 8px rgba(0, 0, 0, 0.5)' : '0 2px 6px rgba(239, 68, 68, 0.12)',
+            borderRadius: 8,
+            border: isDark ? '1px solid #7F1D1D' : '1px solid #FCA5A5',
+            background: isDark ? '#1C1917' : '#FFF7F7',
+            padding: '16px 20px',
+            boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.4)' : '0 2px 8px rgba(220,38,38,0.06)',
           }}
-        />
+        >
+          {/* Header Summary */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 12,
+              paddingBottom: 14,
+              borderBottom: isDark ? '1px solid #3F3F46' : '1px solid #FEE2E2',
+              marginBottom: 14,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <Space align="center">
+                <WarningOutlined style={{ fontSize: 20, color: '#DC2626' }} />
+                <span style={{ fontWeight: 800, fontSize: 15, color: isDark ? '#FFFFFF' : '#991B1B' }}>
+                  Vehicle Compliance &amp; Renewal Alerts
+                </span>
+              </Space>
+              <Tag color="error" style={{ fontSize: 12.5, fontWeight: 700, padding: '2px 10px', borderRadius: 4 }}>
+                Vehicle Count: {groupedVehicleAlerts.length}
+              </Tag>
+              <Tag color="warning" style={{ fontSize: 12.5, fontWeight: 700, padding: '2px 10px', borderRadius: 4 }}>
+                Total Number of Documents: {vehicleAlerts.length}
+              </Tag>
+            </div>
+
+            <Link href="/operations/movement?expiryFilter=ALERTS">
+              <Button
+                size="small"
+                type="default"
+                icon={<ArrowRightOutlined />}
+                style={{
+                  backgroundColor: isDark ? '#27272A' : '#FFFFFF',
+                  borderColor: isDark ? '#3F3F46' : '#CBD5E1',
+                  color: isDark ? '#FFFFFF' : '#090D14',
+                  fontWeight: 600,
+                }}
+              >
+                Manage Fleet ➔
+              </Button>
+            </Link>
+          </div>
+
+          {/* Scrollable Stacked Vehicle Alert Boxes */}
+          <div
+            style={{
+              maxHeight: 290,
+              overflowY: 'auto',
+              paddingRight: 6,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+            }}
+          >
+            {groupedVehicleAlerts.map((grp) => (
+              <div
+                key={grp.vehicleNumber}
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: 6,
+                  background: isDark ? '#18181B' : '#FFFFFF',
+                  border: isDark ? '1px solid #3F3F46' : '1px solid #FECACA',
+                  boxShadow: isDark ? '0 1px 3px rgba(0,0,0,0.3)' : '0 1px 3px rgba(0,0,0,0.03)',
+                }}
+              >
+                {/* Vehicle Header Bar */}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                    marginBottom: 10,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <CarOutlined style={{ fontSize: 16, color: isDark ? '#38BDF8' : '#17324D' }} />
+                    <span style={{ fontSize: 14, fontWeight: 800, color: isDark ? '#FFFFFF' : '#111827' }}>
+                      {grp.vehicleNumber}
+                    </span>
+                    {grp.ownerName && (
+                      <span style={{ fontSize: 12, color: isDark ? '#94A3B8' : '#6B7280' }}>
+                        ({grp.ownerName})
+                      </span>
+                    )}
+                    <Tag color="red" style={{ fontWeight: 600, fontSize: 11.5 }}>
+                      {grp.expiredCount} Expired
+                    </Tag>
+                    {grp.expiringCount > 0 && (
+                      <Tag color="gold" style={{ fontWeight: 600, fontSize: 11.5 }}>
+                        {grp.expiringCount} Going to expire
+                      </Tag>
+                    )}
+                    <span style={{ fontSize: 12, color: isDark ? '#CBD5E1' : '#4B5563', fontWeight: 500 }}>
+                      Total Documents: {grp.alerts.length}
+                    </span>
+                  </div>
+
+                  <Button
+                    size="small"
+                    type="primary"
+                    icon={<FileTextOutlined />}
+                    onClick={() => handleOpenVehicleModal(grp.alerts[0])}
+                    style={{
+                      backgroundColor: isDark ? '#2563EB' : '#17324D',
+                      borderColor: isDark ? '#2563EB' : '#17324D',
+                      fontWeight: 600,
+                      fontSize: 12,
+                    }}
+                  >
+                    View Details
+                  </Button>
+                </div>
+
+                {/* Document Alert Badges/Chips */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {grp.alerts.map((al, aIdx) => (
+                    <div
+                      key={aIdx}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: 4,
+                        fontSize: 12,
+                        background: al.isExpired
+                          ? (isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2')
+                          : (isDark ? 'rgba(245, 158, 11, 0.15)' : '#FFFBEB'),
+                        border: al.isExpired
+                          ? (isDark ? '1px solid #7F1D1D' : '1px solid #FCA5A5')
+                          : (isDark ? '1px solid #78350F' : '1px solid #FDE68A'),
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <strong style={{ color: isDark ? '#FFFFFF' : '#1F2937' }}>
+                        {al.documentLabel}:
+                      </strong>
+                      <span
+                        style={{
+                          color: al.isExpired ? (isDark ? '#F87171' : '#DC2626') : (isDark ? '#FBBF24' : '#D97706'),
+                          fontWeight: 700,
+                        }}
+                      >
+                        {al.isExpired ? 'EXPIRED' : `Expires in ${al.daysRemaining}d`}
+                      </span>
+                      <span style={{ fontSize: 11, color: isDark ? '#94A3B8' : '#6B7280' }}>
+                        ({dayjs(al.expiryDate).format('DD-MMM-YYYY')})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Primary KPI Cards Row 1 */}
@@ -1155,7 +1279,7 @@ export default function DashboardPage() {
               loading={loading}
               pagination={false}
               size="middle"
-              scroll={{ x: 935 }}
+              scroll={{ x: 935, y: 280 }}
             />
           </Card>
         </Col>
@@ -1164,17 +1288,39 @@ export default function DashboardPage() {
         <Col xs={24} xl={12}>
           <Card
             style={{ height: '100%' }}
-            title={<span style={{ fontSize: 14 }}>Recent Processed Invoices</span>}
-            extra={<Link href="/billing/processed" style={{ fontSize: 12.5, color: isDark ? '#60A5FA' : '#17324D', fontWeight: 500 }}>View All Invoices ➔</Link>}
+            title={
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                <Space>
+                  <FileTextOutlined style={{ color: isDark ? '#38BDF8' : '#17324D' }} />
+                  <span style={{ fontSize: 14 }}>Recent Processed Invoices</span>
+                </Space>
+                <Space>
+                  <Text type="secondary" style={{ fontSize: 12, color: isDark ? '#CBD5E1' : undefined }}>Show:</Text>
+                  <Select
+                    size="small"
+                    value={recentBillsCount}
+                    onChange={setRecentBillsCount}
+                    style={{ width: 95 }}
+                  >
+                    <Select.Option value={5}>Top 5</Select.Option>
+                    <Select.Option value={10}>Top 10</Select.Option>
+                    <Select.Option value={15}>Top 15</Select.Option>
+                  </Select>
+                  <Link href="/billing/processed" style={{ fontSize: 12.5, color: isDark ? '#60A5FA' : '#17324D', fontWeight: 500, marginLeft: 8 }}>
+                    View All ➔
+                  </Link>
+                </Space>
+              </div>
+            }
           >
             <Table
               columns={recentBillsColumns}
-              dataSource={summary?.recentBills || []}
+              dataSource={displayedRecentBills}
               rowKey="id"
               loading={loading}
               pagination={false}
               size="middle"
-              scroll={{ x: 745 }}
+              scroll={{ x: 745, y: 280 }}
             />
           </Card>
         </Col>

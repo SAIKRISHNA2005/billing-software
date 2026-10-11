@@ -278,6 +278,12 @@ export default function DailyReportPage() {
           }
         });
 
+        consolidated.sort((a, b) => {
+          const numA = parseInt(String(a.bookingNumber || a.id || '').replace(/\D/g, ''), 10) || 0;
+          const numB = parseInt(String(b.bookingNumber || b.id || '').replace(/\D/g, ''), 10) || 0;
+          if (numA !== numB) return numB - numA;
+          return 0;
+        });
         setDetailedEnquiries(consolidated);
       } else {
         message.error(resDaily.data?.message || 'Failed to load daily report');
@@ -322,11 +328,26 @@ export default function DailyReportPage() {
         if (row.companyName !== filterCompany) return false;
       }
       if (tableDateRange && tableDateRange[0] && tableDateRange[1]) {
-        const d = dayjs(row.date || row.creationDate || row.bookingDate);
-        if (d.isValid()) {
+        const rawDate = row.date || row.creationDate || row.bookingDate || row.createdAt;
+        let d: dayjs.Dayjs | null = null;
+        if (rawDate && rawDate !== '-') {
+          const match = String(rawDate).match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+          if (match) {
+            const day = parseInt(match[1], 10);
+            const mon = parseInt(match[2], 10) - 1;
+            const yr = parseInt(match[3], 10);
+            d = dayjs(new Date(yr, mon, day));
+          } else {
+            const parsed = dayjs(rawDate);
+            if (parsed.isValid()) d = parsed;
+          }
+        }
+        if (d && d.isValid()) {
           if (d.isBefore(tableDateRange[0].startOf('day')) || d.isAfter(tableDateRange[1].endOf('day'))) {
             return false;
           }
+        } else {
+          return false;
         }
       }
       if (searchQuery.trim()) {

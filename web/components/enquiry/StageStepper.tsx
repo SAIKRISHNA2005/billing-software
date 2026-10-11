@@ -21,6 +21,7 @@ import {
   InfoCircleOutlined,
   LockOutlined,
 } from '@ant-design/icons';
+import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api/client';
 
 const { Text } = Typography;
@@ -85,6 +86,7 @@ export const StageStepper: React.FC<StageStepperProps> = ({
   movement,
   onStageChanged,
 }) => {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [backModalOpen, setBackModalOpen] = useState(false);
   const [remarks, setRemarks] = useState('');
@@ -92,7 +94,27 @@ export const StageStepper: React.FC<StageStepperProps> = ({
   const [missingReqMessage, setMissingReqMessage] = useState('');
 
   const currentIndex = STAGES_CONFIG.findIndex((s) => s.key === currentStage);
-  const safeCurrentIndex = currentIndex >= 0 ? currentIndex : 0;
+  const safeCurrentIndex = currentIndex >= 0 ? currentIndex : 4; // defaults to COMPLETED if not matched
+
+  const handleDirectComplete = async () => {
+    setLoading(true);
+    try {
+      const res = await apiClient.post<any>(`/enquiries/${enquiryId}/stage`, {
+        toStage: 'COMPLETED',
+        remarks: 'Fast-tracked to Completed for immediate billing',
+      });
+      if (res.data?.success) {
+        message.success('Enquiry marked as Completed (Port operations finished)! It is now available in Pending Bills.');
+        onStageChanged();
+      } else {
+        message.error(res.data?.message || 'Failed to complete enquiry');
+      }
+    } catch (err: any) {
+      message.error(err.response?.data?.message || err.message || 'Failed to complete enquiry');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const nextStageConfig =
     safeCurrentIndex < STAGES_CONFIG.length - 1 ? STAGES_CONFIG[safeCurrentIndex + 1] : null;
@@ -138,18 +160,24 @@ export const StageStepper: React.FC<StageStepperProps> = ({
     if (!nextStageConfig) return;
 
     if (nextStageConfig.key === 'BILLING' || nextStageConfig.key === 'PROCESSED') {
-      Modal.info({
-        title: 'Billing Module Action Required',
-        icon: <InfoCircleOutlined style={{ color: '#17324D' }} />,
+      Modal.confirm({
+        title: 'Ready for Billing!',
+        icon: <CheckCircleOutlined style={{ color: '#3F6F4A' }} />,
         content: (
           <div>
             <p>
-              This job is completed! In accordance with transport workflow, advancing to{' '}
-              <strong>Billing</strong> is handled by selecting completed enquiries in the{' '}
-              <strong>Billing &gt; Pending Bills</strong> module.
+              This enquiry is at stage <strong>Completed (Port operations finished)</strong>.
+            </p>
+            <p>
+              It is ready in <strong>Pending Bills</strong> where you can generate the bill invoice.
             </p>
           </div>
         ),
+        okText: 'Go to Pending Bills',
+        cancelText: 'Stay on Page',
+        onOk: () => {
+          router.push('/billing/pending');
+        },
       });
       return;
     }
@@ -304,6 +332,33 @@ export const StageStepper: React.FC<StageStepperProps> = ({
                   : `Move to ${nextStageConfig.title}`}
               </Button>
             </Tooltip>
+          )}
+
+          {/* Fast-track button to complete for billing if not yet completed */}
+          {currentStage !== 'COMPLETED' && !isBilledStage && (
+            <Button
+              type="dashed"
+              onClick={handleDirectComplete}
+              loading={loading}
+              style={{ color: '#2E6930', borderColor: '#86EFAC' }}
+            >
+              ✓ Mark Completed (Port operations finished)
+            </Button>
+          )}
+
+          {/* Create Bill Now button when at COMPLETED stage */}
+          {currentStage === 'COMPLETED' && (
+            <Button
+              type="primary"
+              style={{ backgroundColor: '#2563EB', borderColor: '#2563EB' }}
+              onClick={() =>
+                router.push(
+                  `/billing/create?enquiryIds=${enquiryId}&companyId=${enquiry.companyId}&clientId=${enquiry.clientId}`
+                )
+              }
+            >
+              Create Bill Now ➔
+            </Button>
           )}
 
           {currentStage === 'PROCESSED' && (

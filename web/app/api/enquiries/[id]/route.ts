@@ -19,7 +19,13 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     }
 
     const { id } = params;
-    const result = await callAppsScript('enquiry.get', { id }, sessionToken);
+    const result = (await callAppsScript('enquiry.get', { id }, sessionToken)) as any;
+    if (result.success && result.data) {
+      const { extractContainersFromEnquiry, cleanEnquiryComments } = await import('@/lib/utils/enquiryContainers');
+      const enquiry = result.data.enquiry || result.data;
+      enquiry.containers = extractContainersFromEnquiry(enquiry);
+      enquiry.comments = cleanEnquiryComments(enquiry.comments);
+    }
     return NextResponse.json(result, { status: result.success ? 200 : 404 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to retrieve enquiry';
@@ -41,9 +47,17 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     const body = await req.json();
     const patch = body.patch || body;
 
+    if (patch.containers && Array.isArray(patch.containers)) {
+      const { embedContainersInComments } = await import('@/lib/utils/enquiryContainers');
+      patch.comments = embedContainersInComments(patch.comments, patch.containers);
+    }
+
     const result = (await callAppsScript('enquiry.update', { id, patch }, sessionToken)) as any;
     if (result.success && result.data) {
+      const { extractContainersFromEnquiry, cleanEnquiryComments } = await import('@/lib/utils/enquiryContainers');
       const enquiryData = result.data.enquiry || result.data;
+      enquiryData.containers = extractContainersFromEnquiry(enquiryData);
+      enquiryData.comments = cleanEnquiryComments(enquiryData.comments);
       const { syncEnquiryToReports } = await import('@/lib/server/reportSyncService');
       syncEnquiryToReports(enquiryData, body.oldCompanyName, sessionToken).catch((err) =>
         console.error('[LiveSync] Enquiry update sync failed:', err)

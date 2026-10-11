@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Form,
   Input,
@@ -54,6 +54,7 @@ import { isValidVehicleNumber, isValidDriverPhone } from '@/lib/utils/masterVali
 import { isValidContainerNumber } from '@/lib/utils/enquiryValidation';
 import { apiClient } from '@/lib/api/client';
 import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
+import { extractContainersFromEnquiry, cleanEnquiryComments, embedContainersInComments } from '@/lib/utils/enquiryContainers';
 
 const { Title, Text, Paragraph } = Typography;
 const { useBreakpoint } = Grid;
@@ -129,7 +130,7 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
 
   // Guard for billed enquiries
-  const initialStage = initialValues?.stage || 'ENQUIRY_CREATED';
+  const initialStage = initialValues?.stage || 'COMPLETED';
   const isBilledStage = initialStage === 'BILLING' || initialStage === 'PROCESSED';
   const [isUnlocked, setIsUnlocked] = useState(!isBilledStage);
 
@@ -144,8 +145,8 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
   const [driverOptions, setDriverOptions] = useState<{ value: string; label: string; item?: any }[]>([]);
   const [containerOptions, setContainerOptions] = useState<{ value: string; label: string; item?: any }[]>([]);
 
-  // Watch critical reactive form values
-  const noOfContainers = Form.useWatch('noOfContainers', form) || 1;
+  // Direct reactive state for container count (guarantees instantaneous UI updates)
+  const [containersCount, setContainersCount] = useState<number>(1);
   const loadingType = Form.useWatch('loadingType', form) || 'Import';
   const containerSize = Form.useWatch('containerSize', form) || '40 FT';
   const companyId = Form.useWatch('companyId', form);
@@ -153,26 +154,40 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
   const vendorId = Form.useWatch('vendorId', form);
   const paidStatus = Form.useWatch('paidStatus', form) || 'Unpaid';
 
-  // Watch money fields for live financial calculation
-  const freightAmount = Form.useWatch('freightAmount', form) || 0;
-  const advanceAmount = Form.useWatch('advanceAmount', form) || 0;
-  const extraAdvance = Form.useWatch('extraAdvance', form) || 0;
-  const dieselAmount = Form.useWatch('dieselAmount', form) || 0;
-  const haltingAmount = Form.useWatch('haltingAmount', form) || 0;
-  const otherCharges = Form.useWatch('otherCharges', form) || 0;
-  const bonus = Form.useWatch('bonus', form) || 0;
+  // Watch money fields with fallback to form.getFieldValue for unmounted steps
+  const watchedFreight = Form.useWatch('freightAmount', form);
+  const watchedAdvance = Form.useWatch('advanceAmount', form);
+  const watchedExtraAdvance = Form.useWatch('extraAdvance', form);
+  const watchedDiesel = Form.useWatch('dieselAmount', form);
+  const watchedHaltingDays = Form.useWatch('haltingDays', form);
+  const watchedHaltingAmount = Form.useWatch('haltingAmount', form);
+  const watchedOtherCharges = Form.useWatch('otherCharges', form);
+  const watchedBonus = Form.useWatch('bonus', form);
+
+  const freightAmount = Number(watchedFreight !== undefined ? watchedFreight : (form.getFieldValue('freightAmount') ?? 0)) || 0;
+  const advanceAmount = Number(watchedAdvance !== undefined ? watchedAdvance : (form.getFieldValue('advanceAmount') ?? 0)) || 0;
+  const extraAdvance = Number(watchedExtraAdvance !== undefined ? watchedExtraAdvance : (form.getFieldValue('extraAdvance') ?? 0)) || 0;
+  const dieselAmount = Number(watchedDiesel !== undefined ? watchedDiesel : (form.getFieldValue('dieselAmount') ?? 0)) || 0;
+  const haltingDays = parseInt(String(watchedHaltingDays !== undefined ? watchedHaltingDays : (form.getFieldValue('haltingDays') ?? 0)), 10) || 0;
+  const haltingAmount = Number(watchedHaltingAmount !== undefined ? watchedHaltingAmount : (form.getFieldValue('haltingAmount') ?? 0)) || 0;
+  const otherCharges = Number(watchedOtherCharges !== undefined ? watchedOtherCharges : (form.getFieldValue('otherCharges') ?? 0)) || 0;
+  const bonus = Number(watchedBonus !== undefined ? watchedBonus : (form.getFieldValue('bonus') ?? 0)) || 0;
 
   // Additional containers state (for container 2..N)
   const [extraContainers, setExtraContainers] = useState<ContainerDetail[]>([]);
 
-  // Keep extraContainers array in sync with noOfContainers count
-  useEffect(() => {
-    const targetExtraCount = Math.max(0, Number(noOfContainers) - 1);
+  // Function to sync containers count and extraContainers array synchronously
+  const syncContainersCount = useCallback((newTotal: number) => {
+    const total = Math.max(1, Math.min(15, newTotal));
+    setContainersCount(total);
+    form.setFieldsValue({ noOfContainers: total });
+
+    const targetExtra = total - 1;
     setExtraContainers((prev) => {
-      if (prev.length === targetExtraCount) return prev;
-      if (prev.length < targetExtraCount) {
+      if (prev.length === targetExtra) return prev;
+      if (prev.length < targetExtra) {
         const next = [...prev];
-        for (let i = prev.length; i < targetExtraCount; i++) {
+        for (let i = prev.length; i < targetExtra; i++) {
           next.push({
             containerNumber: '',
             sealNumber: '',
@@ -183,13 +198,46 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
         }
         return next;
       }
-      return prev.slice(0, targetExtraCount);
+      return prev.slice(0, targetExtra);
     });
-  }, [noOfContainers]);
+  }, [form]);
 
-  // Synchronize 20FT / 40FT Truck Counts in Section 7 based on Section 1 containerSize & noOfContainers
+  // Handler: Add another container directly from button click
+  const handleAddContainer = () => {
+    setExtraContainers((prev) => {
+      const next = [
+        ...prev,
+        {
+          containerNumber: '',
+          sealNumber: '',
+          vehicleNumber: '',
+          driverName: '',
+          driverPhone: '',
+        },
+      ];
+      const newTotal = next.length + 1;
+      setContainersCount(newTotal);
+      form.setFieldsValue({ noOfContainers: newTotal });
+      return next;
+    });
+    setIsDirty(true);
+  };
+
+  // Handler: Remove a specific container
+  const handleRemoveContainer = (indexToRemove: number) => {
+    setExtraContainers((prev) => {
+      const next = prev.filter((_, i) => i !== indexToRemove);
+      const newTotal = next.length + 1;
+      setContainersCount(newTotal);
+      form.setFieldsValue({ noOfContainers: newTotal });
+      return next;
+    });
+    setIsDirty(true);
+  };
+
+  // Synchronize 20FT / 40FT Truck Counts in Section 7 based on Section 1 containerSize & containersCount
   useEffect(() => {
-    const count = parseInt(String(noOfContainers || 1), 10) || 1;
+    const count = parseInt(String(containersCount || 1), 10) || 1;
     const sizeStr = String(containerSize || '');
     if (sizeStr.includes('20')) {
       form.setFieldsValue({
@@ -202,7 +250,7 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
         truckCount40: count,
       });
     }
-  }, [containerSize, noOfContainers, form]);
+  }, [containerSize, containersCount, form]);
 
   // Live vendor payable computation (official formula: D7)
   const vendorFinance = useMemo(() => {
@@ -213,15 +261,63 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
       haltingAmount,
       bonus,
     });
-  }, [advanceAmount, extraAdvance, dieselAmount, haltingAmount, bonus]);
+  }, [advanceAmount, extraAdvance, dieselAmount, haltingAmount, bonus, currentStep]);
 
-  // Client total charges
+  // Dynamic Custom Charges state (pairs of Custom Charge Name and Value)
+  const [customCharges, setCustomCharges] = useState<{ name: string; amount: number }[]>([]);
+
+  const handleNumCustomChargesChange = (count: number) => {
+    const targetCount = Math.max(0, count);
+    form.setFieldsValue({ numCustomCharges: targetCount });
+    setCustomCharges((prev) => {
+      if (prev.length === targetCount) return prev;
+      if (prev.length < targetCount) {
+        const next = [...prev];
+        for (let i = prev.length; i < targetCount; i++) {
+          next.push({ name: '', amount: 0 });
+        }
+        return next;
+      }
+      return prev.slice(0, targetCount);
+    });
+  };
+
+  const handleAddCustomCharge = () => {
+    setCustomCharges((prev) => {
+      const next = [...prev, { name: '', amount: 0 }];
+      form.setFieldsValue({ numCustomCharges: next.length });
+      return next;
+    });
+  };
+
+  const handleRemoveCustomCharge = (index: number) => {
+    setCustomCharges((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      form.setFieldsValue({ numCustomCharges: next.length });
+      return next;
+    });
+  };
+
+  const handleCustomChargeChange = (index: number, field: 'name' | 'amount', value: any) => {
+    setCustomCharges((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  };
+
+  const customChargesTotal = useMemo(() => {
+    return customCharges.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  }, [customCharges]);
+
+  // Client total charges including custom charges
   const clientTotalCharges = useMemo(() => {
     const f = Number(freightAmount) || 0;
     const h = Number(haltingAmount) || 0;
     const o = Number(otherCharges) || 0;
-    return Math.round((f + h + o) * 100) / 100;
-  }, [freightAmount, haltingAmount, otherCharges]);
+    const c = customChargesTotal;
+    return Math.round((f + h + o + c) * 100) / 100;
+  }, [freightAmount, haltingAmount, otherCharges, customChargesTotal, currentStep]);
 
   // Load type-ahead lookup suggestions on mount
   useEffect(() => {
@@ -341,10 +437,65 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
       if (!formatted.shippingStatus) formatted.shippingStatus = mov.shippingStatus || 'PENDING';
       if (!formatted.paidStatus) formatted.paidStatus = 'Unpaid';
 
-      // Multiple containers restore
-      if (Array.isArray(initialValues.containers) && initialValues.containers.length > 1) {
+      // Clean comments for UI display
+      if (formatted.comments) {
+        formatted.comments = cleanEnquiryComments(formatted.comments);
+      }
+
+      // Multiple containers restore using robust extractor
+      const extractedAllContainers = extractContainersFromEnquiry(initialValues);
+      if (extractedAllContainers.length > 1) {
+        setExtraContainers(extractedAllContainers.slice(1));
+        formatted.noOfContainers = extractedAllContainers.length;
+        setContainersCount(extractedAllContainers.length);
+        // Ensure primary fields reflect container 1 if present
+        if (!formatted.containerNumber && extractedAllContainers[0].containerNumber) {
+          formatted.containerNumber = extractedAllContainers[0].containerNumber;
+        }
+        if (!formatted.vehicleNumber && extractedAllContainers[0].vehicleNumber) {
+          formatted.vehicleNumber = extractedAllContainers[0].vehicleNumber;
+        }
+        if (!formatted.sealNumber && extractedAllContainers[0].sealNumber) {
+          formatted.sealNumber = extractedAllContainers[0].sealNumber;
+        }
+      } else if (Array.isArray(initialValues.containers) && initialValues.containers.length > 1) {
         setExtraContainers(initialValues.containers.slice(1));
         formatted.noOfContainers = initialValues.containers.length;
+        setContainersCount(initialValues.containers.length);
+      } else if (formatted.noOfContainers && Number(formatted.noOfContainers) > 1) {
+        const count = parseInt(String(formatted.noOfContainers), 10) || 1;
+        setContainersCount(count);
+        const extras: ContainerDetail[] = [];
+        for (let i = 1; i < count; i++) {
+          extras.push({
+            containerNumber: '',
+            sealNumber: '',
+            vehicleNumber: '',
+            driverName: '',
+            driverPhone: '',
+          });
+        }
+        setExtraContainers(extras);
+      } else {
+        setContainersCount(1);
+        setExtraContainers([]);
+      }
+
+      // Custom charges restore
+      let restoredCustom: { name: string; amount: number }[] = [];
+      if (Array.isArray(initialValues.customCharges)) {
+        restoredCustom = initialValues.customCharges;
+      } else if (typeof initialValues.customCharges === 'string' && initialValues.customCharges.trim()) {
+        try {
+          const parsed = JSON.parse(initialValues.customCharges);
+          if (Array.isArray(parsed)) restoredCustom = parsed;
+        } catch {}
+      }
+      if (restoredCustom.length > 0) {
+        setCustomCharges(restoredCustom);
+        formatted.numCustomCharges = restoredCustom.length;
+      } else {
+        formatted.numCustomCharges = 0;
       }
 
       form.setFieldsValue(formatted);
@@ -368,6 +519,7 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
         haltingDays: 0,
         haltingAmount: 0,
         otherCharges: 0,
+        numCustomCharges: 0,
         bonus: 0,
         paidStatus: 'Unpaid',
         movementStatus: 'NOT_MOVED',
@@ -499,18 +651,9 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
     }
   };
 
-  const handleStepClick = async (targetStep: number) => {
-    if (targetStep < currentStep) {
-      setCurrentStep(targetStep);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-    // Only jump forward if current step is valid
-    const isValid = await validateStep(currentStep);
-    if (isValid) {
-      setCurrentStep(targetStep);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  const handleStepClick = (targetStep: number) => {
+    setCurrentStep(targetStep);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Form submission handler
@@ -585,11 +728,24 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
       formatted.haltingAmount = Number(values.haltingAmount) || 0;
       formatted.otherCharges = Number(values.otherCharges) || 0;
       formatted.bonus = Number(values.bonus) || 0;
+
+      // Map and clean custom charges
+      const validCustomCharges = (customCharges || [])
+        .filter((c) => (c.name && c.name.trim()) || Number(c.amount) > 0)
+        .map((c) => ({
+          name: c.name.trim() || 'Custom Charge',
+          amount: Number(c.amount) || 0,
+        }));
+      formatted.customCharges = validCustomCharges;
+      formatted.numCustomCharges = validCustomCharges.length;
       formatted.amountPaid = Number(values.amountPaid) || 0;
       formatted.amountReceived = Number(values.amountReceived) || 0;
       formatted.truckCount20 = parseInt(String(values.truckCount20 || '0'), 10) || 0;
       formatted.truckCount40 = parseInt(String(values.truckCount40 || '0'), 10) || 0;
-      formatted.noOfContainers = parseInt(String(values.noOfContainers || '1'), 10) || 1;
+      formatted.noOfContainers = parseInt(String(containersCount || values.noOfContainers || '1'), 10) || 1;
+      formatted.stage = values.stage || initialValues?.stage || 'COMPLETED';
+      formatted.movementStatus = values.movementStatus || initialValues?.movement?.movementStatus || 'MOVED';
+      formatted.shippingStatus = values.shippingStatus || initialValues?.movement?.shippingStatus || 'COMPLETED';
 
       // Clean uppercase assets for primary container
       if (formatted.vehicleNumber) {
@@ -620,6 +776,7 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
         })),
       ];
       formatted.containers = allContainersList;
+      formatted.comments = embedContainersInComments(formatted.comments, allContainersList);
 
       await onSubmit(formatted);
       setIsDirty(false);
@@ -843,6 +1000,11 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
               >
                 <Select
                   placeholder="Select count (1-15)"
+                  value={containersCount}
+                  onChange={(val) => {
+                    syncContainersCount(Number(val));
+                    setIsDirty(true);
+                  }}
                   options={Array.from({ length: 15 }, (_, i) => ({
                     value: i + 1,
                     label: `${i + 1} Container${i > 0 ? 's' : ''}`,
@@ -996,28 +1158,46 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
       {currentStep === 2 && (
         <Card
           title={
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               <Space>
                 <CarOutlined style={{ color: '#365A73' }} />
-                <span style={{ textTransform: 'uppercase', fontSize: 13, letterSpacing: '0.04em', fontWeight: 700, color: '#17324D' }}>CONTAINER & VEHICLE</span>
+                <span style={{ textTransform: 'uppercase', fontSize: 13, letterSpacing: '0.04em', fontWeight: 700, color: '#17324D' }}>
+                  CONTAINER &amp; VEHICLE DETAILS
+                </span>
               </Space>
-              <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9' }}>{noOfContainers} Container{noOfContainers > 1 ? 's' : ''} Configured</Tag>
+              <Space>
+                <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontSize: 12 }}>
+                  {containersCount} Container{containersCount > 1 ? 's' : ''} Configured
+                </Tag>
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleAddContainer}
+                  disabled={containersCount >= 15}
+                >
+                  + Add Container {containersCount + 1}
+                </Button>
+              </Space>
             </div>
           }
           style={{ marginBottom: 24, borderRadius: 4, borderColor: '#D4DAD9', boxShadow: '0 1px 3px rgba(23, 42, 58, 0.06)' }}
         >
           <Paragraph type="secondary" style={{ marginBottom: 20 }}>
-            Assign containers, transport vehicles, and drivers for this consignment.
+            Enter container numbers, vehicle numbers, and driver details for each container ({containersCount} container{containersCount > 1 ? 's' : ''} configured). Details for Container 1 are below; additional containers appear dynamically as added.
           </Paragraph>
 
-          {/* PRIMARY CONTAINER (CONTAINER 1) */}
+          {/* CONTAINER 1 (PRIMARY CONTAINER) */}
           <Card
             type="inner"
             title={
-              <Space>
-                <Badge count={1} style={{ backgroundColor: '#17324D' }} />
-                <span style={{ fontWeight: 600 }}>Container 1 (Primary Job Record)</span>
-              </Space>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Space>
+                  <Badge count={1} style={{ backgroundColor: '#17324D' }} />
+                  <span style={{ fontWeight: 600 }}>Container 1 (Primary Job Record)</span>
+                </Space>
+                <Tag color="blue">Primary</Tag>
+              </div>
             }
             style={{ marginBottom: 16, borderColor: '#D4DAD9', backgroundColor: '#fafafa', borderRadius: 4 }}
           >
@@ -1025,7 +1205,7 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
               <Col xs={24} sm={12} md={6}>
                 <Form.Item
                   name="containerNumber"
-                  label="Container Number"
+                  label="Container 1 Number"
                   extra="Format: 4 letters + 7 digits (e.g. MSCU1234567)"
                   rules={[
                     {
@@ -1114,123 +1294,198 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
           </Card>
 
           {/* DYNAMIC ADDITIONAL CONTAINERS (CONTAINERS 2..N) */}
-          {extraContainers.length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              <Collapse
-                defaultActiveKey={['container-1']}
-                items={extraContainers.map((c, idx) => {
-                  const num = idx + 2;
-                  const isFilled = Boolean(c.containerNumber || c.vehicleNumber);
-                  return {
-                    key: `container-${idx}`,
-                    label: (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                        <Space>
-                          <Badge count={num} style={{ backgroundColor: '#3F6F4A' }} />
-                          <span style={{ fontWeight: 600 }}>Container {num}</span>
-                          {c.containerNumber && <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontFamily: 'monospace' }}>{c.containerNumber}</Tag>}
-                          {c.vehicleNumber && <Tag style={{ background: '#ECEFEE', color: '#1E2933', border: '1px solid #D4DAD9', fontFamily: 'monospace' }}>{c.vehicleNumber}</Tag>}
-                        </Space>
-                        <Tag style={isFilled ? { background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #D4DAD9' } : { background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #D4DAD9' }}>{isFilled ? '✓ Configured' : '○ Pending'}</Tag>
-                      </div>
-                    ),
-                    children: (
-                      <Row gutter={24}>
-                        <Col xs={24} sm={12} md={6}>
-                          <Form.Item label="Container Number" extra="4 letters + 7 digits">
-                            <Input
-                              value={c.containerNumber}
-                              placeholder="e.g. HLBU2126820"
-                              onChange={(e) => {
-                                const val = e.target.value.toUpperCase();
-                                setExtraContainers((prev) => {
-                                  const copy = [...prev];
-                                  copy[idx] = { ...copy[idx], containerNumber: val };
-                                  return copy;
-                                });
-                                setIsDirty(true);
-                              }}
-                            />
-                          </Form.Item>
-                        </Col>
+          {extraContainers.map((c, idx) => {
+            const num = idx + 2;
+            const isFilled = Boolean(c.containerNumber || c.vehicleNumber);
+            return (
+              <Card
+                key={`container-${idx}`}
+                type="inner"
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Space>
+                      <Badge count={num} style={{ backgroundColor: '#2563EB' }} />
+                      <span style={{ fontWeight: 600 }}>Container {num}</span>
+                      {c.containerNumber && (
+                        <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9', fontFamily: 'monospace' }}>
+                          {c.containerNumber}
+                        </Tag>
+                      )}
+                      {c.vehicleNumber && (
+                        <Tag style={{ background: '#ECEFEE', color: '#1E2933', border: '1px solid #D4DAD9', fontFamily: 'monospace' }}>
+                          {c.vehicleNumber}
+                        </Tag>
+                      )}
+                    </Space>
+                    <Space>
+                      <Tag style={isFilled ? { background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #D4DAD9' } : { background: '#FDF6E8', color: '#9E6B1D', border: '1px solid #D4DAD9' }}>
+                        {isFilled ? '✓ Configured' : '○ Pending'}
+                      </Tag>
+                      <Button
+                        size="small"
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleRemoveContainer(idx)}
+                      >
+                        Remove
+                      </Button>
+                    </Space>
+                  </div>
+                }
+                style={{ marginBottom: 16, borderColor: '#D4DAD9', backgroundColor: '#fafafa', borderRadius: 4 }}
+              >
+                <Row gutter={24}>
+                  <Col xs={24} sm={12} md={6}>
+                    <Form.Item label={`Container ${num} Number`} extra="Format: 4 letters + 7 digits">
+                      <AutoComplete
+                        options={containerOptions}
+                        value={c.containerNumber}
+                        placeholder="e.g. HLBU2126820"
+                        filterOption={(input, option) =>
+                          (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                        onChange={(val) => {
+                          const upper = (val || '').toUpperCase();
+                          setExtraContainers((prev) => {
+                            const copy = [...prev];
+                            copy[idx] = { ...copy[idx], containerNumber: upper };
+                            return copy;
+                          });
+                          setIsDirty(true);
+                        }}
+                      />
+                    </Form.Item>
+                  </Col>
 
-                        <Col xs={24} sm={12} md={6}>
-                          <Form.Item label="Seal Number">
-                            <Input
-                              value={c.sealNumber}
-                              placeholder="Seal number"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setExtraContainers((prev) => {
-                                  const copy = [...prev];
-                                  copy[idx] = { ...copy[idx], sealNumber: val };
-                                  return copy;
-                                });
-                                setIsDirty(true);
-                              }}
-                            />
-                          </Form.Item>
-                        </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Form.Item label="Seal Number">
+                      <Input
+                        value={c.sealNumber}
+                        placeholder="Seal number"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setExtraContainers((prev) => {
+                            const copy = [...prev];
+                            copy[idx] = { ...copy[idx], sealNumber: val };
+                            return copy;
+                          });
+                          setIsDirty(true);
+                        }}
+                      />
+                    </Form.Item>
+                  </Col>
 
-                        <Col xs={24} sm={12} md={6}>
-                          <Form.Item label="Vehicle Number" extra="Format: TN04AB1234">
-                            <Input
-                              value={c.vehicleNumber}
-                              placeholder="e.g. TN20BZ4732"
-                              onChange={(e) => {
-                                const val = e.target.value.toUpperCase();
-                                setExtraContainers((prev) => {
-                                  const copy = [...prev];
-                                  copy[idx] = { ...copy[idx], vehicleNumber: val };
-                                  return copy;
-                                });
-                                setIsDirty(true);
-                              }}
-                            />
-                          </Form.Item>
-                        </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Form.Item label="Vehicle Number" extra="Format: TN04AB1234">
+                      <AutoComplete
+                        options={vehicleOptions}
+                        value={c.vehicleNumber}
+                        placeholder="e.g. TN20BZ4732"
+                        filterOption={(input, option) =>
+                          (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                        onSelect={(val) => {
+                          const upper = (val || '').toUpperCase();
+                          setExtraContainers((prev) => {
+                            const copy = [...prev];
+                            copy[idx] = { ...copy[idx], vehicleNumber: upper };
+                            return copy;
+                          });
+                          setIsDirty(true);
+                        }}
+                        onChange={(val) => {
+                          const upper = (val || '').toUpperCase();
+                          setExtraContainers((prev) => {
+                            const copy = [...prev];
+                            copy[idx] = { ...copy[idx], vehicleNumber: upper };
+                            return copy;
+                          });
+                          setIsDirty(true);
+                        }}
+                      />
+                    </Form.Item>
+                  </Col>
 
-                        <Col xs={24} sm={12} md={6}>
-                          <Form.Item label="Driver Name">
-                            <Input
-                              value={c.driverName}
-                              placeholder="Driver name"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setExtraContainers((prev) => {
-                                  const copy = [...prev];
-                                  copy[idx] = { ...copy[idx], driverName: val };
-                                  return copy;
-                                });
-                                setIsDirty(true);
-                              }}
-                            />
-                          </Form.Item>
-                        </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <Form.Item label="Driver Name">
+                      <AutoComplete
+                        options={driverOptions}
+                        value={c.driverName}
+                        placeholder="Driver name"
+                        filterOption={(input, option) =>
+                          (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                        onSelect={(val, option) => {
+                          setExtraContainers((prev) => {
+                            const copy = [...prev];
+                            copy[idx] = {
+                              ...copy[idx],
+                              driverName: option.item?.name || val,
+                              driverPhone: option.item?.phone || copy[idx].driverPhone,
+                            };
+                            return copy;
+                          });
+                          setIsDirty(true);
+                        }}
+                        onChange={(val) => {
+                          setExtraContainers((prev) => {
+                            const copy = [...prev];
+                            copy[idx] = { ...copy[idx], driverName: val };
+                            return copy;
+                          });
+                          setIsDirty(true);
+                        }}
+                      />
+                    </Form.Item>
+                  </Col>
 
-                        <Col xs={24} sm={12} md={6}>
-                          <Form.Item label="Driver Mobile" extra="10 digits starting with 6-9">
-                            <Input
-                              value={c.driverPhone}
-                              placeholder="9876543210"
-                              maxLength={10}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setExtraContainers((prev) => {
-                                  const copy = [...prev];
-                                  copy[idx] = { ...copy[idx], driverPhone: val };
-                                  return copy;
-                                });
-                                setIsDirty(true);
-                              }}
-                            />
-                          </Form.Item>
-                        </Col>
-                      </Row>
-                    ),
-                  };
-                })}
-              />
+                  <Col xs={24} sm={12} md={6}>
+                    <Form.Item label="Driver Mobile" extra="10 digits starting with 6-9">
+                      <Input
+                        value={c.driverPhone}
+                        placeholder="9876543210"
+                        maxLength={10}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setExtraContainers((prev) => {
+                            const copy = [...prev];
+                            copy[idx] = { ...copy[idx], driverPhone: val };
+                            return copy;
+                          });
+                          setIsDirty(true);
+                        }}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </Card>
+            );
+          })}
+
+          {/* ADD CONTAINER PROMINENT ACTION CARD */}
+          {containersCount < 15 && (
+            <div
+              onClick={handleAddContainer}
+              style={{
+                border: '2px dashed #93C5FD',
+                borderRadius: 4,
+                padding: '16px',
+                textAlign: 'center',
+                backgroundColor: '#F8FAFC',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                marginTop: 8,
+              }}
+            >
+              <PlusOutlined style={{ color: '#2563EB', fontSize: 16 }} />
+              <span style={{ color: '#1D4ED8', fontWeight: 600, fontSize: 14 }}>
+                + Add Container {containersCount + 1} &amp; Vehicle Details
+              </span>
             </div>
           )}
         </Card>
@@ -1441,6 +1696,23 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
             </Col>
 
             <Col xs={24} sm={12} md={8}>
+              <Form.Item
+                name="numCustomCharges"
+                label="No. of Custom Charges"
+                extra="Specifies number of custom charge pairs"
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  min={0}
+                  max={20}
+                  precision={0}
+                  placeholder="e.g. 1, 2, 3..."
+                  onChange={(val) => handleNumCustomChargesChange(Number(val) || 0)}
+                />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} sm={12} md={8}>
               <Form.Item name="paidStatus" label="Paid Status">
                 <Select
                   options={[
@@ -1468,6 +1740,83 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
               </>
             )}
           </Row>
+
+          {/* DYNAMIC CUSTOM CHARGES PAIRS (Name + Value) */}
+          {customCharges.length > 0 && (
+            <div
+              style={{
+                marginTop: 8,
+                marginBottom: 20,
+                padding: '16px 20px',
+                border: '1px dashed #B8C4CE',
+                borderRadius: 6,
+                background: '#F8FAFB',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <Space>
+                  <DollarOutlined style={{ color: '#17324D' }} />
+                  <Text strong style={{ fontSize: 13, color: '#17324D', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Custom Charges ({customCharges.length} Pair{customCharges.length > 1 ? 's' : ''})
+                  </Text>
+                </Space>
+                <Button
+                  size="small"
+                  type="dashed"
+                  icon={<PlusOutlined />}
+                  onClick={handleAddCustomCharge}
+                >
+                  Add Custom Charge
+                </Button>
+              </div>
+
+              {customCharges.map((charge, idx) => (
+                <Row gutter={16} key={idx} style={{ marginBottom: 12, alignItems: 'flex-start' }}>
+                  <Col xs={24} sm={11} md={11}>
+                    <Form.Item
+                      label={`Custom Charge ${idx + 1} Name`}
+                      style={{ marginBottom: 0 }}
+                      required
+                    >
+                      <Input
+                        placeholder="e.g. Toll Fee, Weighment, Escort"
+                        value={charge.name}
+                        onChange={(e) => handleCustomChargeChange(idx, 'name', e.target.value)}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={20} sm={10} md={10}>
+                    <Form.Item
+                      label={`Custom Charge ${idx + 1} Value (INR)`}
+                      style={{ marginBottom: 0 }}
+                      required
+                    >
+                      <InputNumber
+                        style={{ width: '100%' }}
+                        min={0}
+                        precision={2}
+                        prefix="₹"
+                        placeholder="0.00"
+                        value={charge.amount}
+                        onChange={(val) => handleCustomChargeChange(idx, 'amount', Number(val) || 0)}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={4} sm={3} md={3} style={{ display: 'flex', alignItems: 'flex-end', paddingTop: 28 }}>
+                    <Button
+                      danger
+                      type="text"
+                      icon={<DeleteOutlined />}
+                      onClick={() => handleRemoveCustomCharge(idx)}
+                      title="Remove Charge Pair"
+                    >
+                      Remove
+                    </Button>
+                  </Col>
+                </Row>
+              ))}
+            </div>
+          )}
 
           {/* LIVE CHARGE SUMMARY CARD */}
           <div
@@ -1506,6 +1855,13 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
                 <Tag style={{ background: '#FDF6E8', color: '#C58A2A', border: '1px solid #D4DAD9', fontVariantNumeric: 'tabular-nums' }}>Diesel: {formatCurrencyINR(dieselAmount)}</Tag>
                 <Tag style={{ background: '#ECEFEE', color: '#34424C', border: '1px solid #D4DAD9', fontVariantNumeric: 'tabular-nums' }}>Halting: {formatCurrencyINR(haltingAmount)}</Tag>
                 {otherCharges > 0 && <Tag style={{ background: '#ECEFEE', color: '#5F6B73', border: '1px solid #D4DAD9', fontVariantNumeric: 'tabular-nums' }}>Other: {formatCurrencyINR(otherCharges)}</Tag>}
+                {customCharges.map((cc, i) => (
+                  (cc.name || Number(cc.amount) > 0) && (
+                    <Tag key={i} color="cyan" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {cc.name || `Custom ${i + 1}`}: {formatCurrencyINR(cc.amount || 0)}
+                    </Tag>
+                  )
+                ))}
               </Space>
             </div>
             <Text type="secondary" style={{ fontSize: 12 }}>
@@ -1588,15 +1944,15 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
                     <Space size="large" wrap>
                       <div>
                         <Text type="secondary" style={{ fontSize: 12 }}>Vendor Total Payable</Text>
-                        <div style={{ fontWeight: 600, color: '#3F6F4A' }}>{formatCurrencyINR(vendorFinance.totalPayable)}</div>
+                        <div style={{ fontWeight: 600, color: '#3F6F4A', fontSize: 15 }}>{formatCurrencyINR(vendorFinance.totalPayable)}</div>
                       </div>
                       <div>
-                        <Text type="secondary" style={{ fontSize: 12 }}>Halting ({form.getFieldValue('haltingDays') || 0} days)</Text>
-                        <div style={{ fontWeight: 600 }}>{formatCurrencyINR(haltingAmount)}</div>
+                        <Text type="secondary" style={{ fontSize: 12 }}>Halting ({haltingDays} days)</Text>
+                        <div style={{ fontWeight: 600, fontSize: 15 }}>{formatCurrencyINR(haltingAmount)}</div>
                       </div>
                       <div>
                         <Text type="secondary" style={{ fontSize: 12 }}>Extra Advance</Text>
-                        <div style={{ fontWeight: 600 }}>{formatCurrencyINR(extraAdvance)}</div>
+                        <div style={{ fontWeight: 600, fontSize: 15 }}>{formatCurrencyINR(extraAdvance)}</div>
                       </div>
                     </Space>
                   </div>
@@ -1727,7 +2083,7 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
                     <Tag style={{ background: '#EEF3F6', color: '#17324D', border: '1px solid #D4DAD9' }}>{loadingType}</Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Size">{containerSize}</Descriptions.Item>
-                  <Descriptions.Item label="Containers">{noOfContainers}</Descriptions.Item>
+                  <Descriptions.Item label="Containers">{containersCount}</Descriptions.Item>
                   <Descriptions.Item label="Company ID">{companyId || '-'}</Descriptions.Item>
                 </Descriptions>
               </Card>
@@ -1760,7 +2116,7 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
               <Card
                 size="small"
                 type="inner"
-                title={`3. Containers & Vehicles (${noOfContainers} Container${noOfContainers > 1 ? 's' : ''})`}
+                title={`3. Containers & Vehicles (${containersCount} Container${containersCount > 1 ? 's' : ''})`}
                 extra={
                   <Button type="link" size="small" icon={<EditOutlined />} onClick={() => setCurrentStep(2)}>
                     Edit
@@ -1845,6 +2201,13 @@ export const EnquiryForm: React.FC<EnquiryFormProps> = ({
                     {formatCurrencyINR(haltingAmount)}
                   </Descriptions.Item>
                   <Descriptions.Item label="Other Charges">{formatCurrencyINR(otherCharges)}</Descriptions.Item>
+                  {customCharges.map((cc, i) => (
+                    (cc.name || Number(cc.amount) > 0) && (
+                      <Descriptions.Item key={`cc-${i}`} label={cc.name || `Custom ${i + 1}`}>
+                        {formatCurrencyINR(cc.amount || 0)}
+                      </Descriptions.Item>
+                    )
+                  ))}
                   <Descriptions.Item label="Client Total">
                     <strong style={{ color: '#17324D', fontVariantNumeric: 'tabular-nums' }}>{formatCurrencyINR(clientTotalCharges)}</strong>
                   </Descriptions.Item>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { callAppsScript } from '@/lib/server/appsScriptClient';
 import { getSessionToken, SESSION_COOKIE_NAME } from '@/lib/server/session';
+import { serverCache } from '@/lib/server/cache';
 
 interface MeResponseData {
   user: {
@@ -23,6 +24,16 @@ export async function GET() {
       },
       { status: 401 }
     );
+  }
+
+  // 1. Check server-side memory cache first (180s TTL)
+  const cachedUser = serverCache.get<{ id: string; name: string; email: string }>('user_session_' + token);
+  if (cachedUser) {
+    return NextResponse.json({
+      success: true,
+      data: { user: cachedUser },
+      message: 'Active session (cached)',
+    });
   }
 
   const result = await callAppsScript<MeResponseData>('auth.me', {}, token);
@@ -57,6 +68,9 @@ export async function GET() {
     response.cookies.delete(SESSION_COOKIE_NAME);
     return response;
   }
+
+  // Cache authenticated user session for 3 minutes (180s)
+  serverCache.set('user_session_' + token, result.data.user, 180);
 
   return NextResponse.json({
     success: true,

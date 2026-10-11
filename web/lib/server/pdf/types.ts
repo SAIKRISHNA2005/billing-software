@@ -1,3 +1,8 @@
+export interface CustomChargeItem {
+  name: string;
+  amount: number;
+}
+
 export interface BillChargeItem {
   sNo?: number;
   description: string;
@@ -9,6 +14,7 @@ export interface BillChargeItem {
   haltingFormula?: string;
   haltingCharges?: number | null;
   advance?: number | null;
+  customCharges?: CustomChargeItem[];
   rate?: number | null;
   amount: number;
 }

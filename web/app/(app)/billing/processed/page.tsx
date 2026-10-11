@@ -81,7 +81,15 @@ export default function ProcessedBillsPage() {
       const res = await axios.get('/api/billing/bills', { params });
       if (res.data && res.data.success) {
         const result = res.data.data;
-        setItems(result.items || []);
+        const sorted = (result?.items || []).sort((a: any, b: any) => {
+          const seqA = parseInt(String(a.billSeq || a.billNumber || '').replace(/\D/g, ''), 10) || 0;
+          const seqB = parseInt(String(b.billSeq || b.billNumber || '').replace(/\D/g, ''), 10) || 0;
+          if (seqA !== seqB) return seqB - seqA;
+          const timeA = new Date(a.createdAt || a.billingDate || 0).getTime();
+          const timeB = new Date(b.createdAt || b.billingDate || 0).getTime();
+          return timeB - timeA;
+        });
+        setItems(sorted);
         setGrandTotal(result.grandTotal || 0);
         setPagination({
           current: result.page || page,
@@ -143,27 +151,45 @@ export default function ProcessedBillsPage() {
   // Handle Download PDF
   const handleDownloadPdf = async (record: any) => {
     setDownloadingId(record.id);
+    const hideLoading = message.loading(`Generating PDF invoice for ${record.billNumber || record.id}...`, 0);
     try {
       const res = await axios.get(`/api/billing/pdf/${record.id}`);
+      hideLoading();
       if (res.data && res.data.success) {
-        if (res.data.data?.pdfUrl) {
-          window.open(res.data.data.pdfUrl, '_blank');
-        } else if (res.data.data?.pdfBase64) {
+        const filename = `Invoice_${record.billNumber ? String(record.billNumber).replace(/[\/\\]/g, '-') : record.id}.pdf`;
+        if (res.data.data?.pdfBase64) {
+          // Convert base64 to Blob object URL to bypass browser data-URI size/security restrictions
+          const byteCharacters = atob(res.data.data.pdfBase64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: 'application/pdf' });
+          const blobUrl = URL.createObjectURL(blob);
+
           const link = document.createElement('a');
-          link.href = 'data:application/pdf;base64,' + res.data.data.pdfBase64;
-          link.download = `Invoice_${record.billNumber ? String(record.billNumber).replace(/\//g, '-') : record.id}.pdf`;
+          link.href = blobUrl;
+          link.download = filename;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
-          message.success('Invoice PDF downloaded successfully');
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+
+          message.success('Invoice PDF downloaded successfully!');
+        } else if (res.data.data?.pdfUrl) {
+          window.open(res.data.data.pdfUrl, '_blank');
         } else {
-          message.info('PDF generated successfully');
+          // Fallback to direct stream endpoint
+          window.open(`/api/billing/pdf/${record.id}?format=pdf`, '_blank');
         }
       } else {
         message.error(res.data?.message || 'Failed to generate PDF for download');
       }
-    } catch {
-      message.error('Error generating PDF');
+    } catch (err: any) {
+      hideLoading();
+      const errorMsg = err.response?.data?.message || err.message || 'Error generating PDF';
+      message.error(errorMsg);
     } finally {
       setDownloadingId(null);
     }
@@ -430,7 +456,20 @@ export default function ProcessedBillsPage() {
             style={{ width: 240 }}
             format="DD/MM/YYYY"
             value={dateRange}
-            onChange={(dates) => setDateRange(dates as any)}
+            onChange={(dates) => {
+              setDateRange(dates as any);
+              if (dates && dates[0] && dates[1]) {
+                fetchBills(1, {
+                  dateFrom: dates[0].format('YYYY-MM-DD'),
+                  dateTo: dates[1].format('YYYY-MM-DD'),
+                });
+              } else {
+                fetchBills(1, {
+                  dateFrom: '',
+                  dateTo: '',
+                });
+              }
+            }}
           />
           <Select
             placeholder="Financial Year"

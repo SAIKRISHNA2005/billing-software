@@ -13,6 +13,10 @@ import {
   Alert,
   Tooltip,
   DatePicker,
+  Modal,
+  Divider,
+  Row,
+  Col,
   message,
 } from 'antd';
 import {
@@ -24,6 +28,8 @@ import {
   EditOutlined,
   DeleteOutlined,
   DownloadOutlined,
+  ArrowRightOutlined,
+  DollarOutlined,
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -58,6 +64,11 @@ export interface PendingBillRow {
   createdAt?: string;
   enquiryNumber?: string | number;
   completedAt: string;
+  otherCharges?: number;
+  advanceAmount?: number;
+  extraAdvance?: number;
+  totalAdvance?: number;
+  customCharges?: any[];
   [key: string]: any;
 }
 
@@ -75,6 +86,10 @@ export default function PendingBillsPage() {
   const [companyId, setCompanyId] = useState('');
   const [clientId, setClientId] = useState('');
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null);
+
+  // Create Bill Charges Confirmation Popup State
+  const [createBillModalOpen, setCreateBillModalOpen] = useState(false);
+  const [modalRows, setModalRows] = useState<PendingBillRow[]>([]);
 
   const fetchPending = async (overrideParams?: { companyId?: string; clientId?: string; search?: string }) => {
     setLoading(true);
@@ -123,17 +138,44 @@ export default function PendingBillsPage() {
     }
   };
 
+  const parseDateFlexible = (val: any): dayjs.Dayjs | null => {
+    if (!val) return null;
+    const str = String(val).trim();
+    if (!str || str === '-') return null;
+    const match = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+    if (match) {
+      const d = parseInt(match[1], 10);
+      const m = parseInt(match[2], 10) - 1;
+      const y = parseInt(match[3], 10);
+      const dt = dayjs(new Date(y, m, d));
+      if (dt.isValid()) return dt;
+    }
+    const dt = dayjs(val);
+    return dt.isValid() ? dt : null;
+  };
+
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
+    const list = items.filter((item) => {
       if (dateRange && dateRange[0] && dateRange[1]) {
-        const itemDate = dayjs(item.completedAt || item.date || item.createdAt);
-        if (itemDate.isValid()) {
+        const itemDate = parseDateFlexible(item.completedAt || item.date || item.createdAt);
+        if (itemDate) {
           if (itemDate.isBefore(dateRange[0].startOf('day')) || itemDate.isAfter(dateRange[1].endOf('day'))) {
             return false;
           }
+        } else {
+          return false;
         }
       }
       return true;
+    });
+
+    return [...list].sort((a, b) => {
+      const numA = parseInt(String(a.enquiryNumber || a.enquiryId || '').replace(/\D/g, ''), 10) || 0;
+      const numB = parseInt(String(b.enquiryNumber || b.enquiryId || '').replace(/\D/g, ''), 10) || 0;
+      if (numA !== numB) return numB - numA;
+      const timeA = parseDateFlexible(a.createdAt || a.completedAt || a.date)?.valueOf() || 0;
+      const timeB = parseDateFlexible(b.createdAt || b.completedAt || b.date)?.valueOf() || 0;
+      return timeB - timeA;
     });
   }, [items, dateRange]);
 
@@ -163,14 +205,96 @@ export default function PendingBillsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleCreateBill = () => {
-    if (selectedRows.length === 0) {
+  const modalCalculations = useMemo(() => {
+    let freightTotal = 0;
+    let haltingTotal = 0;
+    let otherTotal = 0;
+    let customTotal = 0;
+    let advanceCashTotal = 0;
+    let extraAdvanceTotal = 0;
+    let totalAdvance = 0;
+    let grossTotal = 0;
+    let netTotal = 0;
+
+    const itemsDetail = modalRows.map((row) => {
+      const freight = Number(row.freightAmount) || 0;
+      const halting = Number(row.haltingAmount) || 0;
+      const haltingDays = Number(row.haltingDays) || 0;
+      const other = Number(row.otherCharges) || 0;
+      const advCash = Number(row.advanceAmount) || 0;
+      const extraAdv = Number(row.extraAdvance) || 0;
+      const advSum = advCash + extraAdv;
+
+      let customList: { name: string; amount: number }[] = [];
+      const rawCustom = (row as any).customCharges;
+      if (Array.isArray(rawCustom)) {
+        customList = rawCustom;
+      } else if (typeof rawCustom === 'string' && rawCustom.trim().startsWith('[')) {
+        try {
+          const parsed = JSON.parse(rawCustom);
+          if (Array.isArray(parsed)) customList = parsed;
+        } catch {}
+      }
+      const cTotal = customList.reduce((s, c) => s + (Number(c.amount || (c as any).chargeAmount) || 0), 0);
+      const gross = freight + halting + other + cTotal;
+      const net = Math.max(0, gross - advSum);
+
+      freightTotal += freight;
+      haltingTotal += halting;
+      otherTotal += other;
+      customTotal += cTotal;
+      advanceCashTotal += advCash;
+      extraAdvanceTotal += extraAdv;
+      totalAdvance += advSum;
+      grossTotal += gross;
+      netTotal += net;
+
+      return {
+        row,
+        freight,
+        halting,
+        haltingDays,
+        other,
+        customList,
+        cTotal,
+        advCash,
+        extraAdv,
+        advSum,
+        gross,
+        net,
+      };
+    });
+
+    return {
+      itemsDetail,
+      freightTotal,
+      haltingTotal,
+      otherTotal,
+      customTotal,
+      advanceCashTotal,
+      extraAdvanceTotal,
+      totalAdvance,
+      grossTotal,
+      netTotal,
+    };
+  }, [modalRows]);
+
+  const handleOpenCreateBillModal = (rowsToBill?: PendingBillRow[]) => {
+    const targets = rowsToBill && rowsToBill.length > 0 ? rowsToBill : selectedRows;
+    if (targets.length === 0) {
       message.warning('Please select at least one enquiry to create a bill.');
       return;
     }
-    const enquiryIds = selectedRows.map((r) => r.enquiryId).join(',');
-    const company = selectedRows[0].companyId;
-    const client = selectedRows[0].clientId;
+    setModalRows(targets);
+    setCreateBillModalOpen(true);
+  };
+
+  const handleProceedFromModal = () => {
+    if (modalRows.length === 0) return;
+    const enquiryIds = modalRows.map((r) => r.enquiryId).join(',');
+    const company = modalRows[0].companyId;
+    const client = modalRows[0].clientId;
+    setCreateBillModalOpen(false);
     router.push(`/billing/create?enquiryIds=${enquiryIds}&companyId=${company}&clientId=${client}`);
   };
 
@@ -407,7 +531,7 @@ export default function PendingBillsPage() {
                 fontSize: 12,
                 fontWeight: 600,
               }}
-              onClick={() => router.push(`/billing/create?enquiryIds=${record.enquiryId}&companyId=${record.companyId}&clientId=${record.clientId}`)}
+              onClick={() => handleOpenCreateBillModal([record])}
             >
               Bill
             </Button>
@@ -463,26 +587,19 @@ export default function PendingBillsPage() {
             Export All
           </Button>
           {selectedRows.length > 0 ? (
-            <ActionConfirmPopover
-              title={`Are you sure you want to create an invoice for ${selectedRows.length} item(s)?`}
-              description={`Selected ${selectedRows.length} consignment(s) totaling ${formatCurrencyINR(totalSelectedAmount)}.`}
-              okText="Yes, Proceed to Billing"
-              cancelText="No, Cancel"
-              onConfirm={handleCreateBill}
+            <Button
+              type="primary"
+              icon={<CheckCircleOutlined />}
+              size="large"
+              style={{
+                backgroundColor: isDark ? '#2563EB' : '#1D4ED8',
+                borderColor: isDark ? '#2563EB' : '#1D4ED8',
+                fontWeight: 600,
+              }}
+              onClick={() => handleOpenCreateBillModal(selectedRows)}
             >
-              <Button
-                type="primary"
-                icon={<CheckCircleOutlined />}
-                size="large"
-                style={{
-                  backgroundColor: isDark ? '#2563EB' : '#1D4ED8',
-                  borderColor: isDark ? '#2563EB' : '#1D4ED8',
-                  fontWeight: 600,
-                }}
-              >
-                Create Bill ({selectedRows.length})
-              </Button>
-            </ActionConfirmPopover>
+              Create Bill ({selectedRows.length})
+            </Button>
           ) : (
             <Tooltip title="Select consignments using the checkboxes on the left to bill in batch, or click to open Bill Creation">
               <Button
@@ -588,6 +705,235 @@ export default function PendingBillsPage() {
           }}
         />
       </Card>
+
+      {/* ========================================================================= */}
+      {/* CREATE BILL CHARGES BREAKDOWN & CONFIRMATION POPUP MODAL */}
+      {/* ========================================================================= */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 6 }}>
+            <FileAddOutlined style={{ color: isDark ? '#38BDF8' : '#1D4ED8', fontSize: 20 }} />
+            <span style={{ fontSize: 17, fontWeight: 700, color: isDark ? '#F1F5F9' : '#1E2933' }}>
+              Create Bill - Review Charges &amp; Deductions
+            </span>
+            <Tag color="blue" style={{ fontWeight: 600, marginLeft: 8 }}>
+              {modalRows.length} Job{modalRows.length > 1 ? 's' : ''} Selected
+            </Tag>
+          </div>
+        }
+        open={createBillModalOpen}
+        onCancel={() => setCreateBillModalOpen(false)}
+        width={780}
+        footer={[
+          <Button key="cancel" size="large" onClick={() => setCreateBillModalOpen(false)}>
+            Cancel
+          </Button>,
+          <Button
+            key="proceed"
+            type="primary"
+            size="large"
+            icon={<ArrowRightOutlined />}
+            style={{
+              backgroundColor: isDark ? '#2563EB' : '#1D4ED8',
+              borderColor: isDark ? '#2563EB' : '#1D4ED8',
+              fontWeight: 600,
+            }}
+            onClick={handleProceedFromModal}
+          >
+            Proceed to Create Bill Invoice ➔
+          </Button>,
+        ]}
+      >
+        <div style={{ maxHeight: '68vh', overflowY: 'auto', paddingRight: 4 }}>
+          {/* 1. Client & Company Context Card */}
+          {modalRows.length > 0 && (
+            <div
+              style={{
+                backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
+                borderRadius: 6,
+                padding: '12px 16px',
+                marginBottom: 16,
+                display: 'flex',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 12,
+                border: isDark ? '1px solid #334155' : '1px solid #CBD5E1',
+              }}
+            >
+              <div>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Client / Billed Party</Text>
+                <Text strong style={{ fontSize: 15, color: isDark ? '#F8FAFC' : '#0F172A' }}>
+                  {modalRows[0].clientName || modalRows[0].clientId}
+                </Text>
+              </div>
+              <div>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Operating Transporter Company</Text>
+                <Text strong style={{ fontSize: 14, color: isDark ? '#E2E8F0' : '#1E293B' }}>
+                  {modalRows[0].companyName || modalRows[0].companyId}
+                </Text>
+              </div>
+            </div>
+          )}
+
+          {/* 2. Itemized Consignments Charges Breakdown */}
+          <div style={{ marginBottom: 12 }}>
+            <Text strong style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.04em', color: isDark ? '#94A3B8' : '#475569' }}>
+              Enquiry Charges Breakdown:
+            </Text>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {modalCalculations.itemsDetail.map((item, idx) => (
+              <div
+                key={item.row.enquiryId || idx}
+                style={{
+                  border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+                  borderRadius: 6,
+                  padding: 14,
+                  backgroundColor: isDark ? '#0F172A' : '#FAFAFA',
+                }}
+              >
+                {/* Consignment Header Row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+                  <Space wrap>
+                    <Tag color="cyan" style={{ fontWeight: 700, fontSize: 12 }}>
+                      Enquiry #{item.row.enquiryNumber || item.row.enquiryId}
+                    </Tag>
+                    <Text strong style={{ fontSize: 13 }}>
+                      Vehicle: {item.row.vehicleNo || '-'}
+                    </Text>
+                    <span style={{ color: '#94A3B8' }}>|</span>
+                    <Text strong style={{ fontSize: 13 }}>
+                      Container: {item.row.containerNo || '-'}
+                    </Text>
+                    <Tag>{item.row.containerSize || '40 FT'}</Tag>
+                  </Space>
+                  <Tag color="blue" style={{ fontSize: 13, fontWeight: 700, padding: '3px 8px' }}>
+                    Net Amount: {formatCurrencyINR(item.net)}
+                  </Tag>
+                </div>
+
+                {/* Charges Breakdown Grid */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
+                    gap: 10,
+                    fontSize: 12.5,
+                    backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+                    padding: 10,
+                    borderRadius: 4,
+                    border: isDark ? '1px solid #334155' : '1px solid #EDF2F7',
+                  }}
+                >
+                  <div>
+                    <span style={{ color: '#64748B', display: 'block' }}>Transportation / Freight:</span>
+                    <span style={{ fontWeight: 600 }}>{formatCurrencyINR(item.freight)}</span>
+                  </div>
+
+                  <div>
+                    <span style={{ color: '#64748B', display: 'block' }}>
+                      Halting {item.haltingDays > 0 ? `(${item.haltingDays} Day${item.haltingDays > 1 ? 's' : ''})` : ''}:
+                    </span>
+                    <span style={{ fontWeight: 600 }}>{formatCurrencyINR(item.halting)}</span>
+                  </div>
+
+                  {item.other > 0 && (
+                    <div>
+                      <span style={{ color: '#64748B', display: 'block' }}>Other Charges:</span>
+                      <span style={{ fontWeight: 600 }}>{formatCurrencyINR(item.other)}</span>
+                    </div>
+                  )}
+
+                  {item.customList.map((c, cIdx) => (
+                    <div key={cIdx}>
+                      <span style={{ color: '#64748B', display: 'block' }}>{c.name || 'Custom Charge'}:</span>
+                      <span style={{ fontWeight: 600 }}>{formatCurrencyINR(Number(c.amount || (c as any).chargeAmount) || 0)}</span>
+                    </div>
+                  ))}
+
+                  <div style={{ borderTop: isDark ? '1px dashed #475569' : '1px dashed #CBD5E1', paddingTop: 6, gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#64748B', fontWeight: 600 }}>Gross Charges:</span>
+                    <span style={{ fontWeight: 700 }}>{formatCurrencyINR(item.gross)}</span>
+                  </div>
+
+                  {item.advSum > 0 && (
+                    <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isDark ? '#450A0A' : '#FEF2F2', padding: '6px 10px', borderRadius: 4 }}>
+                      <span style={{ color: '#DC2626', fontWeight: 600 }}>
+                        Less: Advance Paid (Advance: {formatCurrencyINR(item.advCash)}{item.extraAdv > 0 ? ` + Extra: ${formatCurrencyINR(item.extraAdv)}` : ''}):
+                      </span>
+                      <span style={{ color: '#DC2626', fontWeight: 700, fontSize: 13 }}>
+                        - {formatCurrencyINR(item.advSum)}
+                      </span>
+                    </div>
+                  )}
+
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
+                    <span style={{ fontWeight: 700, color: isDark ? '#F8FAFC' : '#0F172A' }}>Consignment Total Payable:</span>
+                    <span style={{ fontWeight: 800, fontSize: 14.5, color: '#16A34A' }}>{formatCurrencyINR(item.net)}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 3. Consolidated Grand Total Summary Card */}
+          <div
+            style={{
+              marginTop: 18,
+              padding: 16,
+              borderRadius: 6,
+              backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
+              border: isDark ? '1.5px solid #3B82F6' : '1.5px solid #2563EB',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+              <span>Total Freight Charges:</span>
+              <span style={{ fontWeight: 600 }}>{formatCurrencyINR(modalCalculations.freightTotal)}</span>
+            </div>
+            {modalCalculations.haltingTotal > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                <span>Total Halting Charges:</span>
+                <span style={{ fontWeight: 600 }}>{formatCurrencyINR(modalCalculations.haltingTotal)}</span>
+              </div>
+            )}
+            {modalCalculations.otherTotal > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                <span>Total Other Charges:</span>
+                <span style={{ fontWeight: 600 }}>{formatCurrencyINR(modalCalculations.otherTotal)}</span>
+              </div>
+            )}
+            {modalCalculations.customTotal > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                <span>Total Custom Charges:</span>
+                <span style={{ fontWeight: 600 }}>{formatCurrencyINR(modalCalculations.customTotal)}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13, borderTop: isDark ? '1px dashed #475569' : '1px dashed #CBD5E1', paddingTop: 6 }}>
+              <span style={{ fontWeight: 600 }}>Gross Total:</span>
+              <span style={{ fontWeight: 700 }}>{formatCurrencyINR(modalCalculations.grossTotal)}</span>
+            </div>
+            {modalCalculations.totalAdvance > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13.5, color: '#DC2626' }}>
+                <span style={{ fontWeight: 600 }}>Less: Total Advance Paid (Deductions):</span>
+                <span style={{ fontWeight: 700 }}>- {formatCurrencyINR(modalCalculations.totalAdvance)}</span>
+              </div>
+            )}
+            <Divider style={{ margin: '8px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{ fontSize: 15, fontWeight: 700, display: 'block', color: isDark ? '#F8FAFC' : '#0F172A' }}>
+                  Total Bill Amount:
+                </span>
+                <span style={{ fontSize: 11.5, color: '#64748B' }}>(Gross Charges minus Advance)</span>
+              </div>
+              <span style={{ fontSize: 24, fontWeight: 800, color: '#16A34A' }}>
+                {formatCurrencyINR(modalCalculations.netTotal)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

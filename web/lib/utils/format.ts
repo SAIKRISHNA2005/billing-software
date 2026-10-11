@@ -40,7 +40,7 @@ export function formatDate(date: string | number | Date | null | undefined): str
     }
   }
   const parsed = dayjs(date).tz(TIMEZONE);
-  if (!parsed.isValid()) return typeof date === 'string' ? date : '-';
+  if (!parsed.isValid()) return '-';
   return parsed.format('DD-MM-YYYY');
 }
 

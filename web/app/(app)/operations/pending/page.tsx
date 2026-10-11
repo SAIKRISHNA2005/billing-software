@@ -140,7 +140,14 @@ export default function PendingJobsPage() {
 
       const res = await apiClient.get<any>(`/operations/pending?${query.toString()}`);
       if (res.data?.success && res.data?.data) {
-        setData(res.data.data.items || []);
+        const rawItems = res.data.data.items || [];
+        const sorted = [...rawItems].sort((a: any, b: any) => {
+          const numA = parseInt(String(a.enquiryNumber || a.id || '').replace(/\D/g, ''), 10) || 0;
+          const numB = parseInt(String(b.enquiryNumber || b.id || '').replace(/\D/g, ''), 10) || 0;
+          if (numA !== numB) return sortOrder === 'asc' ? numA - numB : numB - numA;
+          return 0;
+        });
+        setData(sorted);
         setTotal(res.data.data.total || 0);
       } else {
         message.error(res.data?.message || 'Failed to load pending jobs');

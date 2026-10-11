@@ -16,6 +16,8 @@ export async function GET(req: NextRequest) {
       clientId: searchParams.get('clientId') || '',
       financialYear: searchParams.get('financialYear') || '',
       search: searchParams.get('search') || '',
+      dateFrom: searchParams.get('dateFrom') || '',
+      dateTo: searchParams.get('dateTo') || '',
       page: searchParams.get('page') || '1',
       limit: searchParams.get('limit') || '20'
     };

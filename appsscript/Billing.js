@@ -53,26 +53,69 @@ var BillingModule = (function () {
           (e.containerNo || '').toLowerCase().indexOf(q) !== -1
         );
       });
+    // Apply date range filters
+    if (params.dateFrom) {
+      pending = pending.filter(function (e) {
+        var dStr = String(e.date || e.createdAt || '').trim();
+        var m = dStr.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+        var ymd = m ? (m[3] + '-' + (m[2].length === 1 ? '0' + m[2] : m[2]) + '-' + (m[1].length === 1 ? '0' + m[1] : m[1])) : dStr.split('T')[0];
+        return ymd >= String(params.dateFrom).split('T')[0];
+      });
+    }
+    if (params.dateTo) {
+      pending = pending.filter(function (e) {
+        var dStr = String(e.date || e.createdAt || '').trim();
+        var m = dStr.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+        var ymd = m ? (m[3] + '-' + (m[2].length === 1 ? '0' + m[2] : m[2]) + '-' + (m[1].length === 1 ? '0' + m[1] : m[1])) : dStr.split('T')[0];
+        return ymd <= String(params.dateTo).split('T')[0];
+      });
     }
 
     // Format output items with suggested amount
     var items = pending.map(function (e) {
       var freight = parseFloat(e.freightAmount) || 0;
       var halting = parseFloat(e.haltingAmount) || 0;
-      var suggestedAmount = freight + halting;
+      var otherCharges = parseFloat(e.otherCharges) || 0;
+      var advanceAmount = parseFloat(e.advanceAmount) || 0;
+      var extraAdvance = parseFloat(e.extraAdvance) || 0;
+      var totalAdvance = advanceAmount + extraAdvance;
+
+      var customCharges = [];
+      try {
+        if (typeof e.customCharges === 'string' && e.customCharges.trim().indexOf('[') === 0) {
+          customCharges = JSON.parse(e.customCharges);
+        } else if (Array.isArray(e.customCharges)) {
+          customCharges = e.customCharges;
+        }
+      } catch (err) {
+        customCharges = [];
+      }
+      var customTotal = 0;
+      if (Array.isArray(customCharges)) {
+        customCharges.forEach(function (cc) {
+          customTotal += parseFloat(cc.amount || cc.chargeAmount || 0) || 0;
+        });
+      }
+
+      var suggestedAmount = Math.max(0, freight + halting + otherCharges + customTotal - totalAdvance);
 
       return {
         enquiryId: e.id,
-        transactionNo: e.transactionNo || '',
+        transactionNo: e.transactionNo || e.transactionNumber || '',
         companyId: e.companyId || '',
         companyName: companyMap[e.companyId] || e.companyId || '',
         clientId: e.clientId || '',
         clientName: clientMap[e.clientId] || e.clientId || '',
-        vehicleNo: e.vehicleNo || '',
-        containerNo: e.containerNo || '',
+        vehicleNo: e.vehicleNo || e.vehicleNumber || e.vehicleId || '',
+        containerNo: e.containerNo || e.containerNumber || e.containerId || '',
         loadingType: e.loadingType || 'Import',
         freightAmount: freight,
         haltingAmount: halting,
+        otherCharges: otherCharges,
+        advanceAmount: advanceAmount,
+        extraAdvance: extraAdvance,
+        totalAdvance: totalAdvance,
+        customCharges: customCharges,
         suggestedAmount: suggestedAmount,
         weight: e.weight || '-',
         haltingDays: parseInt(e.haltingDays, 10) || 0,
@@ -81,6 +124,16 @@ var BillingModule = (function () {
         enquiryNumber: e.enquiryNumber || e.id || '',
         completedAt: e.completedAt || e.updatedAt || e.createdAt
       };
+    });
+
+    // Sort items by creation date / enquiry number descending (newest first)
+    items.sort(function (a, b) {
+      var numA = parseInt(String(a.enquiryNumber || a.enquiryId || '').replace(/\D/g, ''), 10) || 0;
+      var numB = parseInt(String(b.enquiryNumber || b.enquiryId || '').replace(/\D/g, ''), 10) || 0;
+      if (numA !== numB) return numB - numA;
+      var timeA = new Date(a.createdAt || a.completedAt || a.date || 0).getTime();
+      var timeB = new Date(b.createdAt || b.completedAt || b.date || 0).getTime();
+      return timeB - timeA;
     });
 
     return {
@@ -129,17 +182,61 @@ var BillingModule = (function () {
       targetEnquiries.forEach(function (e) {
         var freight = parseFloat(e.freightAmount) || 0;
         var halting = parseFloat(e.haltingAmount) || 0;
+        var otherCharges = parseFloat(e.otherCharges) || 0;
+        var enqLabel = e.enquiryNumber || e.id;
 
-        lineItems.push({
-          description: 'Transportation Charges (Enquiry ' + e.id + ')',
-          amount: freight,
-          enquiryId: e.id
-        });
+        if (freight > 0) {
+          lineItems.push({
+            description: 'Transportation Charges (Enquiry ' + enqLabel + ')',
+            amount: freight,
+            enquiryId: e.id
+          });
+        }
 
         if (halting > 0) {
+          var haltingDays = parseInt(e.haltingDays, 10) || 0;
+          var haltingDesc = haltingDays > 0 ? ('Halting Charges (' + haltingDays + ' Days) (Enquiry ' + enqLabel + ')') : ('Halting Charges (Enquiry ' + enqLabel + ')');
           lineItems.push({
-            description: 'Halting Charges (Enquiry ' + e.id + ')',
+            description: haltingDesc,
             amount: halting,
+            enquiryId: e.id
+          });
+        }
+
+        if (otherCharges > 0) {
+          lineItems.push({
+            description: 'Other Charges (Enquiry ' + enqLabel + ')',
+            amount: otherCharges,
+            enquiryId: e.id
+          });
+        }
+
+        // Add custom charges from enquiry
+        var customList = [];
+        if (Array.isArray(e.customCharges)) {
+          customList = e.customCharges;
+        } else if (typeof e.customCharges === 'string' && e.customCharges.trim().indexOf('[') === 0) {
+          try { customList = JSON.parse(e.customCharges); } catch (err) {}
+        }
+        if (Array.isArray(customList)) {
+          customList.forEach(function (cc) {
+            var ccAmt = parseFloat(cc.amount || cc.chargeAmount) || 0;
+            if (ccAmt > 0) {
+              lineItems.push({
+                description: (cc.name || 'Custom Charge') + ' (Enquiry ' + enqLabel + ')',
+                amount: ccAmt,
+                enquiryId: e.id
+              });
+            }
+          });
+        }
+
+        // Deduct advance and extra advance
+        var advance = (parseFloat(e.advanceAmount) || 0) + (parseFloat(e.extraAdvance) || 0);
+        if (advance > 0) {
+          lineItems.push({
+            description: 'Less: Advance Received (Enquiry ' + enqLabel + ')',
+            amount: -advance,
             enquiryId: e.id
           });
         }
@@ -488,10 +585,31 @@ var BillingModule = (function () {
         );
       });
     }
+    if (params.dateFrom) {
+      bills = bills.filter(function (b) {
+        var dStr = String(b.billingDate || b.createdAt || '').trim();
+        var m = dStr.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+        var ymd = m ? (m[3] + '-' + (m[2].length === 1 ? '0' + m[2] : m[2]) + '-' + (m[1].length === 1 ? '0' + m[1] : m[1])) : dStr.split('T')[0];
+        return ymd >= String(params.dateFrom).split('T')[0];
+      });
+    }
+    if (params.dateTo) {
+      bills = bills.filter(function (b) {
+        var dStr = String(b.billingDate || b.createdAt || '').trim();
+        var m = dStr.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+        var ymd = m ? (m[3] + '-' + (m[2].length === 1 ? '0' + m[2] : m[2]) + '-' + (m[1].length === 1 ? '0' + m[1] : m[1])) : dStr.split('T')[0];
+        return ymd <= String(params.dateTo).split('T')[0];
+      });
+    }
 
-    // Sort newest first
+    // Sort newest first by sequence number and timestamp
     bills.sort(function (a, b) {
-      return (b.createdAt || '').localeCompare(a.createdAt || '');
+      var seqA = parseInt(a.billSeq, 10) || 0;
+      var seqB = parseInt(b.billSeq, 10) || 0;
+      if (seqA !== seqB) return seqB - seqA;
+      var timeA = new Date(a.createdAt || a.billingDate || 0).getTime();
+      var timeB = new Date(b.createdAt || b.billingDate || 0).getTime();
+      return timeB - timeA;
     });
 
     // Aggregate totals

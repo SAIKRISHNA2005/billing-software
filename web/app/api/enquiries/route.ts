@@ -71,24 +71,61 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    if (!body.stage) {
+      body.stage = 'COMPLETED';
+    }
+    if (!body.movementStatus) {
+      body.movementStatus = 'MOVED';
+    }
+    if (!body.shippingStatus) {
+      body.shippingStatus = 'COMPLETED';
+    }
+    if (body.containers && Array.isArray(body.containers)) {
+      const { embedContainersInComments } = await import('@/lib/utils/enquiryContainers');
+      body.comments = embedContainersInComments(body.comments, body.containers);
+    }
     const result = (await callAppsScript('enquiry.create', body, sessionToken)) as any;
-    if (result.success) {
-      if (result.data) {
-        const enquiryData = result.data.enquiry || result.data;
-        const movementData = result.data.movement || {};
-        const mergedEnquiry = {
-          ...body,
-          ...enquiryData,
-          id: enquiryData.id || result.data.id,
-          enquiryNumber: enquiryData.enquiryNumber || result.data.enquiryNumber,
-          transactionNumber: enquiryData.transactionNumber || result.data.transactionNumber,
-          movement: { ...(body.movement || {}), ...movementData },
-        };
-        const { syncEnquiryToReports } = await import('@/lib/server/reportSyncService');
-        syncEnquiryToReports(mergedEnquiry, undefined, sessionToken).catch((err) =>
-          console.error('[LiveSync] Enquiry create sync failed:', err)
-        );
+    if (result.success && result.data) {
+      const enquiryData = result.data.enquiry || result.data;
+      const enquiryId = enquiryData.id || result.data.id;
+
+      // Guarantee the enquiry row is strictly set to COMPLETED in the Google Sheet and response
+      if (enquiryId && enquiryData.stage !== 'COMPLETED') {
+        try {
+          await callAppsScript(
+            'enquiry.update',
+            {
+              id: enquiryId,
+              patch: {
+                stage: 'COMPLETED',
+                completedAt: new Date().toISOString(),
+                movementStatus: 'MOVED',
+                shippingStatus: 'COMPLETED',
+              },
+            },
+            sessionToken
+          );
+        } catch (err) {
+          console.error('[EnquiryCreate] Auto-update to COMPLETED failed:', err);
+        }
       }
+      enquiryData.stage = 'COMPLETED';
+      enquiryData.completedAt = enquiryData.completedAt || new Date().toISOString();
+
+      const movementData = result.data.movement || {};
+      const mergedEnquiry = {
+        ...body,
+        ...enquiryData,
+        id: enquiryId,
+        stage: 'COMPLETED',
+        enquiryNumber: enquiryData.enquiryNumber || result.data.enquiryNumber,
+        transactionNumber: enquiryData.transactionNumber || result.data.transactionNumber,
+        movement: { ...(body.movement || {}), ...movementData },
+      };
+      const { syncEnquiryToReports } = await import('@/lib/server/reportSyncService');
+      syncEnquiryToReports(mergedEnquiry, undefined, sessionToken).catch((err) =>
+        console.error('[LiveSync] Enquiry create sync failed:', err)
+      );
     }
 
     return NextResponse.json(result, { status: result.success ? 201 : 400 });

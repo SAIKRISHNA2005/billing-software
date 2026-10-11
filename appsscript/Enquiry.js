@@ -314,7 +314,7 @@ const EnquiryModule = {
       driverId: driverObj ? driverObj.id : '',
       containerId: containerObj ? containerObj.id : '',
       sealNumber: data.sealNumber || '',
-      stage: 'ENQUIRY_CREATED',
+      stage: data.stage || 'COMPLETED',
       vendorId: data.vendorId || (vehicleObj && vehicleObj.vendorId ? vehicleObj.vendorId : ''),
       freightAmount: parseFloat(data.freightAmount) || 0,
       dieselAmount: parseFloat(data.dieselAmount) || 0,
@@ -330,7 +330,10 @@ const EnquiryModule = {
       weight: data.weight || '',
       clientAddress: data.clientAddress || '',
       comments: data.comments || '',
+      containers: Array.isArray(data.containers) ? JSON.stringify(data.containers) : (data.containers || ''),
       otherCharges: parseFloat(data.otherCharges) || 0,
+      customCharges: Array.isArray(data.customCharges) ? JSON.stringify(data.customCharges) : (data.customCharges || ''),
+      numCustomCharges: Array.isArray(data.customCharges) ? data.customCharges.length : (parseInt(data.numCustomCharges, 10) || 0),
       shipmentDate: data.shipmentDate || '',
       containerFrom: data.containerFrom || '',
       containerTo: data.containerTo || '',
@@ -339,7 +342,7 @@ const EnquiryModule = {
       truckCount20: parseInt(data.truckCount20, 10) || 0,
       truckCount40: parseInt(data.truckCount40, 10) || 0,
       billId: '',
-      completedAt: '',
+      completedAt: new Date().toISOString(),
       active: true,
     };
 
@@ -362,8 +365,8 @@ const EnquiryModule = {
         printOutTime: data.printOutTime || '',
         portInTime: data.portInTime || '',
         portOutTime: data.portOutTime || '',
-        movementStatus: data.movementStatus || 'NOT_MOVED',
-        shippingStatus: data.shippingStatus || 'PENDING',
+        movementStatus: data.movementStatus || 'MOVED',
+        shippingStatus: data.shippingStatus || 'COMPLETED',
       };
       insertedMovement = SheetRepo.insertRow('movements', movementRecord, session.userId);
     } catch (err) {
@@ -389,9 +392,9 @@ const EnquiryModule = {
       id: 'STG-' + Utilities.getUuid().slice(0, 8).toUpperCase(),
       enquiryId: enquiryId,
       fromStage: '',
-      toStage: 'ENQUIRY_CREATED',
+      toStage: enquiryRecord.stage || 'COMPLETED',
       direction: 'FORWARD',
-      remarks: 'Initial enquiry creation',
+      remarks: 'Initial enquiry creation - ' + (enquiryRecord.stage === 'COMPLETED' ? 'Port operations finished' : enquiryRecord.stage),
       timestamp: now.toISOString(),
     }, session.userId);
 
@@ -510,8 +513,12 @@ const EnquiryModule = {
       let valA = a[sortField] !== undefined ? a[sortField] : '';
       let valB = b[sortField] !== undefined ? b[sortField] : '';
 
-      if (sortField === 'enquiryNumber') {
-        return (parseInt(valA, 10) - parseInt(valB, 10)) * sortOrder;
+      if (sortField === 'enquiryNumber' || sortField === 'id') {
+        const numA = parseInt(String(valA).replace(/\D/g, ''), 10) || 0;
+        const numB = parseInt(String(valB).replace(/\D/g, ''), 10) || 0;
+        if (numA !== numB) {
+          return (numA - numB) * sortOrder;
+        }
       }
       if (typeof valA === 'string') {
         return valA.localeCompare(String(valB)) * sortOrder;
@@ -523,8 +530,15 @@ const EnquiryModule = {
     const startIndex = (page - 1) * limit;
     const pageItems = filtered.slice(startIndex, startIndex + limit).map((e) => {
       const mov = movMap.get(e.id) || null;
+      let parsedCustomCharges = [];
+      if (Array.isArray(e.customCharges)) {
+        parsedCustomCharges = e.customCharges;
+      } else if (typeof e.customCharges === 'string' && e.customCharges.trim().startsWith('[')) {
+        try { parsedCustomCharges = JSON.parse(e.customCharges); } catch (err) {}
+      }
       return {
         ...e,
+        customCharges: parsedCustomCharges,
         movement: mov,
         companyName: cmpMap.get(e.companyId) || e.companyId,
         clientName: cliMap.get(e.clientId) || e.clientId,
@@ -602,8 +616,30 @@ const EnquiryModule = {
     const driver = enquiry.driverId ? SheetRepo.getRowById('drivers', enquiry.driverId) : null;
     const container = enquiry.containerId ? SheetRepo.getRowById('containers', enquiry.containerId) : null;
 
+    let parsedCustomCharges = [];
+    if (Array.isArray(enquiry.customCharges)) {
+      parsedCustomCharges = enquiry.customCharges;
+    } else if (typeof enquiry.customCharges === 'string' && enquiry.customCharges.trim().startsWith('[')) {
+      try { parsedCustomCharges = JSON.parse(enquiry.customCharges); } catch (err) {}
+    let parsedContainers = [];
+    if (Array.isArray(enquiry.containers)) {
+      parsedContainers = enquiry.containers;
+    } else if (typeof enquiry.containers === 'string' && enquiry.containers.trim().startsWith('[')) {
+      try { parsedContainers = JSON.parse(enquiry.containers); } catch (err) {}
+    } else if (typeof enquiry.comments === 'string') {
+      const match = enquiry.comments.match(/<!--CONTAINERS:([\s\S]*?)-->/) ||
+                    enquiry.comments.match(/\[CONTAINERS\]:\s*(\[[\s\S]*?\])/);
+      if (match && match[1]) {
+        try { parsedContainers = JSON.parse(match[1]); } catch (err) {}
+      }
+    }
+    const resolvedEnquiry = Object.assign({}, enquiry, {
+      customCharges: parsedCustomCharges,
+      containers: parsedContainers,
+    });
+
     return {
-      enquiry,
+      enquiry: resolvedEnquiry,
       movement,
       stageHistory,
       vendorFinance: computeVendorPayable(enquiry),
@@ -632,6 +668,15 @@ const EnquiryModule = {
     delete patch.enquiryNumber;
     delete patch.transactionNumber;
     delete patch.createdAt;
+
+    if (patch.customCharges !== undefined) {
+      patch.customCharges = Array.isArray(patch.customCharges) ? JSON.stringify(patch.customCharges) : (patch.customCharges || '');
+      patch.numCustomCharges = Array.isArray(patch.customCharges) ? patch.customCharges.length : (parseInt(patch.numCustomCharges, 10) || 0);
+    }
+
+    if (patch.containers !== undefined) {
+      patch.containers = Array.isArray(patch.containers) ? JSON.stringify(patch.containers) : (patch.containers || '');
+    }
 
     // Resolve assets if changed
     if (patch.vehicleNumber) {

@@ -17,7 +17,9 @@ import {
   Col,
   Statistic,
   message,
+  Badge,
 } from 'antd';
+import { extractContainersFromEnquiry } from '@/lib/utils/enquiryContainers';
 import {
   ArrowLeftOutlined,
   EditOutlined,
@@ -103,7 +105,7 @@ export default function EnquiryDetailPage({ params }: PageProps) {
   }
 
   const { enquiry, movement, stageHistory, vendorFinance, company, client, vendor, vehicle, driver, container } = data;
-  const stage = enquiry.stage || 'ENQUIRY_CREATED';
+  const stage = enquiry.stage || 'COMPLETED';
   const isBilled = enquiry.billId || stage === 'BILLING' || stage === 'PROCESSED';
 
   // Tab items definition
@@ -170,40 +172,123 @@ export default function EnquiryDetailPage({ params }: PageProps) {
           <CarOutlined /> Vehicle &amp; Driver
         </span>
       ),
-      children: (
-        <Card bordered={false}>
-          <Descriptions bordered column={{ xs: 1, sm: 2, md: 2 }}>
-            <Descriptions.Item label="Vehicle Number">
-              <Text strong style={{ fontSize: 15 }}>
-                {vehicle?.vehicleNumber || enquiry.vehicleNumber || '-'}
-              </Text>
-            </Descriptions.Item>
+      children: (() => {
+        const enquiryContainers = extractContainersFromEnquiry(enquiry);
+        if (enquiryContainers.length > 1) {
+          return (
+            <Card bordered={false}>
+              <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+                <Tag color="blue" style={{ fontSize: 13, padding: '4px 10px' }}>
+                  Total Containers Configured: {enquiryContainers.length}
+                </Tag>
+                {enquiry.containerSize && (
+                  <Tag color="cyan" style={{ fontSize: 13, padding: '4px 10px' }}>
+                    Container Size: {enquiry.containerSize}
+                  </Tag>
+                )}
+              </div>
+              {enquiryContainers.map((c, idx) => (
+                <Card
+                  key={`con-card-${idx}`}
+                  type="inner"
+                  title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Space>
+                        <Badge count={idx + 1} style={{ backgroundColor: idx === 0 ? '#17324D' : '#2563EB' }} />
+                        <span style={{ fontWeight: 600, fontSize: 14 }}>
+                          Container {idx + 1} {idx === 0 ? '(Primary Job Record)' : ''}
+                        </span>
+                      </Space>
+                      {idx === 0 && <Tag color="blue">Primary</Tag>}
+                    </div>
+                  }
+                  style={{ marginBottom: 16, borderColor: '#D4DAD9', backgroundColor: '#fafafa', borderRadius: 6 }}
+                >
+                  <Descriptions bordered column={{ xs: 1, sm: 2, md: 2 }} size="small">
+                    <Descriptions.Item label="Container Number">
+                      <Text strong style={{ fontFamily: 'monospace', fontSize: 14, color: '#17324D' }}>
+                        {c.containerNumber || (idx === 0 ? (container?.containerNumber || enquiry.containerNumber) : '-') || '-'}
+                      </Text>
+                      {idx === 0 && container?.containerType && (
+                        <span style={{ marginLeft: 8, color: '#666', fontSize: 12 }}>
+                          ({container.containerType})
+                        </span>
+                      )}
+                    </Descriptions.Item>
 
-            <Descriptions.Item label="Driver Information">
-              {driver ? (
-                <div>
-                  <Text strong>{driver.name}</Text>
-                  <div>Phone: {driver.phone}</div>
-                  {driver.licenseNumber && <div>License: {driver.licenseNumber}</div>}
-                </div>
-              ) : (
-                enquiry.driverPhone || '-'
-              )}
-            </Descriptions.Item>
+                    <Descriptions.Item label="Seal Number">
+                      <Text style={{ fontFamily: 'monospace' }}>
+                        {c.sealNumber || (idx === 0 ? enquiry.sealNumber : '-') || '-'}
+                      </Text>
+                    </Descriptions.Item>
 
-            <Descriptions.Item label="Container Number">
-              <Text strong>{container?.containerNumber || enquiry.containerNumber || '-'}</Text>
-              {container?.containerType && (
-                <span style={{ marginLeft: 8, color: '#666', fontSize: 12 }}>
-                  ({container.containerType})
-                </span>
-              )}
-            </Descriptions.Item>
+                    <Descriptions.Item label="Vehicle Number">
+                      <Text strong style={{ fontFamily: 'monospace', fontSize: 14, color: '#1E2933' }}>
+                        {c.vehicleNumber || (idx === 0 ? (vehicle?.vehicleNumber || enquiry.vehicleNumber) : '-') || '-'}
+                      </Text>
+                    </Descriptions.Item>
 
-            <Descriptions.Item label="Seal Number">{enquiry.sealNumber || '-'}</Descriptions.Item>
-          </Descriptions>
-        </Card>
-      ),
+                    <Descriptions.Item label="Driver Information">
+                      <div>
+                        <Text strong>
+                          {c.driverName || (idx === 0 && driver ? driver.name : (idx === 0 ? enquiry.driverName : '-')) || '-'}
+                        </Text>
+                        {(c.driverPhone || (idx === 0 && (driver?.phone || enquiry.driverPhone))) && (
+                          <div>
+                            Phone: {c.driverPhone || (idx === 0 ? (driver?.phone || enquiry.driverPhone) : '')}
+                          </div>
+                        )}
+                        {idx === 0 && driver?.licenseNumber && (
+                          <div style={{ color: '#888', fontSize: 12 }}>License: {driver.licenseNumber}</div>
+                        )}
+                      </div>
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Card>
+              ))}
+            </Card>
+          );
+        }
+
+        return (
+          <Card bordered={false}>
+            <Descriptions bordered column={{ xs: 1, sm: 2, md: 2 }}>
+              <Descriptions.Item label="Vehicle Number">
+                <Text strong style={{ fontSize: 15, fontFamily: 'monospace' }}>
+                  {vehicle?.vehicleNumber || enquiry.vehicleNumber || '-'}
+                </Text>
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Driver Information">
+                {driver ? (
+                  <div>
+                    <Text strong>{driver.name}</Text>
+                    <div>Phone: {driver.phone}</div>
+                    {driver.licenseNumber && <div>License: {driver.licenseNumber}</div>}
+                  </div>
+                ) : (
+                  enquiry.driverPhone || enquiry.driverName || '-'
+                )}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Container Number">
+                <Text strong style={{ fontFamily: 'monospace' }}>
+                  {container?.containerNumber || enquiry.containerNumber || '-'}
+                </Text>
+                {container?.containerType && (
+                  <span style={{ marginLeft: 8, color: '#666', fontSize: 12 }}>
+                    ({container.containerType})
+                  </span>
+                )}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Seal Number">
+                <Text style={{ fontFamily: 'monospace' }}>{enquiry.sealNumber || '-'}</Text>
+              </Descriptions.Item>
+            </Descriptions>
+          </Card>
+        );
+      })(),
     },
     {
       key: 'movement',

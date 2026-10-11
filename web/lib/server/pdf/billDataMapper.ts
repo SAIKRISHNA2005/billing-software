@@ -3,6 +3,7 @@ import path from 'path';
 import { callAppsScript } from '@/lib/server/appsScriptClient';
 import { numberToWordsINR } from '@/lib/utils/pdfHelper';
 import { BillData, BillChargeItem } from './types';
+import { extractContainersFromEnquiry } from '@/lib/utils/enquiryContainers';
 
 interface RawBillItem {
   enquiryId?: string;
@@ -129,6 +130,22 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
         );
       }
     } catch {}
+
+    // Fallback: If any enquiryId was missing from enquiry.list, fetch via enquiry.get
+    if (linkedEnquiries.length < enquiryIds.length) {
+      const existingIds = new Set(linkedEnquiries.map((e) => e.id));
+      for (const eId of enquiryIds) {
+        if (!existingIds.has(eId)) {
+          try {
+            const single = await callAppsScript<any>('enquiry.get', { id: eId }, sessionToken);
+            if (single.success && single.data) {
+              const eObj = single.data.enquiry || single.data;
+              linkedEnquiries.push(eObj);
+            }
+          } catch {}
+        }
+      }
+    }
   }
 
   // 3. Resolve Client Details (Ensure address, GSTIN, and PAN are populated)
@@ -203,6 +220,13 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
     // Container numbers
     const cNo = e.containerNo || e.containerNumber || (e.containerId ? containerMap.get(e.containerId) : undefined);
     if (cNo && cNo !== '-') containerNumbersSet.add(cNo.trim());
+
+    // Also collect all extra containers from enquiry
+    const cList = extractContainersFromEnquiry(e);
+    cList.forEach((rc) => {
+      if (rc.vehicleNumber && rc.vehicleNumber !== '-') truckNumbersSet.add(rc.vehicleNumber.trim());
+      if (rc.containerNumber && rc.containerNumber !== '-') containerNumbersSet.add(rc.containerNumber.trim());
+    });
 
     // 20 FT vs 40 FT counts
     const count20 = Number(e.truckCount20) || 0;
@@ -288,11 +312,11 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
 
       // Map truck number and container number pairs
       const pairs: { truck: string; container: string }[] = [];
-      const rawContainers = Array.isArray((e as any).containers) ? (e as any).containers : [];
+      const rawContainers = extractContainersFromEnquiry(e);
       if (rawContainers.length > 0) {
-        rawContainers.forEach((rc: any) => {
-          const t = rc.vehicleNumber || rc.vehicleNo || vNum || '-';
-          const c = rc.containerNumber || rc.containerNo || cNum || '-';
+        rawContainers.forEach((rc) => {
+          const t = rc.vehicleNumber || vNum || '-';
+          const c = rc.containerNumber || cNum || '-';
           pairs.push({ truck: t, container: c });
         });
       } else {
@@ -339,8 +363,70 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
       }
 
       const otherAmt = Number(e.otherCharges) || 0;
-      const advAmt = Number(e.advanceAmount) || 0;
-      const rowTotal = freightAmt + otherAmt + haltingAmt;
+      const advAmt = (Number(e.advanceAmount) || 0) + (Number((e as any).extraAdvance) || 0);
+
+      // Map dynamic custom charges (e.g. Toll, Weighment, Escort)
+      let rowCustomCharges: { name: string; amount: number }[] = [];
+      const rawCustom = (e as any).customCharges;
+      if (Array.isArray(rawCustom)) {
+        rowCustomCharges = rawCustom.map((cc) => ({
+          name: String(cc.name || cc.chargeName || 'Custom Charge').trim(),
+          amount: Number(cc.amount || cc.chargeAmount) || 0,
+        }));
+      } else if (typeof rawCustom === 'string' && rawCustom.trim()) {
+        try {
+          const parsed = JSON.parse(rawCustom);
+          if (Array.isArray(parsed)) {
+            rowCustomCharges = parsed.map((cc) => ({
+              name: String(cc.name || cc.chargeName || 'Custom Charge').trim(),
+              amount: Number(cc.amount || cc.chargeAmount) || 0,
+            }));
+          }
+        } catch {}
+      }
+
+      // Also extract custom charges from bill's rawItems for this enquiry
+      rawItems.forEach((it) => {
+        const itEnqId = it.enquiryId || (it as any).enquiryNumber;
+        const matchesEnq = !itEnqId || itEnqId === e.id || itEnqId === e.enquiryNumber;
+        if (matchesEnq && it.description && (Number(it.amount) || 0) > 0) {
+          const desc = it.description.trim();
+          const descLower = desc.toLowerCase();
+          const isFreight = descLower.includes('transportation charges') || descLower.includes('freight charges');
+          const isHalting = descLower.includes('halting charges');
+          const isAdv = descLower.includes('advance');
+          const isStandardOther = descLower.startsWith('other charges');
+
+          if (!isFreight && !isHalting && !isAdv && !isStandardOther) {
+            const cleanName = desc.replace(/\s*-\s*enquiry\s*#.*$/i, '').replace(/\s*-\s*enq.*$/i, '').trim();
+            if (cleanName) {
+              const amt = Number(it.amount) || 0;
+              const existingIdx = rowCustomCharges.findIndex(
+                (cc) => cc.name.trim().toLowerCase() === cleanName.toLowerCase()
+              );
+              if (existingIdx === -1) {
+                rowCustomCharges.push({ name: cleanName, amount: amt });
+              } else if (rowCustomCharges[existingIdx].amount === 0) {
+                rowCustomCharges[existingIdx].amount = amt;
+              }
+            }
+          }
+        }
+      });
+
+      // Filter only positive custom charges with valid names
+      rowCustomCharges = rowCustomCharges.filter(
+        (cc) => cc.name && cc.name.trim() && (Number(cc.amount) || 0) > 0
+      );
+
+      let rowCustomTotal = 0;
+      rowCustomCharges.forEach((cc) => {
+        rowCustomTotal += Number(cc.amount) || 0;
+      });
+
+      // Calculate row gross and deduct advance
+      const rowGross = freightAmt + otherAmt + haltingAmt + rowCustomTotal;
+      const rowNet = Math.max(0, rowGross - advAmt);
 
       charges.push({
         sNo: currentSNo++,
@@ -352,15 +438,16 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
         haltingFormula,
         haltingCharges: haltingAmt > 0 ? haltingAmt : null,
         advance: advAmt > 0 ? advAmt : null,
+        customCharges: rowCustomCharges.length > 0 ? rowCustomCharges : undefined,
         rate: null,
-        amount: rowTotal > 0 ? rowTotal : freightAmt,
+        amount: rowNet,
       });
 
       freightTotal += freightAmt;
       otherChargesTotal += otherAmt;
       haltingTotal += haltingAmt;
       advanceTotal += advAmt;
-      grandTotal += rowTotal;
+      grandTotal += rowNet;
     });
 
     // Check for any standalone bill items that weren't tied to an enquiry
@@ -390,14 +477,16 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
       const desc = it.description || 'Freight Charges';
       const descLower = desc.toLowerCase();
       const isFreight = descLower.includes('freight') || descLower.includes('transport');
-      const isOther = descLower.includes('other') || descLower.includes('additional') || descLower.includes('toll');
       const isHalting = descLower.includes('halting');
       const isAdv = descLower.includes('advance');
+      const isCustom = !isFreight && !isHalting && !isAdv && !descLower.startsWith('other charges') && !descLower.startsWith('other');
+      const itemCustom = isCustom ? [{ name: desc, amount: amt }] : undefined;
+      const isOther = (descLower.includes('other') || descLower.includes('additional')) && !isCustom;
 
-      const itemFreight = (isFreight || (!isOther && !isHalting && !isAdv)) ? amt : null;
+      const itemFreight = (isFreight || (!isOther && !isHalting && !isAdv && !isCustom)) ? amt : null;
       const itemOther = isOther ? amt : null;
       const itemHalting = isHalting ? amt : null;
-      const itemAdv = isAdv ? amt : null;
+      const itemAdv = isAdv ? Math.abs(amt) : null;
 
       charges.push({
         sNo: currentSNo++,
@@ -406,6 +495,7 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
         otherCharges: itemOther,
         haltingCharges: itemHalting,
         advance: itemAdv,
+        customCharges: itemCustom,
         rate: null,
         amount: amt,
       });
@@ -475,15 +565,12 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
     grandTotal = freightAmt;
   }
 
-  // Preserve official bill total if specified in production record
-  const officialTotal = Number(bill.totalAmount) || grandTotal;
-  if (grandTotal === 0 && officialTotal > 0) {
-    freightTotal = officialTotal;
-    grandTotal = officialTotal;
-  }
+  // 5. Grand total: ensure advance deduction is respected
+  const netGrandTotal = Math.max(0, grandTotal);
+  const finalGrandTotal = netGrandTotal > 0 ? netGrandTotal : (Number(bill.totalAmount) || 0);
 
   // 6. Number to words
-  const totalInWords = numberToWordsINR(officialTotal);
+  const totalInWords = numberToWordsINR(finalGrandTotal);
 
   return {
     id: bill.id,
@@ -533,7 +620,7 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
       otherChargesTotal,
       haltingTotal,
       advanceTotal,
-      grandTotal: officialTotal,
+      grandTotal: finalGrandTotal,
     },
 
     totalInWords,
@@ -541,7 +628,7 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
     assets: {
       headerImage: getAssetDataUri('header.png'),
       sealAndSignatureImage: getAssetDataUri('seal-and-signature.png'),
-      sealImage: getAssetDataUri('seal-and-signature.png') || getAssetDataUri('seal.png'),
+      sealImage: getAssetDataUri('seal.png') || getAssetDataUri('seal-and-signature.png'),
       signatureImage: getAssetDataUri('signature.png'),
     },
   };

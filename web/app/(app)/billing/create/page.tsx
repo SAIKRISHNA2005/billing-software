@@ -52,41 +52,152 @@ export default function CreateBillPage() {
           setItems(bill.items || []);
         }
       } else if (enquiryIdsStr) {
-        // Fetch enquiry details to build default line items & labels
-        const ids = enquiryIdsStr.split(',');
-        const pendRes = await axios.get('/api/billing/pending');
-        if (pendRes.data && pendRes.data.success) {
-          const pendingItems = pendRes.data.data.items || [];
-          const matched = pendingItems.filter((it: any) => ids.includes(it.enquiryId));
+        // Fetch full enquiry details for each selected ID to guarantee all charges and advances are loaded
+        const ids = enquiryIdsStr.split(',').filter(Boolean);
+        const fullEnquiries: any[] = [];
 
-          if (matched.length > 0) {
-            setCompanyName(matched[0].companyName);
-            setClientName(matched[0].clientName);
-          }
-
-          const defaultItems: any[] = [];
-          matched.forEach((e: any, index: number) => {
-            if (e.freightAmount > 0) {
-              defaultItems.push({
-                id: 'item-' + index + '-f',
-                description: `Transportation Charges (Enquiry ${e.enquiryId})`,
-                amount: e.freightAmount,
-                enquiryId: e.enquiryId
+        // 1. Fetch each enquiry via /api/enquiries/${id} to ensure 100% full detail (advanceAmount, extraAdvance, otherCharges, customCharges)
+        for (const id of ids) {
+          try {
+            const enqRes = await axios.get(`/api/enquiries/${id}`);
+            if (enqRes.data && enqRes.data.success && enqRes.data.data) {
+              const d = enqRes.data.data;
+              const e = d.enquiry || d;
+              fullEnquiries.push({
+                ...e,
+                enquiryId: e.id || id,
+                enquiryNumber: e.enquiryNumber || id,
+                companyId: e.companyId || d.company?.id,
+                companyName: d.company?.name || e.companyName || companyIdParam,
+                clientId: e.clientId || d.client?.id,
+                clientName: d.client?.name || e.clientName || clientIdParam,
+                vehicleNo: d.vehicle?.vehicleNumber || e.vehicleNumber || e.vehicleNo || '',
+                containerNo: d.container?.containerNumber || e.containerNumber || e.containerNo || '',
+                freightAmount: Number(e.freightAmount) || 0,
+                haltingAmount: Number(e.haltingAmount) || 0,
+                haltingDays: Number(e.haltingDays) || 0,
+                otherCharges: Number(e.otherCharges) || 0,
+                advanceAmount: Number(e.advanceAmount) || 0,
+                extraAdvance: Number(e.extraAdvance) || 0,
+                dieselAmount: Number(e.dieselAmount) || 0,
+                bonus: Number(e.bonus) || 0,
+                customCharges: e.customCharges || [],
               });
             }
-            if (e.haltingAmount > 0) {
+          } catch (eErr) {
+            console.warn(`Could not load enquiry ${id} directly:`, eErr);
+          }
+        }
+
+        // 2. If any enquiry was not loaded directly, fallback to /api/billing/pending
+        if (fullEnquiries.length < ids.length) {
+          try {
+            const pendRes = await axios.get('/api/billing/pending');
+            if (pendRes.data && pendRes.data.success) {
+              const pendingItems = pendRes.data.data.items || [];
+              const loadedIds = new Set(fullEnquiries.map((fe) => fe.enquiryId || fe.id));
+              const missing = pendingItems.filter((it: any) => ids.includes(it.enquiryId) && !loadedIds.has(it.enquiryId));
+              fullEnquiries.push(...missing);
+            }
+          } catch {}
+        }
+
+        if (fullEnquiries.length > 0) {
+          setCompanyName(fullEnquiries[0].companyName || companyIdParam);
+          setClientName(fullEnquiries[0].clientName || clientIdParam);
+        }
+
+        const defaultItems: any[] = [];
+        fullEnquiries.forEach((e: any, index: number) => {
+          const enqLabel = e.enquiryNumber || e.enquiryId || e.id;
+          const vehDesc = e.vehicleNo ? ` (Veh: ${e.vehicleNo})` : '';
+
+          // 1. Base Freight / Transportation Charges
+          if (Number(e.freightAmount) > 0) {
+            defaultItems.push({
+              id: 'item-' + index + '-f',
+              description: `Transportation Charges - Enquiry #${enqLabel}${vehDesc}`,
+              amount: Number(e.freightAmount),
+              enquiryId: e.enquiryId || e.id
+            });
+          }
+
+          // 2. Halting Charges (with days)
+          if (Number(e.haltingAmount) > 0) {
+            const hDays = Number(e.haltingDays) || 0;
+            const haltingDesc = hDays > 0
+              ? `Halting Charges (${hDays} Day${hDays > 1 ? 's' : ''}) - Enquiry #${enqLabel}`
+              : `Halting Charges - Enquiry #${enqLabel}`;
+            defaultItems.push({
+              id: 'item-' + index + '-h',
+              description: haltingDesc,
+              amount: Number(e.haltingAmount),
+              enquiryId: e.enquiryId || e.id
+            });
+          }
+
+          // 3. Other Charges
+          if (Number(e.otherCharges) > 0) {
+            defaultItems.push({
+              id: 'item-' + index + '-o',
+              description: `Other Charges - Enquiry #${enqLabel}`,
+              amount: Number(e.otherCharges),
+              enquiryId: e.enquiryId || e.id
+            });
+          }
+
+          // 4. Dynamic Custom Charges
+          let customList: any[] = [];
+          if (Array.isArray(e.customCharges)) {
+            customList = e.customCharges;
+          } else if (typeof e.customCharges === 'string' && e.customCharges.trim().startsWith('[')) {
+            try { customList = JSON.parse(e.customCharges); } catch {}
+          }
+          customList.forEach((cc: any, ccIdx: number) => {
+            const ccAmt = Number(cc.amount || cc.chargeAmount) || 0;
+            if (ccAmt > 0) {
               defaultItems.push({
-                id: 'item-' + index + '-h',
-                description: `Halting Charges (Enquiry ${e.enquiryId})`,
-                amount: e.haltingAmount,
-                enquiryId: e.enquiryId
+                id: 'item-' + index + '-c-' + ccIdx,
+                description: `${cc.name || 'Custom Charge'} - Enquiry #${enqLabel}`,
+                amount: ccAmt,
+                enquiryId: e.enquiryId || e.id
               });
             }
           });
 
-          setItems(defaultItems);
-          form.setFieldsValue({ billingDate: dayjs() });
+          // 5. Advance Cash Deduction
+          const advAmt = Number(e.advanceAmount) || 0;
+          if (advAmt > 0) {
+            defaultItems.push({
+              id: 'item-' + index + '-adv',
+              description: `Less: Advance Amount Paid - Enquiry #${enqLabel}`,
+              amount: -advAmt,
+              enquiryId: e.enquiryId || e.id
+            });
+          }
+
+          // 6. Extra Advance Deduction
+          const extraAdv = Number(e.extraAdvance) || 0;
+          if (extraAdv > 0) {
+            defaultItems.push({
+              id: 'item-' + index + '-extra-adv',
+              description: `Less: Extra Advance Paid - Enquiry #${enqLabel}`,
+              amount: -extraAdv,
+              enquiryId: e.enquiryId || e.id
+            });
+          }
+        });
+
+        if (defaultItems.length === 0) {
+          defaultItems.push({
+            id: 'item-0',
+            description: 'Transportation Charges',
+            amount: 0
+          });
         }
+
+        setItems(defaultItems);
+        form.setFieldsValue({ billingDate: dayjs() });
       }
     } catch (err: any) {
       message.error('Failed to load bill setup data');
@@ -201,22 +312,31 @@ export default function CreateBillPage() {
       dataIndex: 'description',
       key: 'description',
       render: (text: string, record: any) => (
-        <Input
-          value={text}
-          onChange={(e) => handleItemChange(record.id, 'description', e.target.value)}
-          placeholder="Item description"
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Input
+            value={text}
+            onChange={(e) => handleItemChange(record.id, 'description', e.target.value)}
+            placeholder="Item description"
+            style={{ flex: 1 }}
+          />
+          {Number(record.amount) < 0 && (
+            <Tag color="error" style={{ fontWeight: 600, flexShrink: 0 }}>Deduction</Tag>
+          )}
+        </div>
       )
     },
     {
       title: 'Amount (₹)',
       dataIndex: 'amount',
       key: 'amount',
-      width: 200,
+      width: 220,
       render: (val: number, record: any) => (
         <InputNumber
-          style={{ width: '100%' }}
-          min={0}
+          style={{
+            width: '100%',
+            color: Number(val) < 0 ? '#DC2626' : undefined,
+            fontWeight: Number(val) < 0 ? 700 : undefined
+          }}
           value={val}
           onChange={(v) => handleItemChange(record.id, 'amount', v || 0)}
         />
@@ -298,14 +418,32 @@ export default function CreateBillPage() {
             dataSource={items}
             rowKey="id"
             pagination={false}
-            footer={() => (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text strong style={{ fontSize: 14, color: '#34424C' }}>Total Invoice Amount:</Text>
-                <Title level={3} style={{ margin: 0, color: '#17324D', fontWeight: 700 }}>
-                  {formatCurrencyINR(totalAmount)}
-                </Title>
-              </div>
-            )}
+            footer={() => {
+              const gross = items.filter(it => (Number(it.amount) || 0) > 0).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+              const advDed = items.filter(it => (Number(it.amount) || 0) < 0).reduce((s, it) => s + Math.abs(Number(it.amount) || 0), 0);
+              const netTot = gross - advDed;
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text type="secondary" style={{ fontSize: 13 }}>Gross Charges Subtotal:</Text>
+                    <Text strong style={{ fontSize: 14 }}>{formatCurrencyINR(gross)}</Text>
+                  </div>
+                  {advDed > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 13, color: '#DC2626', fontWeight: 600 }}>Less: Advance Deductions:</Text>
+                      <Text style={{ fontSize: 14, color: '#DC2626', fontWeight: 700 }}>- {formatCurrencyINR(advDed)}</Text>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #E2E8F0', paddingTop: 8 }}>
+                    <Text strong style={{ fontSize: 15, color: '#1E2933' }}>Total Invoice Amount (Gross - Advance):</Text>
+                    <Title level={3} style={{ margin: 0, color: '#16A34A', fontWeight: 800 }}>
+                      {formatCurrencyINR(netTot)}
+                    </Title>
+                  </div>
+                </div>
+              );
+            }}
           />
         </Card>
 

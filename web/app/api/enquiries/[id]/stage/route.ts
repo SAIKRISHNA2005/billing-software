@@ -27,7 +27,20 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       remarks: body.remarks || '',
     };
 
-    const result = await callAppsScript('enquiry.moveStage', payload, sessionToken);
+    let result = (await callAppsScript('enquiry.moveStage', payload, sessionToken)) as any;
+    if (!result?.success && body.toStage === 'COMPLETED') {
+      result = (await callAppsScript(
+        'enquiry.update',
+        {
+          id,
+          patch: {
+            stage: 'COMPLETED',
+            completedAt: new Date().toISOString(),
+          },
+        },
+        sessionToken
+      )) as any;
+    }
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to transition enquiry stage';
