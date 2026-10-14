@@ -364,4 +364,59 @@ describe('Bill PDF System Tests', () => {
     const pageCount = (buffer.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length;
     expect(pageCount).toBe(1);
   }, 30000);
+
+  it('strictly contains high-density table with 7 dynamic columns within 100% width and 1 page', async () => {
+    const highDensityBill: BillData = {
+      ...TEST_BILL_FIXTURE,
+      charges: [
+        {
+          sNo: 1,
+          description: 'TRUCK NUMBER\tCONTAINER NUMBER\nTN04JK7890\tCMAU1122334',
+          freightCharges: 38000,
+          freightFormula: '1 X 38,000.00',
+          haltingCharges: 1500,
+          haltingFormula: '1 Day X 1,500.00',
+          otherCharges: 2500,
+          advance: 3500,
+          customCharges: [
+            { name: 'Heavy Haul Flattrack Transport (Container CMAU1122334 - 40 FT FR, 26.8 MT)', amount: 38000 },
+            { name: 'Plant Detention Charges (1 Day)', amount: 1500 },
+            { name: 'Special Cargo Handling & Escort Charges', amount: 2500 },
+          ],
+          rate: null,
+          amount: 80000,
+        },
+      ],
+      totals: {
+        freightTotal: 38000,
+        haltingTotal: 1500,
+        otherChargesTotal: 2500,
+        advanceTotal: 3500,
+        grandTotal: 80000,
+      },
+      totalInWords: 'Rupees Eighty Thousand Only',
+    };
+
+    const html = generateBillHtml(highDensityBill);
+
+    // Verify CSS enforcement for containment
+    expect(html).toContain('table-layout: fixed !important;');
+    expect(html).toContain('overflow: hidden;');
+    expect(html).toContain('<colgroup>');
+
+    // Verify all 7 dynamic columns and Amount (INR) exist in table
+    expect(html).toContain('Freight Charges');
+    expect(html).toContain('Halting Charges');
+    expect(html).toContain('Other Charges');
+    expect(html).toContain('Heavy Haul Flattrack Transport');
+    expect(html).toContain('Plant Detention Charges');
+    expect(html).toContain('Special Cargo Handling & Escort Charges');
+    expect(html).toContain('Advance Paid');
+    expect(html).toContain('Amount<br>(INR)');
+
+    // Verify single-page PDF generation even with long custom column titles
+    const buffer = await generateBillPdfBuffer(html);
+    const pageCount = (buffer.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length;
+    expect(pageCount).toBe(1);
+  }, 30000);
 });

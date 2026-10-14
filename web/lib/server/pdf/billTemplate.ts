@@ -58,7 +58,7 @@ export function generateBillHtml(data: BillData): string {
   interface DynamicCol {
     key: string;
     label: string;
-    width: string;
+    width?: string;
     getValue: (row: any) => string;
     getTotal: () => number;
   }
@@ -70,7 +70,6 @@ export function generateBillHtml(data: BillData): string {
     dynamicCols.push({
       key: 'freight',
       label: 'Freight Charges<br>(INR)',
-      width: '120px',
       getValue: (r) => r.freightFormula ? r.freightFormula : formatAmount(r.freightCharges),
       getTotal: () => data.totals?.freightTotal || 0,
     });
@@ -81,7 +80,6 @@ export function generateBillHtml(data: BillData): string {
     dynamicCols.push({
       key: 'halting',
       label: 'Halting Charges<br>(INR)',
-      width: '100px',
       getValue: (r) => r.haltingFormula ? r.haltingFormula : formatAmount(r.haltingCharges),
       getTotal: () => data.totals?.haltingTotal || 0,
     });
@@ -92,7 +90,6 @@ export function generateBillHtml(data: BillData): string {
     dynamicCols.push({
       key: 'other',
       label: 'Other Charges<br>(INR)',
-      width: '85px',
       getValue: (r) => r.otherFormula ? r.otherFormula : formatAmount(r.otherCharges),
       getTotal: () => data.totals?.otherChargesTotal || 0,
     });
@@ -103,7 +100,6 @@ export function generateBillHtml(data: BillData): string {
     dynamicCols.push({
       key: `custom_${colName}`,
       label: `${colName}<br>(INR)`,
-      width: '95px',
       getValue: (r) => {
         const match = r.customCharges?.find((c: any) => c.name?.trim() === colName);
         return match ? formatAmount(match.amount) : '-';
@@ -122,7 +118,6 @@ export function generateBillHtml(data: BillData): string {
     dynamicCols.push({
       key: 'advance',
       label: 'Advance Paid<br>(Deduction)',
-      width: '95px',
       getValue: (r) => {
         const advVal = Number(r.advance) || 0;
         return advVal > 0 ? `- ${formatAmount(advVal)}` : '-';
@@ -130,6 +125,70 @@ export function generateBillHtml(data: BillData): string {
       getTotal: () => data.totals?.advanceTotal || 0,
     });
   }
+
+  const numDynamicCols = dynamicCols.length;
+
+  // Determine dynamic column sizing and typography based on total column density to strictly prevent overflow
+  let sNoWidth = '5%';
+  let amountWidth = '14%';
+  let descWidth = '33%';
+  let thFontSize = '10.5px';
+  let tdFontSize = '10.5px';
+  let tfootFontSize = '10.5px';
+  let tfootTotalFontSize = '11.5px';
+  let thPadding = '5px 4px';
+  let tdPadding = '5px 4.5px';
+  let descPadding = '5.5px 7px';
+  let cellWhiteSpace = 'nowrap';
+
+  if (numDynamicCols >= 6) {
+    sNoWidth = '4%';
+    amountWidth = '11%';
+    descWidth = '23%';
+    thFontSize = '8.5px';
+    tdFontSize = '9px';
+    tfootFontSize = '9px';
+    tfootTotalFontSize = '10px';
+    thPadding = '3px 2px';
+    tdPadding = '4px 2px';
+    descPadding = '4px 4px';
+    cellWhiteSpace = 'normal';
+  } else if (numDynamicCols >= 4) {
+    sNoWidth = '4.5%';
+    amountWidth = '12.5%';
+    descWidth = '28%';
+    thFontSize = '9.5px';
+    tdFontSize = '10px';
+    tfootFontSize = '10px';
+    tfootTotalFontSize = '11px';
+    thPadding = '4px 3px';
+    tdPadding = '4.5px 3.5px';
+    descPadding = '4.5px 5px';
+    cellWhiteSpace = 'normal';
+  } else if (numDynamicCols <= 1) {
+    sNoWidth = '5.5%';
+    amountWidth = '16%';
+    descWidth = '48.5%';
+    thFontSize = '11px';
+    tdFontSize = '11px';
+    tfootFontSize = '11px';
+    tfootTotalFontSize = '12px';
+    thPadding = '5.5px 4px';
+    tdPadding = '5.5px 6px';
+    descPadding = '5.5px 7px';
+    cellWhiteSpace = 'nowrap';
+  }
+
+  // Calculate proportional width for dynamic columns to guarantee exactly 100% total table width
+  const sNoPctVal = parseFloat(sNoWidth);
+  const amountPctVal = parseFloat(amountWidth);
+  const descPctVal = parseFloat(descWidth);
+  const remainingForDynamic = Math.max(20, 100 - sNoPctVal - amountPctVal - descPctVal);
+  const colPercent = numDynamicCols > 0 ? (remainingForDynamic / numDynamicCols).toFixed(2) : '15';
+
+  dynamicCols.forEach(col => {
+    col.width = `${colPercent}%`;
+  });
 
   const chargeRows = rawCharges.map((row, idx) => {
     const sNo = row.sNo !== undefined && row.sNo !== null ? row.sNo : idx + 1;
@@ -140,16 +199,16 @@ export function generateBillHtml(data: BillData): string {
 
     return `
       <tr>
-        <td style="text-align: center; font-weight: bold; width: 44px; vertical-align: top; padding-top: 5px; ${rowBottomBorder}">${isSpecialText ? '' : sNo}</td>
-        <td style="vertical-align: top; padding: 5.5px 7px; word-break: break-word; ${rowBottomBorder}">
-          ${row.descriptionHtml ? row.descriptionHtml : `<div style="font-weight: 600; font-size: 11px; white-space: pre-line;">${row.description || '-'}</div>`}
+        <td style="text-align: center; font-weight: bold; width: ${sNoWidth}; vertical-align: top; padding-top: 5px; ${rowBottomBorder}">${isSpecialText ? '' : sNo}</td>
+        <td style="vertical-align: top; width: ${descWidth}; padding: ${descPadding}; word-break: break-word; ${rowBottomBorder}">
+          ${row.descriptionHtml ? row.descriptionHtml : `<div style="font-weight: 600; font-size: ${tdFontSize}; white-space: pre-line;">${row.description || '-'}</div>`}
         </td>
         ${dynamicCols.map(col => `
-          <td style="text-align: right; width: ${col.width}; vertical-align: top; padding-top: 5px; font-size: 11px; white-space: nowrap; ${rowBottomBorder}">
+          <td style="text-align: right; width: ${col.width}; vertical-align: top; padding-top: 5px; font-size: ${tdFontSize}; white-space: ${cellWhiteSpace}; ${rowBottomBorder}">
             ${col.getValue(row)}
           </td>
         `).join('')}
-        <td style="text-align: right; font-weight: bold; width: 100px; vertical-align: top; padding-top: 5px; font-size: 11.5px; white-space: nowrap; ${rowBottomBorder}">${amountContent}</td>
+        <td style="text-align: right; font-weight: bold; width: ${amountWidth}; vertical-align: top; padding-top: 5px; font-size: ${tdFontSize}; white-space: nowrap; ${rowBottomBorder}">${amountContent}</td>
       </tr>
     `;
   }).join('');
@@ -171,10 +230,11 @@ export function generateBillHtml(data: BillData): string {
   const clientAddrLines = (data.client?.address || '').split(/[\r\n]+/).filter(Boolean).length;
   const extraAddrHeight = Math.max(0, (clientAddrLines - 1) * 12);
   const headerHeight = data.assets?.headerImage ? 245 : 120;
+  const headerWrapOffset = numDynamicCols >= 6 ? 28 : (numDynamicCols >= 4 ? 14 : 0);
 
   // A4 printable height with 1mm top and 3px bottom margin is ~1115px; non-table elements take ~350px + headerHeight
   // Target available spacer height keeps bill strictly inside 1 page with minimal space (~3mm) from bottom border to end of page
-  const availableSpacer = 730 - headerHeight - extraAddrHeight - estimatedChargesHeight;
+  const availableSpacer = 730 - headerHeight - extraAddrHeight - estimatedChargesHeight - headerWrapOffset;
   const spacerHeight = Math.max(0, Math.round(availableSpacer));
 
   // Checkbox generation helper
@@ -317,10 +377,13 @@ export function generateBillHtml(data: BillData): string {
 
     /* BORDERED MAIN INVOICE CONTAINER (Starts immediately below header) */
     .invoice-box {
-      width: 100%;
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
       border: 2px solid #000;
       background: #fff;
       margin-top: 0;
+      overflow: hidden;
     }
 
     /* SECTION 2: TOP 2-COLUMN SECTION */
@@ -384,18 +447,27 @@ export function generateBillHtml(data: BillData): string {
 
     /* SECTION 3: CHARGES TABLE */
     table.charges-table {
-      width: 100%;
-      border-collapse: collapse;
+      width: 100% !important;
+      max-width: 100% !important;
+      table-layout: fixed !important;
+      border-collapse: collapse !important;
+      box-sizing: border-box !important;
       border: none;
     }
     table.charges-table thead th {
       border-bottom: 1.5px solid #000;
       border-right: 1px solid #000;
-      padding: 5.5px 4px;
-      font-size: 11px;
+      padding: ${thPadding};
+      font-size: ${thFontSize};
       font-weight: bold;
       text-align: center;
       background-color: #fff;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      word-break: break-word;
+      hyphens: auto;
+      line-height: 1.15;
+      box-sizing: border-box;
     }
     table.charges-table thead th:last-child {
       border-right: none;
@@ -403,20 +475,46 @@ export function generateBillHtml(data: BillData): string {
     table.charges-table tbody td {
       border-bottom: 1px solid #000;
       border-right: 1px solid #000;
-      padding: 5.5px 6px;
-      font-size: 11px;
+      padding: ${tdPadding};
+      font-size: ${tdFontSize};
       vertical-align: top;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      word-break: break-word;
+      box-sizing: border-box;
+      line-height: 1.25;
     }
     table.charges-table tbody td:last-child {
       border-right: none;
+    }
+    table.charges-table tbody td table {
+      width: 100% !important;
+      max-width: 100% !important;
+      table-layout: fixed !important;
+      border-collapse: collapse !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    table.charges-table tbody td table th,
+    table.charges-table tbody td table td {
+      border: none !important;
+      padding: 1px 3px 1px 0 !important;
+      font-size: ${tdFontSize} !important;
+      white-space: normal !important;
+      overflow-wrap: break-word !important;
+      word-break: break-word !important;
+      line-height: 1.2 !important;
     }
     table.charges-table tfoot td {
       border-top: 1.5px solid #000;
       border-bottom: 1.5px solid #000;
       border-right: 1px solid #000;
-      padding: 5.5px 6px;
-      font-size: 11.5px;
+      padding: ${tdPadding};
+      font-size: ${tfootFontSize};
       font-weight: bold;
+      box-sizing: border-box;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
     }
     table.charges-table tfoot td:last-child {
       border-right: none;
@@ -579,12 +677,18 @@ export function generateBillHtml(data: BillData): string {
 
       <!-- 3. MAIN CHARGES TABLE (Dynamic columns as per active charges) -->
       <table class="charges-table">
+        <colgroup>
+          <col style="width: ${sNoWidth};">
+          <col style="width: ${descWidth};">
+          ${dynamicCols.map(col => `<col style="width: ${col.width};">`).join('')}
+          <col style="width: ${amountWidth};">
+        </colgroup>
         <thead>
           <tr>
-            <th style="width: 44px;">S.No.</th>
-            <th>Description</th>
+            <th style="width: ${sNoWidth};">S.No.</th>
+            <th style="width: ${descWidth};">Description</th>
             ${dynamicCols.map(col => `<th style="width: ${col.width}; text-align: right;">${col.label}</th>`).join('')}
-            <th style="width: 100px; text-align: right;">Amount<br>(INR)</th>
+            <th style="width: ${amountWidth}; text-align: right;">Amount<br>(INR)</th>
           </tr>
         </thead>
         <tbody>
@@ -600,13 +704,13 @@ export function generateBillHtml(data: BillData): string {
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="2" style="text-align: right; font-weight: bold; padding-right: 12px;">Total</td>
+            <td colspan="2" style="text-align: right; font-weight: bold; padding-right: 8px; font-size: ${tfootFontSize};">Total</td>
             ${dynamicCols.map(col => `
-              <td style="text-align: right; font-weight: bold; white-space: nowrap;">
+              <td style="text-align: right; font-weight: bold; font-size: ${tfootFontSize}; white-space: ${cellWhiteSpace};">
                 ${col.key === 'advance' ? (col.getTotal() > 0 ? `- ${formatTotal(col.getTotal())}` : '-') : formatTotal(col.getTotal())}
               </td>
             `).join('')}
-            <td style="text-align: right; font-weight: 800; font-size: 12.5px; white-space: nowrap;">${formatTotal(data.totals?.grandTotal ?? 0)}</td>
+            <td style="text-align: right; font-weight: 800; font-size: ${tfootTotalFontSize}; white-space: nowrap;">${formatTotal(data.totals?.grandTotal ?? 0)}</td>
           </tr>
         </tfoot>
       </table>
