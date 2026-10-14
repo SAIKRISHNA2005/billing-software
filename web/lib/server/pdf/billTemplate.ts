@@ -156,8 +156,14 @@ export function generateBillHtml(data: BillData): string {
 
   // Dynamically calibrate spacer height based on actual rendered charge line counts, address height, and header
   const estimatedChargesHeight = rawCharges.reduce((acc, row) => {
-    const rawText = row.descriptionHtml || row.description || '';
-    const lineCount = Math.max(1, rawText.split(/<br\s*\/?>|\n/i).length);
+    if (row.descriptionHtml) {
+      const tbodyMatch = row.descriptionHtml.match(/<tbody>([\s\S]*?)<\/tbody>/i);
+      const trMatches = (tbodyMatch ? tbodyMatch[1] : row.descriptionHtml).match(/<tr\b/gi);
+      const numPairs = trMatches ? trMatches.length : 1;
+      return acc + (22 + (numPairs * 18) + 8);
+    }
+    const plain = (row.description || '').trim();
+    const lineCount = Math.max(1, plain.split(/<br\s*\/?>|\n/i).filter((l: string) => l.trim().length > 0).length);
     const rowHeight = 26 + ((lineCount - 1) * 14);
     return acc + rowHeight;
   }, 0);
@@ -167,8 +173,8 @@ export function generateBillHtml(data: BillData): string {
   const headerHeight = data.assets?.headerImage ? 245 : 120;
 
   // A4 printable height with 1mm top and 3px bottom margin is ~1115px; non-table elements take ~350px + headerHeight
-  // Target available spacer height keeps bill strictly inside 1 page with minimal space (~4mm) from bottom border to end of page
-  const availableSpacer = 738 - headerHeight - extraAddrHeight - estimatedChargesHeight;
+  // Target available spacer height keeps bill strictly inside 1 page with minimal space (~3mm) from bottom border to end of page
+  const availableSpacer = 730 - headerHeight - extraAddrHeight - estimatedChargesHeight;
   const spacerHeight = Math.max(0, Math.round(availableSpacer));
 
   // Checkbox generation helper
