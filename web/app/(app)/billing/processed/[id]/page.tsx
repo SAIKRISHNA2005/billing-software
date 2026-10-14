@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Table, Tag, Button, Typography, Space, Descriptions, Modal, Form, Input, InputNumber, Select, DatePicker, Spin, message } from 'antd';
-import { FileTextOutlined, ArrowLeftOutlined, EditOutlined, DownloadOutlined, EyeOutlined, DollarOutlined } from '@ant-design/icons';
+import { FileTextOutlined, ArrowLeftOutlined, EditOutlined, DownloadOutlined, EyeOutlined, DollarOutlined, PrinterOutlined } from '@ant-design/icons';
 import { useRouter, useParams } from 'next/navigation';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -97,6 +97,16 @@ export default function ProcessedBillDetailPage() {
           setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
 
           message.success('Invoice PDF downloaded successfully!');
+        } else if (res.data.data?.html) {
+          // Client-side print fallback when serverless environment lacks local browser
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(res.data.data.html);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => printWindow.print(), 350);
+          }
+          message.success('Opening print dialog to Save as PDF...');
         } else if (res.data.data.pdfUrl) {
           window.open(res.data.data.pdfUrl, '_blank');
         } else {
@@ -349,6 +359,24 @@ export default function ProcessedBillDetailPage() {
               Download PDF
             </Button>
           ),
+          pdfData?.html && !pdfData?.pdfBase64 && (
+            <Button
+              key="print-save-pdf"
+              type="primary"
+              icon={<PrinterOutlined />}
+              onClick={() => {
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                  printWindow.document.write(pdfData.html!);
+                  printWindow.document.close();
+                  printWindow.focus();
+                  setTimeout(() => printWindow.print(), 350);
+                }
+              }}
+            >
+              Print / Save as PDF
+            </Button>
+          ),
           pdfData?.pdfUrl && (
             <Button
               key="download"
@@ -366,6 +394,12 @@ export default function ProcessedBillDetailPage() {
               src={previewBlobUrl || `data:application/pdf;base64,${pdfData?.pdfBase64}`}
               style={{ width: '100%', height: '100%', border: 'none', borderRadius: 4 }}
               title="PDF Preview"
+            />
+          ) : pdfData?.html ? (
+            <iframe
+              srcDoc={pdfData.html}
+              style={{ width: '100%', height: '100%', border: 'none', borderRadius: 4, background: '#fff' }}
+              title="Invoice HTML Preview"
             />
           ) : (
             <div style={{ textAlign: 'center', padding: 40, margin: 'auto' }}>

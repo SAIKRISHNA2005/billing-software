@@ -33,19 +33,35 @@ export async function GET(
 
     // If direct PDF streaming is requested
     if (format === 'pdf' || format === 'binary') {
-      const pdfBuffer = await generateBillPdfBuffer(html);
-      return new NextResponse(new Uint8Array(pdfBuffer), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-        },
-      });
+      try {
+        const pdfBuffer = await generateBillPdfBuffer(html);
+        return new NextResponse(new Uint8Array(pdfBuffer), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${filename}"`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          },
+        });
+      } catch (pdfErr) {
+        console.warn('[BillPDFRoute] Server-side PDF binary streaming unavailable, falling back to auto-print HTML:', pdfErr);
+        const autoPrintHtml = html.replace('</body>', '<script>window.addEventListener("load", () => window.print());</script></body>');
+        return new NextResponse(autoPrintHtml, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+          },
+        });
+      }
     }
 
     // Default: Return JSON with Base64 for the Processed Bills UI instant download
-    const pdfBase64 = await generateBillPdfBase64(html);
+    let pdfBase64: string | null = null;
+    try {
+      pdfBase64 = await generateBillPdfBase64(html);
+    } catch (pdfErr) {
+      console.warn('[BillPDFRoute] Server-side Puppeteer PDF rendering unavailable (e.g., serverless/Vercel):', pdfErr);
+    }
 
     return NextResponse.json({
       success: true,
@@ -58,7 +74,7 @@ export async function GET(
         clientName: billData.client.name,
         totalAmount: billData.totals.grandTotal,
       },
-      message: 'Bill PDF generated successfully',
+      message: pdfBase64 ? 'Bill PDF generated successfully' : 'Bill HTML rendered successfully (Client Print mode)',
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'An error occurred while generating the bill PDF';

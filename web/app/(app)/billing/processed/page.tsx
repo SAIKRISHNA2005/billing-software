@@ -179,6 +179,15 @@ export default function ProcessedBillsPage() {
           message.success('Invoice PDF downloaded successfully!');
         } else if (res.data.data?.pdfUrl) {
           window.open(res.data.data.pdfUrl, '_blank');
+        } else if (res.data.data?.html) {
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(res.data.data.html);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => printWindow.print(), 350);
+          }
+          message.success('Opening print dialog to Save as PDF...');
         } else {
           // Fallback to direct stream endpoint
           window.open(`/api/billing/pdf/${record.id}?format=pdf`, '_blank');
