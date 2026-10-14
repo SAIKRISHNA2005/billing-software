@@ -1103,61 +1103,175 @@ html:not([data-theme='dark']) [style*="background:#EBF4ED"] * {
 }
 
 /* --------------------------------------------------------------------------
-   5. UNIVERSAL INLINE HARDCODED COLOR OVERRIDES IN DARK MODE
-   Overrides legacy inline dark text colors so they shine white on dark surfaces
+   5. UNIVERSAL INLINE HARDCODED COLOR & BACKGROUND OVERRIDES IN DARK MODE
+   Overrides legacy inline dark text colors so they shine crisp white on dark surfaces,
+   and adapts legacy inline light backgrounds to dark charcoal panels.
    -------------------------------------------------------------------------- */
-[data-theme='dark'] [style*="color: #17324D"],
-[data-theme='dark'] [style*="color:#17324D"],
-[data-theme='dark'] [style*="color: #11202D"],
-[data-theme='dark'] [style*="color:#11202D"],
-[data-theme='dark'] [style*="color: #1E2933"],
-[data-theme='dark'] [style*="color:#1E2933"],
-[data-theme='dark'] [style*="color: #34424C"],
-[data-theme='dark'] [style*="color:#34424C"],
-[data-theme='dark'] [style*="color: #111827"],
-[data-theme='dark'] [style*="color:#111827"],
-[data-theme='dark'] [style*="color: #090D14"],
-[data-theme='dark'] [style*="color:#090D14"],
-[data-theme='dark'] [style*="color: #1F2937"],
-[data-theme='dark'] [style*="color:#1F2937"],
-[data-theme='dark'] [style*="color: #374151"],
-[data-theme='dark'] [style*="color:#374151"],
-[data-theme='dark'] [style*="color: #4B5563"],
-[data-theme='dark'] [style*="color:#4B5563"],
-[data-theme='dark'] [style*="color: #000000"],
-[data-theme='dark'] [style*="color:#000000"],
-[data-theme='dark'] [style*="color: #000"],
-[data-theme='dark'] [style*="color:#000"],
-[data-theme='dark'] [style*="color: black"],
-[data-theme='dark'] [style*="color: rgb(23, 50, 77)"],
-[data-theme='dark'] [style*="color: rgb(30, 41, 51)"],
-[data-theme='dark'] [style*="color: rgb(17, 24, 39)"] {
+/* Primary dark text overrides -> Pure White */
+[data-theme='dark'] [style*="color: #17324D" i],
+[data-theme='dark'] [style*="color:#17324D" i],
+[data-theme='dark'] [style*="color: #11202D" i],
+[data-theme='dark'] [style*="color:#11202D" i],
+[data-theme='dark'] [style*="color: #1E2933" i],
+[data-theme='dark'] [style*="color:#1E2933" i],
+[data-theme='dark'] [style*="color: #34424C" i],
+[data-theme='dark'] [style*="color:#34424C" i],
+[data-theme='dark'] [style*="color: #365A73" i],
+[data-theme='dark'] [style*="color:#365A73" i],
+[data-theme='dark'] [style*="color: #111827" i],
+[data-theme='dark'] [style*="color:#111827" i],
+[data-theme='dark'] [style*="color: #090D14" i],
+[data-theme='dark'] [style*="color:#090D14" i],
+[data-theme='dark'] [style*="color: #1F2937" i],
+[data-theme='dark'] [style*="color:#1F2937" i],
+[data-theme='dark'] [style*="color: #374151" i],
+[data-theme='dark'] [style*="color:#374151" i],
+[data-theme='dark'] [style*="color: #4B5563" i],
+[data-theme='dark'] [style*="color:#4B5563" i],
+[data-theme='dark'] [style*="color: #000000" i],
+[data-theme='dark'] [style*="color:#000000" i],
+[data-theme='dark'] [style*="color: #000" i],
+[data-theme='dark'] [style*="color:#000" i],
+[data-theme='dark'] [style*="color: black" i],
+[data-theme='dark'] [style*="color: rgb(23, 50, 77)" i],
+[data-theme='dark'] [style*="color: rgb(23,50,77)" i],
+[data-theme='dark'] [style*="color: rgb(30, 41, 51)" i],
+[data-theme='dark'] [style*="color: rgb(30,41,51)" i],
+[data-theme='dark'] [style*="color: rgb(52, 66, 76)" i],
+[data-theme='dark'] [style*="color: rgb(52,66,76)" i],
+[data-theme='dark'] [style*="color: rgb(17, 24, 39)" i],
+[data-theme='dark'] [style*="color: rgb(17,24,39)" i],
+[data-theme='dark'] [style*="color: rgb(9, 13, 20)" i],
+[data-theme='dark'] [style*="color: rgb(31, 41, 55)" i],
+[data-theme='dark'] [style*="color: rgb(55, 65, 81)" i],
+[data-theme='dark'] [style*="color: rgb(75, 85, 99)" i],
+[data-theme='dark'] [style*="color: rgb(0, 0, 0)" i],
+[data-theme='dark'] [style*="color: rgb(0,0,0)" i] {
   color: #FFFFFF !important;
 }
 
-/* Secondary dark text overrides in Dark Mode */
-[data-theme='dark'] [style*="color: #5F6B73"],
-[data-theme='dark'] [style*="color:#5F6B73"],
-[data-theme='dark'] [style*="color: #64748B"],
-[data-theme='dark'] [style*="color:#64748B"],
-[data-theme='dark'] [style*="color: #6b7280"],
-[data-theme='dark'] [style*="color:#6b7280"] {
+/* Secondary dark text overrides -> Clean readable Zinc/Slate */
+[data-theme='dark'] [style*="color: #5F6B73" i],
+[data-theme='dark'] [style*="color:#5F6B73" i],
+[data-theme='dark'] [style*="color: #64748B" i],
+[data-theme='dark'] [style*="color:#64748B" i],
+[data-theme='dark'] [style*="color: #6B7280" i],
+[data-theme='dark'] [style*="color:#6B7280" i],
+[data-theme='dark'] [style*="color: #9CA3AF" i],
+[data-theme='dark'] [style*="color:#9CA3AF" i],
+[data-theme='dark'] [style*="color: #475569" i],
+[data-theme='dark'] [style*="color:#475569" i],
+[data-theme='dark'] [style*="color: rgb(95, 107, 115)" i],
+[data-theme='dark'] [style*="color: rgb(95,107,115)" i],
+[data-theme='dark'] [style*="color: rgb(100, 116, 139)" i],
+[data-theme='dark'] [style*="color: rgb(107, 114, 128)" i] {
   color: #A1A1AA !important;
 }
 
+/* Operational Green text in Dark Mode -> Vibrant Mint Green */
+[data-theme='dark'] [style*="color: #3F6F4A" i],
+[data-theme='dark'] [style*="color:#3F6F4A" i],
+[data-theme='dark'] [style*="color: #2F5938" i],
+[data-theme='dark'] [style*="color:#2F5938" i],
+[data-theme='dark'] [style*="color: #166534" i],
+[data-theme='dark'] [style*="color:#166534" i],
+[data-theme='dark'] [style*="color: rgb(63, 111, 74)" i],
+[data-theme='dark'] [style*="color: rgb(63,111,74)" i] {
+  color: #4ADE80 !important;
+}
+
+/* Operational Amber text in Dark Mode -> Vibrant Golden Amber */
+[data-theme='dark'] [style*="color: #C58A2A" i],
+[data-theme='dark'] [style*="color:#C58A2A" i],
+[data-theme='dark'] [style*="color: #9E6B1D" i],
+[data-theme='dark'] [style*="color:#9E6B1D" i],
+[data-theme='dark'] [style*="color: #B45309" i],
+[data-theme='dark'] [style*="color:#B45309" i],
+[data-theme='dark'] [style*="color: #92400E" i],
+[data-theme='dark'] [style*="color:#92400E" i],
+[data-theme='dark'] [style*="color: rgb(197, 138, 42)" i] {
+  color: #FBBF24 !important;
+}
+
+/* Operational Red text in Dark Mode -> Vibrant Coral Red */
+[data-theme='dark'] [style*="color: #A8473C" i],
+[data-theme='dark'] [style*="color:#A8473C" i],
+[data-theme='dark'] [style*="color: #87362D" i],
+[data-theme='dark'] [style*="color:#87362D" i],
+[data-theme='dark'] [style*="color: #B91C1C" i],
+[data-theme='dark'] [style*="color:#B91C1C" i],
+[data-theme='dark'] [style*="color: rgb(168, 71, 60)" i] {
+  color: #F87171 !important;
+}
+
+/* Legacy inline light backgrounds in Dark Mode -> Sleek Charcoal Panel */
+[data-theme='dark'] [style*="background: #ECEFEE" i],
+[data-theme='dark'] [style*="background:#ECEFEE" i],
+[data-theme='dark'] [style*="background: rgb(236, 239, 238)" i],
+[data-theme='dark'] [style*="background: #EEF3F6" i],
+[data-theme='dark'] [style*="background:#EEF3F6" i],
+[data-theme='dark'] [style*="background: #F3F4F2" i],
+[data-theme='dark'] [style*="background:#F3F4F2" i],
+[data-theme='dark'] [style*="background: #F1F5F9" i],
+[data-theme='dark'] [style*="background:#F1F5F9" i],
+[data-theme='dark'] [style*="background: #F8FAFC" i],
+[data-theme='dark'] [style*="background:#F8FAFC" i],
+[data-theme='dark'] [style*="background: #F3F4F6" i],
+[data-theme='dark'] [style*="background:#F3F4F6" i],
+[data-theme='dark'] [style*="background: #F4F4F5" i],
+[data-theme='dark'] [style*="background:#F4F4F5" i],
+[data-theme='dark'] [style*="background: #FAFAFA" i],
+[data-theme='dark'] [style*="background:#FAFAFA" i],
+[data-theme='dark'] [style*="background: #F9FAFB" i],
+[data-theme='dark'] [style*="background:#F9FAFB" i] {
+  background-color: #202024 !important;
+  border-color: #3F3F46 !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme='dark'] [style*="background: #ECEFEE" i] *,
+[data-theme='dark'] [style*="background:#ECEFEE" i] *,
+[data-theme='dark'] [style*="background: #EEF3F6" i] *,
+[data-theme='dark'] [style*="background:#EEF3F6" i] *,
+[data-theme='dark'] [style*="background: #F3F4F2" i] *,
+[data-theme='dark'] [style*="background:#F3F4F2" i] *,
+[data-theme='dark'] [style*="background: #F1F5F9" i] *,
+[data-theme='dark'] [style*="background:#F1F5F9" i] *,
+[data-theme='dark'] [style*="background: #F8FAFC" i] *,
+[data-theme='dark'] [style*="background:#F8FAFC" i] *,
+[data-theme='dark'] [style*="background: #F3F4F6" i] *,
+[data-theme='dark'] [style*="background:#F3F4F6" i] *,
+[data-theme='dark'] [style*="background: #F4F4F5" i] *,
+[data-theme='dark'] [style*="background:#F4F4F5" i] * {
+  color: #FFFFFF !important;
+}
+
+/* Light border overrides in Dark Mode */
+[data-theme='dark'] [style*="border: 1px solid #D4DAD9" i],
+[data-theme='dark'] [style*="border:1px solid #D4DAD9" i],
+[data-theme='dark'] [style*="border: 1px solid #D4D4D8" i],
+[data-theme='dark'] [style*="border: 1px solid #E2E8F0" i],
+[data-theme='dark'] [style*="border: 1px solid #CBD5E1" i],
+[data-theme='dark'] [style*="border: 1px solid #E5E7EB" i] {
+  border-color: #3F3F46 !important;
+}
+
 /* Links with inline dark navy styling switch to bright blue in Dark Mode */
-[data-theme='dark'] a[style*="color: #17324D"],
-[data-theme='dark'] a[style*="color:#17324D"],
-[data-theme='dark'] a[style*="color: #1E2933"],
-[data-theme='dark'] a[style*="color:#1E2933"],
-[data-theme='dark'] a[style*="color: #111827"],
-[data-theme='dark'] a[style*="color:#111827"],
-[data-theme='dark'] a[style*="color: rgb(23, 50, 77)"] {
+[data-theme='dark'] a[style*="color: #17324D" i],
+[data-theme='dark'] a[style*="color:#17324D" i],
+[data-theme='dark'] a[style*="color: #1E2933" i],
+[data-theme='dark'] a[style*="color:#1E2933" i],
+[data-theme='dark'] a[style*="color: #111827" i],
+[data-theme='dark'] a[style*="color:#111827" i],
+[data-theme='dark'] a[style*="color: #1D4ED8" i],
+[data-theme='dark'] a[style*="color:#1D4ED8" i],
+[data-theme='dark'] a[style*="color: rgb(23, 50, 77)" i] {
   color: #60A5FA !important;
 }
 
-[data-theme='dark'] a[style*="color: #17324D"]:hover,
-[data-theme='dark'] a[style*="color:#17324D"]:hover {
+[data-theme='dark'] a[style*="color: #17324D" i]:hover,
+[data-theme='dark'] a[style*="color:#17324D" i]:hover,
+[data-theme='dark'] a[style*="color: #1D4ED8" i]:hover {
   color: #93C5FD !important;
 }
 
@@ -1351,6 +1465,135 @@ body:not([data-theme='dark']) .ant-modal-confirm-content,
 body:not([data-theme='dark']) .ant-modal-confirm-paragraph {
   color: #1F2937 !important;
 }
+
+/* --------------------------------------------------------------------------
+   11. ANT DESIGN COMPONENT HIGH CONTRAST DARK MODE STYLES
+   Ensures complete visibility across all Ant Design UI components
+   -------------------------------------------------------------------------- */
+/* Descriptions (Key-Value Ledgers) */
+[data-theme='dark'] .ant-descriptions-bordered .ant-descriptions-item-label {
+  background-color: #202024 !important;
+  color: #D4D4D8 !important;
+  border-color: #2E2E33 !important;
+}
+
+[data-theme='dark'] .ant-descriptions-bordered .ant-descriptions-item-content {
+  background-color: #18181B !important;
+  color: #FFFFFF !important;
+  border-color: #2E2E33 !important;
+}
+
+[data-theme='dark'] .ant-descriptions-title {
+  color: #FFFFFF !important;
+}
+
+/* Tabs */
+[data-theme='dark'] .ant-tabs-nav {
+  color: #A1A1AA !important;
+}
+
+[data-theme='dark'] .ant-tabs-tab {
+  color: #A1A1AA !important;
+}
+
+[data-theme='dark'] .ant-tabs-tab:hover {
+  color: #60A5FA !important;
+}
+
+[data-theme='dark'] .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+/* Collapse / Accordion */
+[data-theme='dark'] .ant-collapse {
+  background-color: #18181B !important;
+  border-color: #2E2E33 !important;
+}
+
+[data-theme='dark'] .ant-collapse-header {
+  background-color: #202024 !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme='dark'] .ant-collapse-content {
+  background-color: #18181B !important;
+  color: #FFFFFF !important;
+  border-top-color: #2E2E33 !important;
+}
+
+/* Form Item Labels */
+[data-theme='dark'] .ant-form-item-label > label {
+  color: #FFFFFF !important;
+}
+
+/* Empty State */
+[data-theme='dark'] .ant-empty-description {
+  color: #A1A1AA !important;
+}
+
+/* Timeline */
+[data-theme='dark'] .ant-timeline-item-content {
+  color: #E4E4E7 !important;
+}
+
+/* Segmented Control */
+[data-theme='dark'] .ant-segmented {
+  background-color: #121214 !important;
+  color: #A1A1AA !important;
+}
+
+[data-theme='dark'] .ant-segmented-item-selected {
+  background-color: #27272A !important;
+  color: #FFFFFF !important;
+}
+
+/* Radio & Checkbox */
+[data-theme='dark'] .ant-radio-wrapper,
+[data-theme='dark'] .ant-checkbox-wrapper {
+  color: #FFFFFF !important;
+}
+
+/* Dropdown & Popover Menus */
+[data-theme='dark'] .ant-dropdown-menu {
+  background-color: #18181B !important;
+  border: 1px solid #2E2E33 !important;
+}
+
+[data-theme='dark'] .ant-dropdown-menu-item {
+  color: #E4E4E7 !important;
+}
+
+[data-theme='dark'] .ant-dropdown-menu-item:hover,
+[data-theme='dark'] .ant-dropdown-menu-item-active {
+  background-color: #27272A !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme='dark'] .ant-popover-inner {
+  background-color: #18181B !important;
+  color: #FFFFFF !important;
+  border: 1px solid #2E2E33 !important;
+}
+
+[data-theme='dark'] .ant-popover-title {
+  color: #FFFFFF !important;
+  border-bottom-color: #2E2E33 !important;
+}
+
+[data-theme='dark'] .ant-popover-inner-content {
+  color: #E4E4E7 !important;
+}
+
+/* Statistic Content & Title */
+[data-theme='dark'] .ant-statistic-title {
+  color: #A1A1AA !important;
+}
+
+[data-theme='dark'] .ant-statistic-content {
+  color: #FFFFFF !important;
+}
+
 
 
 

@@ -41,6 +41,7 @@ import { MovementTimesModal } from '@/components/enquiry/MovementTimesModal';
 import { EnquiryExpensesTab } from '@/components/enquiry/EnquiryExpensesTab';
 import { STAGE_TAG_COLORS, STAGE_LABELS } from '@/lib/utils/enquiryValidation';
 import { formatCurrencyINR, formatDate, formatDateTime } from '@/lib/utils/format';
+import { useTheme } from '@/components/providers/ThemeContext';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -53,6 +54,7 @@ interface PageProps {
 export default function EnquiryDetailPage({ params }: PageProps) {
   const { id } = params;
   const router = useRouter();
+  const { isDark } = useTheme();
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
@@ -124,7 +126,7 @@ export default function EnquiryDetailPage({ params }: PageProps) {
               <Text strong>{enquiry.id}</Text>
             </Descriptions.Item>
             <Descriptions.Item label="Transaction No">
-              <Text copyable strong style={{ color: '#17324D', fontFamily: 'monospace' }}>
+              <Text copyable strong style={{ color: isDark ? '#60A5FA' : '#17324D', fontFamily: 'monospace' }}>
                 {enquiry.transactionNumber}
               </Text>
             </Descriptions.Item>
@@ -132,16 +134,16 @@ export default function EnquiryDetailPage({ params }: PageProps) {
 
             <Descriptions.Item label="Company Name">
               <Text strong>{company?.name || enquiry.companyId}</Text>
-              {company?.gstin && <div style={{ fontSize: 12, color: '#666' }}>GSTIN: {company.gstin}</div>}
+              {company?.gstin && <div style={{ fontSize: 12, color: isDark ? '#A1A1AA' : '#666' }}>GSTIN: {company.gstin}</div>}
             </Descriptions.Item>
 
             <Descriptions.Item label="Client Name">
               <Text strong>{client?.name || enquiry.clientId}</Text>
-              {client?.gstin && <div style={{ fontSize: 12, color: '#666' }}>GSTIN: {client.gstin}</div>}
+              {client?.gstin && <div style={{ fontSize: 12, color: isDark ? '#A1A1AA' : '#666' }}>GSTIN: {client.gstin}</div>}
             </Descriptions.Item>
 
             <Descriptions.Item label="Loading Type">
-              <Tag style={{ background: enquiry.loadingType === 'Import' ? '#EEF3F6' : '#FDF6E8', color: enquiry.loadingType === 'Import' ? '#17324D' : '#9E6B1D', border: '1px solid #D4DAD9' }}>
+              <Tag style={{ background: enquiry.loadingType === 'Import' ? (isDark ? '#27272A' : '#EEF3F6') : (isDark ? '#451A03' : '#FDF6E8'), color: enquiry.loadingType === 'Import' ? (isDark ? '#FFFFFF' : '#17324D') : (isDark ? '#FBBF24' : '#9E6B1D'), border: isDark ? '1px solid #3F3F46' : '1px solid #D4DAD9' }}>
                 {enquiry.loadingType}
               </Tag>
             </Descriptions.Item>
@@ -152,7 +154,7 @@ export default function EnquiryDetailPage({ params }: PageProps) {
 
             <Descriptions.Item label="Bill Association">
               {enquiry.billId ? (
-                <Tag style={{ background: '#EBF4ED', color: '#3F6F4A', border: '1px solid #B8DCBE' }}>Billed ({enquiry.billId})</Tag>
+                <Tag style={{ background: isDark ? '#052E16' : '#EBF4ED', color: isDark ? '#86EFAC' : '#3F6F4A', border: isDark ? '1px solid #22C55E' : '1px solid #B8DCBE' }}>Billed ({enquiry.billId})</Tag>
               ) : (
                 <Tag color="default">Unbilled</Tag>
               )}
@@ -194,7 +196,7 @@ export default function EnquiryDetailPage({ params }: PageProps) {
                   title={
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Space>
-                        <Badge count={idx + 1} style={{ backgroundColor: idx === 0 ? '#17324D' : '#2563EB' }} />
+                        <Badge count={idx + 1} style={{ backgroundColor: idx === 0 ? (isDark ? '#3B82F6' : '#17324D') : '#2563EB' }} />
                         <span style={{ fontWeight: 600, fontSize: 14 }}>
                           Container {idx + 1} {idx === 0 ? '(Primary Job Record)' : ''}
                         </span>
@@ -202,15 +204,15 @@ export default function EnquiryDetailPage({ params }: PageProps) {
                       {idx === 0 && <Tag color="blue">Primary</Tag>}
                     </div>
                   }
-                  style={{ marginBottom: 16, borderColor: '#D4DAD9', backgroundColor: '#fafafa', borderRadius: 6 }}
+                  style={{ marginBottom: 16, borderColor: isDark ? '#3F3F46' : '#D4DAD9', backgroundColor: isDark ? '#202024' : '#fafafa', borderRadius: 6 }}
                 >
                   <Descriptions bordered column={{ xs: 1, sm: 2, md: 2 }} size="small">
                     <Descriptions.Item label="Container Number">
-                      <Text strong style={{ fontFamily: 'monospace', fontSize: 14, color: '#17324D' }}>
+                      <Text strong style={{ fontFamily: 'monospace', fontSize: 14, color: isDark ? '#FFFFFF' : '#17324D' }}>
                         {c.containerNumber || (idx === 0 ? (container?.containerNumber || enquiry.containerNumber) : '-') || '-'}
                       </Text>
                       {idx === 0 && container?.containerType && (
-                        <span style={{ marginLeft: 8, color: '#666', fontSize: 12 }}>
+                        <span style={{ marginLeft: 8, color: isDark ? '#A1A1AA' : '#666', fontSize: 12 }}>
                           ({container.containerType})
                         </span>
                       )}
@@ -548,7 +550,7 @@ export default function EnquiryDetailPage({ params }: PageProps) {
                       value={vendorFinance?.balance || 0}
                       precision={2}
                       prefix="₹"
-                      valueStyle={{ color: (vendorFinance?.balance || 0) > 0 ? '#C58A2A' : '#3F6F4A', fontFamily: 'monospace', fontWeight: 600 }}
+                      valueStyle={{ color: (vendorFinance?.balance || 0) > 0 ? (isDark ? '#FBBF24' : '#C58A2A') : (isDark ? '#4ADE80' : '#3F6F4A'), fontFamily: 'monospace', fontWeight: 600 }}
                     />
                   </Card>
                 </Col>
@@ -556,9 +558,9 @@ export default function EnquiryDetailPage({ params }: PageProps) {
 
               <Descriptions bordered column={{ xs: 1, sm: 2, md: 2 }}>
                 <Descriptions.Item label="Vendor Name">
-                  <a href={`/vendors/${vendor.id}`} style={{ fontWeight: 600, color: '#17324D' }}>
+                  <Link href={`/vendors/${vendor.id}`} style={{ fontWeight: 600, color: isDark ? '#60A5FA' : '#17324D' }}>
                     {vendor.name}
-                  </a>
+                  </Link>
                 </Descriptions.Item>
                 <Descriptions.Item label="Contact Person">{vendor.contactPerson || '-'}</Descriptions.Item>
                 <Descriptions.Item label="Phone">{vendor.phone || '-'}</Descriptions.Item>

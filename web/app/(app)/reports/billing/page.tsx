@@ -704,11 +704,11 @@ export default function ConsolidatedBillingReportPage() {
       {/* Top Header */}
       <Row justify="space-between" align="middle" style={{ marginBottom: 24, gap: 12 }}>
         <Col>
-          <Title level={2} style={{ margin: 0, color: '#17324D', letterSpacing: '-0.01em' }}>
-            <BarChartOutlined style={{ marginRight: 8, color: '#17324D' }} />
+          <Title level={2} style={{ margin: 0, color: isDark ? '#FFFFFF' : '#17324D', letterSpacing: '-0.01em' }}>
+            <BarChartOutlined style={{ marginRight: 8, color: isDark ? '#60A5FA' : '#17324D' }} />
             Billing Revenue &amp; Accounts Receivable Report
           </Title>
-          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
+          <Text type="secondary" style={{ fontSize: 13, color: isDark ? '#A1A1AA' : '#5F6B73' }}>
             Consolidated invoices analysis, customer receipts reconciliation, and overdue ageing buckets
           </Text>
         </Col>
@@ -750,51 +750,51 @@ export default function ConsolidatedBillingReportPage() {
         <Col xs={24} sm={12} md={8} lg={4}>
           <Card loading={reportLoading} className="spt-kpi-card spt-kpi-steel" size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Invoices</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Total Invoices</span>}
               value={totals.totalBills || 0}
-              valueStyle={{ color: '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#FFFFFF' : '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={5}>
           <Card loading={reportLoading} className="spt-kpi-card spt-kpi-green" size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Billed Revenue</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Total Billed Revenue</span>}
               value={totals.totalBilled || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#4ADE80' : '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={5}>
           <Card loading={reportLoading} className="spt-kpi-card spt-kpi-teal" size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Processed / Draft</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Processed / Draft</span>}
               value={`${totals.processedCount || 0} / ${totals.draftCount || 0}`}
-              valueStyle={{ color: '#2F6F73', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#38BDF8' : '#2F6F73', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={5}>
           <Card loading={paymentsLoading} className="spt-kpi-card spt-kpi-green" size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Payments Received</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Total Payments Received</span>}
               value={totalPaymentsReceived}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#4ADE80' : '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={5}>
           <Card loading={reportLoading} className={`spt-kpi-card ${totalOutstandingReceivable > 0 ? 'spt-kpi-amber' : 'spt-kpi-green'}`} size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Outstanding Balance</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Outstanding Balance</span>}
               value={totalOutstandingReceivable}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: totalOutstandingReceivable > 0 ? '#C58A2A' : '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: totalOutstandingReceivable > 0 ? (isDark ? '#FBBF24' : '#C58A2A') : (isDark ? '#4ADE80' : '#3F6F4A'), fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>

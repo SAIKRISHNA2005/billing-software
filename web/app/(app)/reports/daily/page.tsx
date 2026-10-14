@@ -905,7 +905,7 @@ export default function DailyReportPage() {
               type="primary"
               icon={<CloudSyncOutlined />}
               loading={syncingLiveWorkbooks}
-              style={{ backgroundColor: '#17324D', borderColor: '#17324D' }}
+              style={{ backgroundColor: isDark ? '#2563EB' : '#17324D', borderColor: isDark ? '#2563EB' : '#17324D' }}
             >
               Sync Live Workbooks
             </Button>
@@ -923,14 +923,14 @@ export default function DailyReportPage() {
         <Alert
           message={
             <span>
-              <InfoCircleOutlined style={{ marginRight: 8, color: '#365A73' }} />
+              <InfoCircleOutlined style={{ marginRight: 8, color: isDark ? '#60A5FA' : '#365A73' }} />
               No new bookings were recorded on <strong>{selectedDate.format('DD-MM-YYYY')}</strong>. Automatically displaying all <strong>{report.enquiriesDetail?.length || 0} active operations</strong> so the operational console remains fully populated.
             </span>
           }
           type="info"
           showIcon={false}
           closable
-          style={{ marginBottom: 20, borderRadius: 4, background: '#EEF3F6', borderColor: '#D4DAD9' }}
+          style={{ marginBottom: 20, borderRadius: 4, background: isDark ? '#1E293B' : '#EEF3F6', borderColor: isDark ? '#334155' : '#D4DAD9' }}
         />
       )}
 
@@ -939,58 +939,58 @@ export default function DailyReportPage() {
         <Col xs={24} sm={12} md={8} lg={4}>
           <Card loading={loading} className="spt-kpi-card spt-kpi-steel" size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Enquiries</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Total Enquiries</span>}
               value={report?.totalEnquiries || 0}
-              valueStyle={{ color: '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#FFFFFF' : '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={4}>
           <Card loading={loading} className="spt-kpi-card spt-kpi-green" size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Completed Jobs</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Completed Jobs</span>}
               value={report?.completedJobs || 0}
-              valueStyle={{ color: '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#4ADE80' : '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={4}>
           <Card loading={loading} className="spt-kpi-card spt-kpi-amber" size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Pending Pipeline</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Pending Pipeline</span>}
               value={report?.pendingJobs || 0}
-              valueStyle={{ color: '#C58A2A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#FBBF24' : '#C58A2A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={4}>
           <Card loading={loading} className="spt-kpi-card spt-kpi-teal" size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Bills Processed</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Bills Processed</span>}
               value={report?.billsGenerated || 0}
-              valueStyle={{ color: '#2F6F73', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#38BDF8' : '#2F6F73', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={4}>
           <Card loading={loading} className="spt-kpi-card spt-kpi-green" size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Billing</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Total Billing</span>}
               value={report?.totalBilling || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#4ADE80' : '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={4}>
           <Card loading={loading} className="spt-kpi-card spt-kpi-red" size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Expenses</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Total Expenses</span>}
               value={report?.totalExpenses || 0}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#A8473C', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#F87171' : '#A8473C', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>

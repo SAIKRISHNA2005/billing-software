@@ -39,6 +39,7 @@ import { STAGE_TAG_COLORS, STAGE_LABELS } from '@/lib/utils/enquiryValidation';
 import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 import { RecordDetailPopover } from '@/components/common/RecordDetailPopover';
 import { VehicleStatusToggle } from '@/components/common/VehicleStatusToggle';
+import { useTheme } from '@/components/providers/ThemeContext';
 import axios from 'axios';
 
 const { Title, Paragraph, Text } = Typography;
@@ -70,6 +71,7 @@ interface PendingRow {
 }
 
 export default function PendingJobsPage() {
+  const { isDark } = useTheme();
   const [data, setData] = useState<PendingRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -328,7 +330,7 @@ export default function PendingJobsPage() {
                 fontSize: 10,
                 fontWeight: 700,
                 letterSpacing: 0.3,
-                color: isToggled ? '#17324D' : '#5F6B73',
+                color: isToggled ? (isDark ? '#38BDF8' : '#17324D') : (isDark ? '#A1A1AA' : '#5F6B73'),
               }}
             >
               {isToggled ? 'SENT FOR WORK' : 'NOT ASSIGNED'}
@@ -418,8 +420,8 @@ export default function PendingJobsPage() {
         }}
       >
         <div>
-          <Title level={2} style={{ margin: 0, color: '#1E2933' }}>
-            <FieldTimeOutlined style={{ marginRight: 10, color: '#17324D' }} />
+          <Title level={2} style={{ margin: 0, color: isDark ? '#FFFFFF' : '#1E2933' }}>
+            <FieldTimeOutlined style={{ marginRight: 10, color: isDark ? '#60A5FA' : '#17324D' }} />
             Pending Transport Jobs
           </Title>
           <Paragraph type="secondary" style={{ margin: 0 }}>

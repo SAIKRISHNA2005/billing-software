@@ -687,11 +687,11 @@ function VehicleManagementContent() {
         }}
       >
         <div>
-          <Title level={2} style={{ margin: 0, color: '#1E2933', fontSize: 22, fontWeight: 600 }}>
-            <CarOutlined style={{ marginRight: 8, color: '#17324D' }} />
-            Vehicle Fleet & RC Management
+          <Title level={2} style={{ margin: 0, color: isDark ? '#FFFFFF' : '#1E2933', fontSize: 22, fontWeight: 600 }}>
+            <CarOutlined style={{ marginRight: 8, color: isDark ? '#60A5FA' : '#17324D' }} />
+            Vehicle Fleet &amp; RC Management
           </Title>
-          <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
+          <Text type="secondary" style={{ fontSize: 13, color: isDark ? '#A1A1AA' : '#5F6B73' }}>
             Comprehensive fleet registry, registration certificates (RC), and automated document renewal alerts
           </Text>
         </div>
@@ -714,10 +714,10 @@ function VehicleManagementContent() {
         <Col xs={24} sm={12} md={6}>
           <Card size="small" className="spt-kpi-card spt-kpi-steel">
             <Statistic
-              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Total Registered Fleet</span>}
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: isDark ? '#A1A1AA' : '#5F6B73', textTransform: 'uppercase' }}>Total Registered Fleet</span>}
               value={stats.total}
-              prefix={<CarOutlined style={{ color: '#365A73' }} />}
-              valueStyle={{ color: '#17324D', fontWeight: 700 }}
+              prefix={<CarOutlined style={{ color: isDark ? '#60A5FA' : '#365A73' }} />}
+              valueStyle={{ color: isDark ? '#FFFFFF' : '#17324D', fontWeight: 700 }}
             />
           </Card>
         </Col>
@@ -725,10 +725,10 @@ function VehicleManagementContent() {
         <Col xs={24} sm={12} md={6}>
           <Card size="small" className="spt-kpi-card spt-kpi-green">
             <Statistic
-              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Active Vehicles</span>}
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: isDark ? '#A1A1AA' : '#5F6B73', textTransform: 'uppercase' }}>Active Vehicles</span>}
               value={stats.active}
-              prefix={<CheckCircleOutlined style={{ color: '#3F6F4A' }} />}
-              valueStyle={{ color: '#3F6F4A', fontWeight: 700 }}
+              prefix={<CheckCircleOutlined style={{ color: isDark ? '#4ADE80' : '#3F6F4A' }} />}
+              valueStyle={{ color: isDark ? '#4ADE80' : '#3F6F4A', fontWeight: 700 }}
             />
           </Card>
         </Col>
@@ -741,10 +741,10 @@ function VehicleManagementContent() {
             onClick={() => setExpiryFilter(expiryFilter === 'ALERTS' ? 'ALL' : 'ALERTS')}
           >
             <Statistic
-              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Expiring Soon (&le;3 Days)</span>}
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: isDark ? '#A1A1AA' : '#5F6B73', textTransform: 'uppercase' }}>Expiring Soon (&le;3 Days)</span>}
               value={stats.totalAlerts}
-              prefix={<WarningOutlined style={{ color: '#C58A2A' }} />}
-              valueStyle={{ color: '#C58A2A', fontWeight: 700 }}
+              prefix={<WarningOutlined style={{ color: isDark ? '#FBBF24' : '#C58A2A' }} />}
+              valueStyle={{ color: isDark ? '#FBBF24' : '#C58A2A', fontWeight: 700 }}
             />
           </Card>
         </Col>
@@ -757,10 +757,10 @@ function VehicleManagementContent() {
             onClick={() => setExpiryFilter(expiryFilter === 'EXPIRED' ? 'ALL' : 'EXPIRED')}
           >
             <Statistic
-              title={<span style={{ fontSize: 12, fontWeight: 600, color: '#5F6B73', textTransform: 'uppercase' }}>Expired Documents</span>}
+              title={<span style={{ fontSize: 12, fontWeight: 600, color: isDark ? '#A1A1AA' : '#5F6B73', textTransform: 'uppercase' }}>Expired Documents</span>}
               value={stats.expiredCount}
-              prefix={<ExclamationCircleOutlined style={{ color: '#A8473C' }} />}
-              valueStyle={{ color: '#A8473C', fontWeight: 700 }}
+              prefix={<ExclamationCircleOutlined style={{ color: isDark ? '#F87171' : '#A8473C' }} />}
+              valueStyle={{ color: isDark ? '#F87171' : '#A8473C', fontWeight: 700 }}
             />
           </Card>
         </Col>

@@ -41,6 +41,7 @@ import { ActionConfirmPopover } from '@/components/common/ActionConfirmPopover';
 import { RecordDetailPopover } from '@/components/common/RecordDetailPopover';
 import { VehicleStatusToggle } from '@/components/common/VehicleStatusToggle';
 import { exportToExcel } from '@/lib/utils/exportHelper';
+import { useTheme } from '@/components/providers/ThemeContext';
 import axios from 'axios';
 
 const { Title, Paragraph, Text } = Typography;
@@ -84,6 +85,7 @@ interface EnquiryRow {
 
 export default function EnquiriesListPage() {
   const router = useRouter();
+  const { isDark } = useTheme();
 
   // Table Data State
   const [data, setData] = useState<EnquiryRow[]>([]);
@@ -275,7 +277,7 @@ export default function EnquiriesListPage() {
       sorter: true,
       render: (enqNo, record) => (
         <RecordDetailPopover record={record} title={`Enquiry #ENQ-${enqNo}`}>
-          <Link href={`/enquiries/${record.id}`} style={{ fontWeight: 600, color: '#17324D' }}>
+          <Link href={`/enquiries/${record.id}`} style={{ fontWeight: 600, color: isDark ? '#60A5FA' : '#17324D' }}>
             {`ENQ-${enqNo}`}
           </Link>
         </RecordDetailPopover>
@@ -369,7 +371,7 @@ export default function EnquiriesListPage() {
                 fontSize: 10,
                 fontWeight: 700,
                 letterSpacing: 0.3,
-                color: isToggled ? '#17324D' : '#5F6B73',
+                color: isToggled ? (isDark ? '#38BDF8' : '#17324D') : (isDark ? '#A1A1AA' : '#5F6B73'),
               }}
             >
               {isToggled ? 'SENT FOR WORK' : 'NOT ASSIGNED'}
@@ -527,8 +529,8 @@ export default function EnquiriesListPage() {
         }}
       >
         <div>
-          <Title level={2} style={{ margin: 0, color: '#1E2933' }}>
-            <FileTextOutlined style={{ marginRight: 10, color: '#17324D' }} />
+          <Title level={2} style={{ margin: 0, color: isDark ? '#FFFFFF' : '#1E2933' }}>
+            <FileTextOutlined style={{ marginRight: 10, color: isDark ? '#60A5FA' : '#17324D' }} />
             Transport Enquiries
           </Title>
           <Paragraph type="secondary" style={{ margin: 0 }}>

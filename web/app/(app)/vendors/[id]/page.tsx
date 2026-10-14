@@ -488,11 +488,11 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
               Vendors
             </Button>
             <div>
-              <Title level={3} style={{ margin: 0, color: '#17324D', letterSpacing: '-0.01em' }}>
-                <UserOutlined style={{ marginRight: 8, color: '#17324D' }} />
+              <Title level={3} style={{ margin: 0, color: isDark ? '#FFFFFF' : '#17324D', letterSpacing: '-0.01em' }}>
+                <UserOutlined style={{ marginRight: 8, color: isDark ? '#60A5FA' : '#17324D' }} />
                 {vendor?.name || 'Vendor Details'}
               </Title>
-              <Text type="secondary" style={{ fontSize: 13, color: '#5F6B73' }}>
+              <Text type="secondary" style={{ fontSize: 13, color: isDark ? '#A1A1AA' : '#5F6B73' }}>
                 Financial summary, transport trips, and payment reconciliation ledger.
               </Text>
             </div>
@@ -515,44 +515,44 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
         <Col xs={24} sm={12} md={6}>
           <Card className="spt-kpi-card spt-kpi-steel" size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Payable</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Total Payable</span>}
               value={totals.totalPayable}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#FFFFFF' : '#17324D', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card className="spt-kpi-card spt-kpi-green" size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Total Paid</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Total Paid</span>}
               value={totals.totalPaid}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#4ADE80' : '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card className={`spt-kpi-card ${totals.netPending > 0 ? 'spt-kpi-amber' : 'spt-kpi-green'}`} size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Pending Balance</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Pending Balance</span>}
               value={totals.netPending}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: totals.netPending > 0 ? '#C58A2A' : '#3F6F4A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: totals.netPending > 0 ? (isDark ? '#FBBF24' : '#C58A2A') : (isDark ? '#4ADE80' : '#3F6F4A'), fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card className="spt-kpi-card spt-kpi-steel" size="small">
             <Statistic
-              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: '#5F6B73', fontWeight: 600 }}>Unallocated Payments</span>}
+              title={<span style={{ fontSize: 11, textTransform: 'uppercase', color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600 }}>Unallocated Payments</span>}
               value={totals.unallocatedPaid}
               precision={2}
               prefix="₹"
-              valueStyle={{ color: '#5F6B73', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
+              valueStyle={{ color: isDark ? '#A1A1AA' : '#5F6B73', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
             />
           </Card>
         </Col>
@@ -632,9 +632,9 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
         }
       >
         <Form form={form} layout="vertical">
-          <div style={{ marginBottom: 16, padding: '8px 12px', background: '#ECEFEE', border: '1px solid #D4DAD9', borderRadius: 4 }}>
-            <Text>
-              Vendor Net Pending: <Text strong style={{ color: totals.netPending > 0 ? '#A8473C' : '#3F6F4A', fontFamily: 'monospace' }}>₹{totals.netPending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</Text>
+          <div style={{ marginBottom: 16, padding: '8px 12px', background: isDark ? '#27272A' : '#ECEFEE', border: isDark ? '1px solid #3F3F46' : '1px solid #D4DAD9', borderRadius: 4 }}>
+            <Text style={{ color: isDark ? '#E4E4E7' : '#1F2937' }}>
+              Vendor Net Pending: <Text strong style={{ color: totals.netPending > 0 ? (isDark ? '#F87171' : '#A8473C') : (isDark ? '#4ADE80' : '#3F6F4A'), fontFamily: 'monospace' }}>₹{totals.netPending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</Text>
             </Text>
           </div>
 
@@ -663,9 +663,9 @@ export default function VendorDetailPage({ params }: VendorDetailProps) {
           </Form.Item>
 
           {selectedEnquiryPending !== null && (
-            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#FDF6E8', border: '1px solid #F0D59E', borderRadius: 4 }}>
-              <Text type="secondary">Selected Trip Pending: </Text>
-              <Text strong style={{ color: '#9E6B1D', fontFamily: 'monospace' }}>
+            <div style={{ marginBottom: 16, padding: '8px 12px', background: isDark ? '#451A03' : '#FDF6E8', border: isDark ? '1px solid #78350F' : '1px solid #F0D59E', borderRadius: 4 }}>
+              <Text type="secondary" style={{ color: isDark ? '#A1A1AA' : undefined }}>Selected Trip Pending: </Text>
+              <Text strong style={{ color: isDark ? '#FBBF24' : '#9E6B1D', fontFamily: 'monospace' }}>
                 ₹{selectedEnquiryPending.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </Text>
             </div>

@@ -162,11 +162,95 @@ function InnerAntdConfigProvider({ children }: { children: React.ReactNode }) {
             ? {
                 titleFontSize: 12,
                 contentFontSize: 24,
+                colorTextDescription: '#A1A1AA',
+                colorTextHeading: '#FFFFFF',
               }
             : {
                 titleFontSize: 12,
                 contentFontSize: 24,
+                colorTextDescription: '#475569',
+                colorTextHeading: '#090D14',
               },
+          Descriptions: isDark
+            ? {
+                labelBg: '#202024',
+                titleColor: '#FFFFFF',
+                colorText: '#FFFFFF',
+                colorTextSecondary: '#D4D4D8',
+              }
+            : {
+                labelBg: '#F8FAFC',
+                titleColor: '#090D14',
+                colorText: '#090D14',
+                colorTextSecondary: '#475569',
+              },
+          Tabs: isDark
+            ? {
+                itemColor: '#A1A1AA',
+                itemSelectedColor: '#FFFFFF',
+                itemHoverColor: '#60A5FA',
+                inkBarColor: '#3B82F6',
+                cardBg: '#18181B',
+              }
+            : {
+                itemColor: '#475569',
+                itemSelectedColor: '#17324D',
+                itemHoverColor: '#24445D',
+                inkBarColor: '#17324D',
+                cardBg: '#F8FAFC',
+              },
+          Form: {
+            labelColor: isDark ? '#FFFFFF' : '#090D14',
+            labelFontSize: 13,
+          },
+          Collapse: isDark
+            ? {
+                headerBg: '#202024',
+                contentBg: '#18181B',
+                colorText: '#FFFFFF',
+                colorTextHeading: '#FFFFFF',
+              }
+            : {
+                headerBg: '#F8FAFC',
+                contentBg: '#FFFFFF',
+                colorText: '#090D14',
+                colorTextHeading: '#090D14',
+              },
+          Empty: {
+            colorTextDescription: isDark ? '#A1A1AA' : '#64748B',
+          },
+          Segmented: isDark
+            ? {
+                itemColor: '#A1A1AA',
+                itemSelectedColor: '#FFFFFF',
+                itemSelectedBg: '#27272A',
+                itemHoverColor: '#FFFFFF',
+                trackBg: '#121214',
+              }
+            : {
+                itemColor: '#475569',
+                itemSelectedColor: '#090D14',
+                itemSelectedBg: '#FFFFFF',
+                itemHoverColor: '#090D14',
+                trackBg: '#E2E8F0',
+              },
+          Radio: {
+            colorText: isDark ? '#FFFFFF' : '#090D14',
+          },
+          Checkbox: {
+            colorText: isDark ? '#FFFFFF' : '#090D14',
+          },
+          Timeline: {
+            colorText: isDark ? '#E4E4E7' : '#090D14',
+            colorTextDescription: isDark ? '#A1A1AA' : '#64748B',
+          },
+          Badge: {
+            colorText: isDark ? '#FFFFFF' : '#090D14',
+          },
+          Tooltip: {
+            colorBgSpotlight: isDark ? '#27272A' : '#0F172A',
+            colorTextLightSolid: '#FFFFFF',
+          },
           Button: {
             fontWeight: 500,
             borderRadius: 4,
