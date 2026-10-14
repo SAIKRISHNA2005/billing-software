@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Table, Tag, Button, Typography, Space, Descriptions, Modal, Form, Input, InputNumber, Select, DatePicker, Spin, message } from 'antd';
-import { FileTextOutlined, ArrowLeftOutlined, EditOutlined, DownloadOutlined, EyeOutlined, DollarOutlined, PrinterOutlined } from '@ant-design/icons';
+import { FileTextOutlined, ArrowLeftOutlined, EditOutlined, DownloadOutlined, DollarOutlined, PrinterOutlined } from '@ant-design/icons';
 import { useRouter, useParams } from 'next/navigation';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -54,64 +54,28 @@ export default function ProcessedBillDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const handleGeneratePdf = async (preview: boolean = false) => {
+  const handleGeneratePdf = async () => {
     setPdfGenerating(true);
     try {
       const res = await axios.get(`/api/billing/pdf/${id}`);
       if (res.data && res.data.success) {
         setPdfData(res.data.data);
-        if (preview) {
-          if (res.data.data?.pdfBase64) {
-            try {
-              const byteCharacters = atob(res.data.data.pdfBase64);
-              const byteNumbers = new Array(byteCharacters.length);
-              for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-              }
-              const byteArray = new Uint8Array(byteNumbers);
-              const blob = new Blob([byteArray], { type: 'application/pdf' });
-              const blobUrl = URL.createObjectURL(blob);
-              setPreviewBlobUrl(blobUrl);
-            } catch (blobErr) {
-              console.error('Error creating Blob URL:', blobErr);
+        if (res.data.data?.pdfBase64) {
+          try {
+            const byteCharacters = atob(res.data.data.pdfBase64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
             }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            setPreviewBlobUrl(blobUrl);
+          } catch (blobErr) {
+            console.error('Error creating Blob URL:', blobErr);
           }
-          setPdfModalVisible(true);
-        } else if (res.data.data?.pdfBase64) {
-          const filename = `Invoice_${bill?.billNumber ? String(bill.billNumber).replace(/[\/\\]/g, '-') : id}.pdf`;
-          const byteCharacters = atob(res.data.data.pdfBase64);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: 'application/pdf' });
-          const blobUrl = URL.createObjectURL(blob);
-
-          const link = document.createElement('a');
-          link.href = blobUrl;
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-
-          message.success('Invoice PDF downloaded successfully!');
-        } else if (res.data.data?.html) {
-          // Client-side print fallback when serverless environment lacks local browser
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(res.data.data.html);
-            printWindow.document.close();
-            printWindow.focus();
-            setTimeout(() => printWindow.print(), 350);
-          }
-          message.success('Opening print dialog to Save as PDF...');
-        } else if (res.data.data.pdfUrl) {
-          window.open(res.data.data.pdfUrl, '_blank');
-        } else {
-          message.success('PDF generated successfully!');
         }
+        setPdfModalVisible(true);
       } else {
         message.error(res.data?.message || 'Failed to generate PDF');
       }
@@ -197,17 +161,9 @@ export default function ProcessedBillDetailPage() {
         </Space>
         <Space wrap>
           <Button
-            icon={<EyeOutlined />}
-            loading={pdfGenerating}
-            onClick={() => handleGeneratePdf(true)}
-          >
-            Preview PDF
-          </Button>
-          <Button
-            type="default"
             icon={<DownloadOutlined />}
             loading={pdfGenerating}
-            onClick={() => handleGeneratePdf(false)}
+            onClick={() => handleGeneratePdf()}
           >
             Download PDF
           </Button>
