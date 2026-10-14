@@ -219,7 +219,11 @@ function InnerAntdConfigProvider({ children }: { children: React.ReactNode }) {
             borderRadiusLG: 6,
             headerBg: isDark ? '#18181B' : '#FFFFFF',
             contentBg: isDark ? '#18181B' : '#FFFFFF',
+            footerBg: isDark ? '#18181B' : '#FFFFFF',
             titleColor: isDark ? '#FFFFFF' : '#090D14',
+            colorText: isDark ? '#FFFFFF' : '#090D14',
+            colorTextHeading: isDark ? '#FFFFFF' : '#090D14',
+            colorTextDescription: isDark ? '#E4E4E7' : '#1F2937',
           },
           Drawer: {
             borderRadiusLG: 6,

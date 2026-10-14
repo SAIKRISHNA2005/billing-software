@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, Form, Input, Button, Typography, Alert, Space } from 'antd';
 import { MailOutlined, LockOutlined, CarOutlined, EnvironmentOutlined, CheckCircleOutlined, CompassOutlined } from '@ant-design/icons';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useTheme } from '@/components/providers/ThemeContext';
 
 const { Title, Text } = Typography;
 
@@ -16,6 +17,7 @@ interface LoginFormValues {
 export default function LoginPage() {
   const router = useRouter();
   const { user, login, isAuthenticated } = useAuth();
+  const { isDark } = useTheme();
   const [form] = Form.useForm<LoginFormValues>();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -140,8 +142,10 @@ export default function LoginPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#172A3A',
-        backgroundImage: 'radial-gradient(circle at 50% 30%, #1D354A 0%, #172A3A 70%)',
+        backgroundColor: isDark ? '#09090B' : '#172A3A',
+        backgroundImage: isDark
+          ? 'radial-gradient(circle at 50% 30%, #18181B 0%, #09090B 70%)'
+          : 'radial-gradient(circle at 50% 30%, #1D354A 0%, #172A3A 70%)',
         padding: '24px',
       }}
     >
@@ -150,9 +154,11 @@ export default function LoginPage() {
           width: '100%',
           maxWidth: 420,
           borderRadius: 6,
-          boxShadow: '0 12px 32px rgba(10, 20, 30, 0.45)',
-          border: '1px solid #365A73',
-          background: '#FFFFFF',
+          boxShadow: isDark
+            ? '0 12px 32px rgba(0, 0, 0, 0.7)'
+            : '0 12px 32px rgba(10, 20, 30, 0.45)',
+          border: isDark ? '1px solid #2E2E33' : '1px solid #365A73',
+          background: isDark ? '#18181B' : '#FFFFFF',
         }}
         bodyStyle={{ padding: '36px 32px' }}
       >
@@ -162,23 +168,23 @@ export default function LoginPage() {
               width: 52,
               height: 52,
               borderRadius: 6,
-              background: '#ECEFEE',
-              border: '1px solid #D4DAD9',
+              background: isDark ? '#27272A' : '#ECEFEE',
+              border: isDark ? '1px solid #3F3F46' : '1px solid #D4DAD9',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: 14,
             }}
           >
-            <CarOutlined style={{ fontSize: 26, color: '#17324D' }} />
+            <CarOutlined style={{ fontSize: 26, color: isDark ? '#60A5FA' : '#17324D' }} />
           </div>
-          <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: '0.6px', color: '#090D14', lineHeight: 1.2 }}>
+          <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: '0.6px', color: isDark ? '#FFFFFF' : '#090D14', lineHeight: 1.2 }}>
             SRI PONNIAMMAN TRANS
           </div>
-          <div style={{ fontSize: 11.5, fontWeight: 700, color: '#1F2937', letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: 4 }}>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: isDark ? '#E4E4E7' : '#1F2937', letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: 4 }}>
             Transport & Logistics Management System
           </div>
-          <div style={{ fontSize: 12.5, color: '#374151', fontWeight: 500, marginTop: 4 }}>
+          <div style={{ fontSize: 12.5, color: isDark ? '#A1A1AA' : '#374151', fontWeight: 500, marginTop: 4 }}>
             Single-Operator Operational Dispatch Console
           </div>
         </div>
@@ -188,46 +194,120 @@ export default function LoginPage() {
             type="error"
             message={errorMessage}
             showIcon
-            style={{ marginBottom: 18, borderRadius: 4, border: '1px solid #E5BDB9', background: '#FBEFEF' }}
+            style={{
+              marginBottom: 18,
+              borderRadius: 4,
+              border: isDark ? '1px solid #7F1D1D' : '1px solid #E5BDB9',
+              background: isDark ? '#450A0A' : '#FBEFEF',
+              color: isDark ? '#FCA5A5' : '#991B1B',
+            }}
           />
         )}
 
         {/* GPS Audit Location Verification Banner */}
         <div
+          className="spt-audit-location-banner"
           style={{
             marginBottom: 20,
             padding: '10px 14px',
             borderRadius: 4,
-            background: gpsStatus === 'granted' ? '#EBF4ED' : gpsStatus === 'denied' ? '#FDF6E8' : '#EEF3F6',
-            border: `1px solid ${gpsStatus === 'granted' ? '#B7D9BF' : gpsStatus === 'denied' ? '#E8CCA1' : '#D4DAD9'}`,
+            background: isDark
+              ? (gpsStatus === 'granted' ? '#052E16' : gpsStatus === 'denied' ? '#451A03' : '#18181B')
+              : (gpsStatus === 'granted' ? '#EBF4ED' : gpsStatus === 'denied' ? '#FDF6E8' : '#EEF3F6'),
+            border: isDark
+              ? `1px solid ${gpsStatus === 'granted' ? '#14532D' : gpsStatus === 'denied' ? '#78350F' : '#2E2E33'}`
+              : `1px solid ${gpsStatus === 'granted' ? '#B7D9BF' : gpsStatus === 'denied' ? '#E8CCA1' : '#D4DAD9'}`,
             fontSize: 12,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: '#1E2933' }}>
-              <EnvironmentOutlined style={{ color: gpsStatus === 'granted' ? '#3F6F4A' : '#365A73', fontSize: 13 }} />
+            <span
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontWeight: 600,
+                color: isDark
+                  ? (gpsStatus === 'granted' ? '#86EFAC' : gpsStatus === 'denied' ? '#FDE68A' : '#93C5FD')
+                  : (gpsStatus === 'granted' ? '#166534' : gpsStatus === 'denied' ? '#92400E' : '#1E2933'),
+              }}
+            >
+              <EnvironmentOutlined
+                style={{
+                  color: isDark
+                    ? (gpsStatus === 'granted' ? '#4ADE80' : gpsStatus === 'denied' ? '#FBBF24' : '#60A5FA')
+                    : (gpsStatus === 'granted' ? '#3F6F4A' : gpsStatus === 'denied' ? '#C58A2A' : '#365A73'),
+                  fontSize: 13,
+                }}
+              />
               Audit Security Location
             </span>
             {gpsStatus === 'granted' && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#2F5938', background: '#D2E8D6', padding: '1px 6px', borderRadius: 3 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: isDark ? '#86EFAC' : '#2F5938',
+                  background: isDark ? '#14532D' : '#D2E8D6',
+                  border: isDark ? '1px solid #16A34A' : 'none',
+                  padding: '1px 6px',
+                  borderRadius: 3,
+                }}
+              >
                 Verified
               </span>
             )}
             {gpsStatus === 'requesting' && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#365A73', background: '#DCE8EF', padding: '1px 6px', borderRadius: 3 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: isDark ? '#93C5FD' : '#365A73',
+                  background: isDark ? '#1E3A8A' : '#DCE8EF',
+                  padding: '1px 6px',
+                  borderRadius: 3,
+                }}
+              >
                 Acquiring GPS...
               </span>
             )}
             {gpsStatus === 'denied' && (
-              <Button size="small" type="link" onClick={() => acquireLocation()} style={{ padding: 0, height: 'auto', fontSize: 11, color: '#C58A2A' }}>
+              <Button
+                size="small"
+                type="link"
+                onClick={() => acquireLocation()}
+                style={{
+                  padding: 0,
+                  height: 'auto',
+                  fontSize: 11,
+                  color: isDark ? '#FBBF24' : '#C58A2A',
+                }}
+              >
                 Allow Access
               </Button>
             )}
           </div>
-          <div style={{ color: '#5F6B73', fontSize: 11.5, wordBreak: 'break-word', lineHeight: 1.4 }}>
+          <div
+            style={{
+              color: isDark
+                ? (gpsStatus === 'granted' ? '#D1FAE5' : gpsStatus === 'denied' ? '#FDE68A' : '#D4D4D8')
+                : (gpsStatus === 'granted' ? '#1F2937' : gpsStatus === 'denied' ? '#78350F' : '#5F6B73'),
+              fontSize: 11.5,
+              wordBreak: 'break-word',
+              lineHeight: 1.4,
+            }}
+          >
             {gpsStatus === 'granted' && gpsData?.address ? (
               <span>
-                📍 {gpsData.address} <Text type="secondary" style={{ fontSize: 10.5 }}>(Accuracy: ±{Math.round(gpsData.accuracy || 0)}m)</Text>
+                📍 {gpsData.address}{' '}
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    color: isDark ? '#A7F3D0' : '#4B5563',
+                  }}
+                >
+                  (Accuracy: ±{Math.round(gpsData.accuracy || 0)}m)
+                </span>
               </span>
             ) : gpsStatus === 'requesting' ? (
               <span>Acquiring exact GPS satellite coordinates for audit verification...</span>
@@ -248,14 +328,14 @@ export default function LoginPage() {
         >
           <Form.Item
             name="email"
-            label={<span style={{ fontSize: 13, fontWeight: 700, color: '#090D14' }}>Email Address</span>}
+            label={<span style={{ fontSize: 13, fontWeight: 700, color: isDark ? '#FFFFFF' : '#090D14' }}>Email Address</span>}
             rules={[
               { required: true, message: 'Please enter your email' },
               { type: 'email', message: 'Please enter a valid email' },
             ]}
           >
             <Input
-              prefix={<MailOutlined style={{ color: '#4B5563' }} />}
+              prefix={<MailOutlined style={{ color: isDark ? '#9CA3AF' : '#4B5563' }} />}
               placeholder="e.g. admin@tms.local"
               size="large"
               autoComplete="email"
@@ -266,11 +346,11 @@ export default function LoginPage() {
 
           <Form.Item
             name="password"
-            label={<span style={{ fontSize: 13, fontWeight: 700, color: '#090D14' }}>Password</span>}
+            label={<span style={{ fontSize: 13, fontWeight: 700, color: isDark ? '#FFFFFF' : '#090D14' }}>Password</span>}
             rules={[{ required: true, message: 'Please enter your password' }]}
           >
             <Input.Password
-              prefix={<LockOutlined style={{ color: '#4B5563' }} />}
+              prefix={<LockOutlined style={{ color: isDark ? '#9CA3AF' : '#4B5563' }} />}
               placeholder="Enter your password"
               size="large"
               autoComplete="current-password"
@@ -291,8 +371,9 @@ export default function LoginPage() {
                 fontSize: 14.5,
                 fontWeight: 600,
                 borderRadius: 4,
-                backgroundColor: '#17324D',
-                borderColor: '#17324D',
+                backgroundColor: isDark ? '#2563EB' : '#17324D',
+                borderColor: isDark ? '#2563EB' : '#17324D',
+                color: '#FFFFFF',
               }}
             >
               Sign In to Console
@@ -302,10 +383,10 @@ export default function LoginPage() {
 
         <div style={{ textAlign: 'center', marginTop: 14 }}>
           <Space direction="vertical" size={2}>
-            <Text type="secondary" style={{ fontSize: 11.5, color: '#5F6B73' }}>
+            <Text type="secondary" style={{ fontSize: 11.5, color: isDark ? '#A1A1AA' : '#5F6B73' }}>
               Sri Ponniamman Trans Secure Transport Portal
             </Text>
-            <Text type="secondary" style={{ fontSize: 11, color: '#89939A' }}>
+            <Text type="secondary" style={{ fontSize: 11, color: isDark ? '#71717A' : '#89939A' }}>
               Protected by server-side session authentication & audit tracking
             </Text>
           </Space>

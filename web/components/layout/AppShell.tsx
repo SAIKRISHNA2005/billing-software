@@ -14,6 +14,7 @@ import {
   Avatar,
   Modal,
   Tooltip,
+  App,
 } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -53,6 +54,7 @@ export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const { user, isLoading, isAuthenticated, logout } = useAuth();
   const { themeMode, toggleTheme } = useTheme();
+  const { modal } = App.useApp();
   const [collapsed, setCollapsed] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -109,7 +111,7 @@ export default function AppShell({ children }: AppShellProps) {
   }
 
   const handleLogout = () => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Confirm Logout',
       content: 'Are you sure you want to end your current session?',
       okText: 'Logout',
