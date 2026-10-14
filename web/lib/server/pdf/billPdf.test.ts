@@ -345,9 +345,10 @@ describe('Bill PDF System Tests', () => {
     expect(html).toContain('51,850.00');
 
     // Sign and seal spacing and size assertions
-    expect(html).toContain('gap: 4px;');
-    expect(html).toContain('width: 148px; height: 87px;');
-    expect(html).toContain('width: 102px; height: 102px;');
+    expect(html).toContain('gap: 0px;');
+    expect(html).toContain('width: 140px; height: 85px;');
+    expect(html).toContain('width: 98px; height: 98px;');
+    expect(html).toContain('margin-left: -22px;');
   });
 
   it('generates an in-memory PDF buffer with valid %PDF- header and strictly 1 single page', async () => {

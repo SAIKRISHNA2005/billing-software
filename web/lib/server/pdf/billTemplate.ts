@@ -158,7 +158,7 @@ export function generateBillHtml(data: BillData): string {
   const estimatedChargesHeight = rawCharges.reduce((acc, row) => {
     const rawText = row.descriptionHtml || row.description || '';
     const lineCount = Math.max(1, rawText.split(/<br\s*\/?>|\n/i).length);
-    const rowHeight = 24 + ((lineCount - 1) * 14);
+    const rowHeight = 26 + ((lineCount - 1) * 14);
     return acc + rowHeight;
   }, 0);
 
@@ -166,9 +166,9 @@ export function generateBillHtml(data: BillData): string {
   const extraAddrHeight = Math.max(0, (clientAddrLines - 1) * 12);
   const headerHeight = data.assets?.headerImage ? 245 : 120;
 
-  // A4 printable height with 1mm top and 5px bottom margin is ~1113px; non-table elements take ~440px + headerHeight
-  // Target available spacer height keeps bill strictly inside 1 page touching ~5px from the bottom
-  const availableSpacer = 1155 - headerHeight - 440 - extraAddrHeight - estimatedChargesHeight;
+  // A4 printable height with 1mm top and 3px bottom margin is ~1115px; non-table elements take ~350px + headerHeight
+  // Target available spacer height keeps bill strictly inside 1 page with minimal space (~4mm) from bottom border to end of page
+  const availableSpacer = 738 - headerHeight - extraAddrHeight - estimatedChargesHeight;
   const spacerHeight = Math.max(0, Math.round(availableSpacer));
 
   // Checkbox generation helper
@@ -202,7 +202,7 @@ export function generateBillHtml(data: BillData): string {
   <style>
     @page {
       size: A4 portrait;
-      margin: 1mm 8mm 5px 8mm;
+      margin: 1mm 8mm 3px 8mm;
     }
     * {
       box-sizing: border-box;
@@ -640,20 +640,20 @@ export function generateBillHtml(data: BillData): string {
             FOR SRI PONNIAMMAN TRANS
           </div>
 
-          <!-- Middle: Sign on LEFT, Seal on RIGHT with small gap between each other, larger size, tight to top and bottom text -->
-          <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin: 1px 0;">
+          <!-- Middle: Sign on LEFT, Seal on RIGHT with tight spacing matching physical Sri Ponniamman stamp reference -->
+          <div style="display: flex; align-items: center; justify-content: center; gap: 0px; margin: 1px 0;">
             ${data.assets?.signatureImage ? `
               <img
                 src="${data.assets.signatureImage}"
-                alt="Signature"
-                style="width: 148px; height: 87px; object-fit: contain; z-index: 2;"
+                alt="Authorized Signature"
+                style="width: 140px; height: 85px; object-fit: contain; z-index: 2;"
               />
             ` : ''}
             ${data.assets?.sealImage ? `
               <img
                 src="${data.assets.sealImage}"
-                alt="Seal"
-                style="width: 102px; height: 102px; object-fit: contain; opacity: 0.9; z-index: 1;"
+                alt="Official Seal"
+                style="width: 98px; height: 98px; object-fit: contain; opacity: 0.92; z-index: 1; ${data.assets?.signatureImage ? 'margin-left: -22px;' : ''}"
               />
             ` : ''}
             ${(!data.assets?.sealImage && !data.assets?.signatureImage && data.assets?.sealAndSignatureImage) ? `
