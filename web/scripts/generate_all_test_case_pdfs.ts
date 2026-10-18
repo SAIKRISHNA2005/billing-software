@@ -91,7 +91,7 @@ const testCase2_NormalPlusCustom: BillData = {
       freightCharges: 30000,
       freightFormula: '1 X 30,000.00',
       haltingCharges: 2000,
-      haltingFormula: null,
+      haltingFormula: undefined,
       otherCharges: null,
       advance: 3000,
       customCharges: [

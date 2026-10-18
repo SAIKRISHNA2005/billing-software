@@ -453,24 +453,63 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
     // Check for any standalone bill items that weren't tied to an enquiry
     const linkedEnqIds = new Set(linkedEnquiries.map((e) => e.id));
     const standaloneItems = rawItems.filter((it) => it.enquiryId && !linkedEnqIds.has(it.enquiryId));
-    standaloneItems.forEach((it) => {
-      const amt = Number(it.amount) || 0;
-      if (amt > 0) {
-        charges.push({
-          sNo: currentSNo++,
-          description: plainDescription,
-          descriptionHtml,
-          freightCharges: null,
-          otherCharges: amt,
-          haltingCharges: null,
-          advance: null,
-          rate: null,
-          amount: amt,
-        });
-        otherChargesTotal += amt;
-        grandTotal += amt;
+    if (standaloneItems.length > 0) {
+      const standalonePairs: { truck: string; container: string }[] = [];
+      const sLen = Math.max(truckNumbers.length, containerNumbers.length);
+      if (sLen > 0) {
+        for (let i = 0; i < sLen; i++) {
+          standalonePairs.push({
+            truck: truckNumbers[i] || truckNumbers[0] || '-',
+            container: containerNumbers[i] || containerNumbers[0] || '-',
+          });
+        }
+      } else {
+        standalonePairs.push({ truck: '-', container: '-' });
       }
-    });
+
+      const standaloneDescHtml = `
+        <table style="width: 100%; border: none; border-collapse: collapse; margin: 0; padding: 0;">
+          <thead>
+            <tr>
+              <th style="border: none; text-align: left; padding: 0 14px 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">TRUCK NUMBER</th>
+              <th style="border: none; text-align: left; padding: 0 0 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">CONTAINER NUMBER</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${standalonePairs.map((p) => `
+              <tr>
+                <td style="border: none; text-align: left; padding: 2px 14px 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">${p.truck}</td>
+                <td style="border: none; text-align: left; padding: 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">${p.container}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `.trim();
+
+      const standalonePlainDesc = [
+        'TRUCK NUMBER\tCONTAINER NUMBER',
+        ...standalonePairs.map((p) => `${p.truck}\t${p.container}`),
+      ].join('\n');
+
+      standaloneItems.forEach((it) => {
+        const amt = Number(it.amount) || 0;
+        if (amt > 0) {
+          charges.push({
+            sNo: currentSNo++,
+            description: standalonePlainDesc,
+            descriptionHtml: standaloneDescHtml,
+            freightCharges: null,
+            otherCharges: amt,
+            haltingCharges: null,
+            advance: null,
+            rate: null,
+            amount: amt,
+          });
+          otherChargesTotal += amt;
+          grandTotal += amt;
+        }
+      });
+    }
   } else if (rawItems.length > 0) {
     // Non-enquiry items (e.g. manual items or test fixtures)
     const pairs: { truck: string; container: string }[] = [];
