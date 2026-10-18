@@ -44,11 +44,14 @@ export async function GET(
           },
         });
       } catch (pdfErr) {
-        console.error('[BillPDFRoute] Error generating PDF binary stream:', pdfErr);
-        return NextResponse.json(
-          { success: false, message: 'Server-side PDF generation failed. Please try again.' },
-          { status: 500 }
-        );
+        console.warn('[BillPDFRoute] Server-side PDF generation unavailable in this environment, falling back to HTML stream:', pdfErr);
+        return new NextResponse(html, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'X-PDF-Fallback': 'html',
+          },
+        });
       }
     }
 

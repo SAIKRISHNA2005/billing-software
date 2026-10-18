@@ -8,6 +8,7 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import { formatCurrencyINR } from '@/lib/utils/format';
 import { useTheme } from '@/components/providers/ThemeContext';
+import { downloadBillPdf } from '@/lib/client/billDownloader';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -62,75 +63,24 @@ export default function ProcessedBillDetailPage() {
     const filename = `Invoice_${invoiceNum}.pdf`;
     const hideLoading = message.loading(`Preparing PDF invoice for ${bill?.billNumber || id}...`, 0);
     try {
-      if (pdfData?.pdfBase64) {
-        const byteCharacters = atob(pdfData.pdfBase64);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: 'application/pdf' });
-        const blobUrl = URL.createObjectURL(blob);
+      let base64 = pdfData?.pdfBase64;
+      let html = pdfData?.html;
 
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-
-        message.success(`Invoice ${bill?.billNumber || id} downloaded successfully!`);
-        return;
-      }
-
-      // Stream PDF directly from server
-      const pdfRes = await axios.get(`/api/billing/pdf/${id}?format=pdf`, { responseType: 'blob' });
-      if (pdfRes.data) {
-        const blob = new Blob([pdfRes.data], { type: 'application/pdf' });
-        const blobUrl = URL.createObjectURL(blob);
-
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-
-        message.success(`Invoice ${bill?.billNumber || id} downloaded successfully!`);
-      } else {
-        message.error('Failed to download invoice PDF');
-      }
-    } catch (err: any) {
-      // Fallback to base64 endpoint if binary format failed
-      try {
+      if (!base64 && !html) {
         const res = await axios.get(`/api/billing/pdf/${id}`);
-        if (res.data?.success && res.data.data?.pdfBase64) {
-          const byteCharacters = atob(res.data.data.pdfBase64);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: 'application/pdf' });
-          const blobUrl = URL.createObjectURL(blob);
-
-          const link = document.createElement('a');
-          link.href = blobUrl;
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-
-          message.success(`Invoice ${bill?.billNumber || id} downloaded successfully!`);
-        } else {
-          message.error(res.data?.message || 'Error generating PDF invoice');
+        if (!res.data || !res.data.success) {
+          throw new Error(res.data?.message || 'Failed to fetch bill PDF');
         }
-      } catch (fallbackErr: any) {
-        message.error(fallbackErr.response?.data?.message || fallbackErr.message || 'Error downloading PDF');
+        base64 = res.data.data?.pdfBase64;
+        html = res.data.data?.html;
+        setPdfData(res.data.data);
       }
+
+      await downloadBillPdf({ pdfBase64: base64, html, filename });
+      message.success(`Invoice ${bill?.billNumber || id} downloaded successfully!`);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || err.message || 'Error downloading PDF';
+      message.error(errorMsg);
     } finally {
       hideLoading();
       setDownloadingPdf(false);

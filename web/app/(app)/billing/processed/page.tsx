@@ -35,6 +35,7 @@ import { RecordDetailPopover } from '@/components/common/RecordDetailPopover';
 import { exportToExcel } from '@/lib/utils/exportHelper';
 import { useTheme } from '@/components/providers/ThemeContext';
 import { getCachedCompanies, getCachedClients, setCachedCompanies, setCachedClients } from '@/lib/client/masterCache';
+import { downloadBillPdf } from '@/lib/client/billDownloader';
 
 const { Title, Text, Paragraph } = Typography;
 const { RangePicker } = DatePicker;
@@ -156,52 +157,20 @@ export default function ProcessedBillsPage() {
     const hideLoading = message.loading(`Preparing PDF invoice for ${record.billNumber || record.id}...`, 0);
     try {
       const res = await axios.get(`/api/billing/pdf/${record.id}`);
-      hideLoading();
-      if (res.data && res.data.success && res.data.data?.pdfBase64) {
-        // Convert base64 to Blob object URL to download directly
-        const byteCharacters = atob(res.data.data.pdfBase64);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: 'application/pdf' });
-        const blobUrl = URL.createObjectURL(blob);
-
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-
-        message.success(`Invoice ${record.billNumber || record.id} downloaded successfully!`);
-      } else {
-        // Direct binary PDF stream fallback
-        const pdfBlobRes = await axios.get(`/api/billing/pdf/${record.id}?format=pdf`, { responseType: 'blob' });
-        if (pdfBlobRes.data) {
-          const blob = new Blob([pdfBlobRes.data], { type: 'application/pdf' });
-          const blobUrl = URL.createObjectURL(blob);
-
-          const link = document.createElement('a');
-          link.href = blobUrl;
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-
-          message.success(`Invoice ${record.billNumber || record.id} downloaded successfully!`);
-        } else {
-          message.error('Failed to generate PDF for download');
-        }
+      if (!res.data || !res.data.success) {
+        throw new Error(res.data?.message || 'Failed to fetch bill PDF');
       }
+
+      const pdfBase64 = res.data.data?.pdfBase64;
+      const html = res.data.data?.html;
+
+      await downloadBillPdf({ pdfBase64, html, filename });
+      message.success(`Invoice ${record.billNumber || record.id} downloaded successfully!`);
     } catch (err: any) {
-      hideLoading();
       const errorMsg = err.response?.data?.message || err.message || 'Error generating PDF';
       message.error(errorMsg);
     } finally {
+      hideLoading();
       setDownloadingId(null);
     }
   };

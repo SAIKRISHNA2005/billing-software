@@ -47,14 +47,25 @@ export async function GET(req: NextRequest) {
     const safeNumber = (billData.billNumber || billData.id).replace(/[\/\\]/g, '-');
 
     if (format === 'pdf' || format === 'binary') {
-      const pdfBuffer = await generateBillPdfBuffer(html);
-      return new NextResponse(new Uint8Array(pdfBuffer), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `inline; filename="Invoice_${safeNumber}.pdf"`,
-        },
-      });
+      try {
+        const pdfBuffer = await generateBillPdfBuffer(html);
+        return new NextResponse(new Uint8Array(pdfBuffer), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `inline; filename="Invoice_${safeNumber}.pdf"`,
+          },
+        });
+      } catch (pdfErr) {
+        console.warn('[BillPreviewRoute] Server-side PDF generation unavailable in this environment, falling back to HTML stream:', pdfErr);
+        return new NextResponse(html, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'X-PDF-Fallback': 'html',
+          },
+        });
+      }
     }
 
     const pdfBase64 = await generateBillPdfBase64(html);

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Card, Button, Typography, Space, Divider, message, Tag } from 'antd';
 import { DownloadOutlined, EyeOutlined, ArrowLeftOutlined, PrinterOutlined } from '@ant-design/icons';
 import Link from 'next/link';
+import { downloadBillPdf } from '@/lib/client/billDownloader';
 
 const { Title, Text } = Typography;
 
@@ -12,22 +13,17 @@ export default function BillTemplatePreviewPage() {
 
   const handleDownloadSamplePdf = async () => {
     setDownloading(true);
+    const hideLoading = message.loading('Preparing sample PDF invoice...', 0);
     try {
-      const response = await fetch('/api/billing/preview?format=pdf');
-      if (!response.ok) throw new Error('Failed to generate preview PDF');
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'Sample_Invoice_231-2026-27.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      const response = await fetch('/api/billing/preview?format=html');
+      if (!response.ok) throw new Error('Failed to fetch preview HTML');
+      const html = await response.text();
+      await downloadBillPdf({ html, filename: 'Sample_Invoice_231-2026-27.pdf' });
       message.success('Sample Invoice PDF downloaded successfully!');
     } catch (e: any) {
       message.error(e.message || 'Error downloading sample PDF');
     } finally {
+      hideLoading();
       setDownloading(false);
     }
   };
