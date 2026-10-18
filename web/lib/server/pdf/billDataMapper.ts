@@ -113,6 +113,72 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
     } catch {}
   }
 
+  // 1c. If still not found, check if cleanIdentifier is an Enquiry ID or Enquiry Number
+  if (!bill) {
+    try {
+      // First check if an existing bill is linked to this enquiry in bill.list
+      const listRes = await callAppsScript<any>('bill.list', { limit: 100 }, sessionToken);
+      if (listRes.success && listRes.data?.items) {
+        bill = listRes.data.items.find((b: any) =>
+          b.enquiryId === cleanIdentifier ||
+          b.enquiryNumber === cleanIdentifier ||
+          (Array.isArray(b.enquiryIds) && b.enquiryIds.map(String).includes(cleanIdentifier)) ||
+          (Array.isArray(b.enquiries) && b.enquiries.some((e: any) => e.id === cleanIdentifier || e.enquiryNumber === cleanIdentifier))
+        );
+      }
+    } catch {}
+
+    // If still not found, fetch the enquiry directly
+    if (!bill) {
+      try {
+        const enqRes = await callAppsScript<any>('enquiry.get', { id: cleanIdentifier }, sessionToken);
+        if (enqRes.success && enqRes.data) {
+          const foundEnquiry = enqRes.data.enquiry || enqRes.data;
+          if (foundEnquiry && foundEnquiry.id) {
+            // Check if this enquiry references a billId
+            if (foundEnquiry.billId) {
+              try {
+                const bRes = await callAppsScript<any>('bill.get', { id: foundEnquiry.billId }, sessionToken);
+                if (bRes.success && bRes.data) {
+                  bill = bRes.data;
+                }
+              } catch {}
+            }
+
+            // If enquiry is still unbilled or draft, construct a bill representation from the enquiry
+            if (!bill) {
+              const freightAmt = Number(foundEnquiry.freightAmount) || 0;
+              const haltingAmt = Number(foundEnquiry.haltingAmount) || 0;
+              const otherAmt = Number(foundEnquiry.otherCharges) || 0;
+              const advAmt = Number(foundEnquiry.advanceAmount) || 0;
+              const subtotal = freightAmt + haltingAmt + otherAmt;
+              const grandTotal = Math.max(0, subtotal - advAmt);
+
+              bill = {
+                id: foundEnquiry.id,
+                billNumber: foundEnquiry.billNumber || `INV-${foundEnquiry.enquiryNumber || foundEnquiry.id}`,
+                billingDate: foundEnquiry.completedAt || foundEnquiry.createdAt || new Date().toISOString(),
+                createdAt: foundEnquiry.createdAt || new Date().toISOString(),
+                status: foundEnquiry.status || 'PROCESSED',
+                companyId: foundEnquiry.companyId,
+                companyName: foundEnquiry.companyName,
+                clientId: foundEnquiry.clientId,
+                clientName: foundEnquiry.clientName,
+                clientAddress: foundEnquiry.clientAddress,
+                enquiryId: foundEnquiry.id,
+                enquiryIds: [foundEnquiry.id],
+                enquiries: [foundEnquiry],
+                items: [],
+                subtotal,
+                totalAmount: grandTotal,
+              };
+            }
+          }
+        }
+      } catch {}
+    }
+  }
+
   if (!bill) {
     throw new Error(`Bill or Invoice "${cleanIdentifier}" could not be found.`);
   }
@@ -121,19 +187,31 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
   let linkedEnquiries: RawEnquiry[] = Array.isArray(bill.enquiries) ? bill.enquiries : [];
 
   if (linkedEnquiries.length === 0) {
-    const enquiryIds: string[] = Array.isArray(bill.enquiryIds) ? bill.enquiryIds : [];
+    const enquiryIds: string[] = [];
+    if (Array.isArray(bill.enquiryIds)) {
+      bill.enquiryIds.forEach((id: any) => { if (id) enquiryIds.push(String(id)); });
+    }
+    if (bill.enquiryId && !enquiryIds.includes(String(bill.enquiryId))) {
+      enquiryIds.push(String(bill.enquiryId));
+    }
+    if (bill.enquiryNumber && !enquiryIds.includes(String(bill.enquiryNumber))) {
+      enquiryIds.push(String(bill.enquiryNumber));
+    }
+
     try {
       const enqRes = await callAppsScript<any>('enquiry.list', { limit: 100 }, sessionToken);
       if (enqRes.success && enqRes.data?.items) {
         linkedEnquiries = enqRes.data.items.filter((e: any) =>
-          e.billId === bill.id || enquiryIds.includes(e.id)
+          e.billId === bill.id ||
+          enquiryIds.includes(String(e.id)) ||
+          enquiryIds.includes(String(e.enquiryNumber))
         );
       }
     } catch {}
 
     // Fallback: If any enquiryId was missing from enquiry.list, fetch via enquiry.get
     if (linkedEnquiries.length < enquiryIds.length) {
-      const existingIds = new Set(linkedEnquiries.map((e) => e.id));
+      const existingIds = new Set(linkedEnquiries.map((e) => String(e.id)));
       for (const eId of enquiryIds) {
         if (!existingIds.has(eId)) {
           try {

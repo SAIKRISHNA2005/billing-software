@@ -40,16 +40,47 @@ export async function downloadBillPdf({
     const html2pdfModule = await import('html2pdf.js');
     const html2pdf = (html2pdfModule.default || html2pdfModule) as any;
 
+    // Parse the full HTML document to extract <style> rules and body markup
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // Extract all CSS style contents
+    const styles = Array.from(doc.querySelectorAll('style'));
+    const styleText = styles.map((s) => s.textContent).join('\n');
+
+    // Extract invoice wrapper content or body
+    const invoiceWrapper = doc.querySelector('.invoice-wrapper') || doc.body;
+
+    // Create an invisible render container at (0, 0) behind application content
+    // Setting left: 0, top: 0, opacity: 1 ensures html2canvas captures pixels from (0, 0)
+    // Setting zIndex: -99999 and pointerEvents: none keeps it completely hidden from the user
     const container = document.createElement('div');
-    container.style.position = 'fixed';
-    container.style.left = '-99999px';
+    container.id = 'bill-pdf-render-root';
+    container.style.position = 'absolute';
+    container.style.left = '0';
     container.style.top = '0';
     container.style.width = '210mm';
-    container.style.background = '#ffffff';
-    container.innerHTML = html;
+    container.style.minHeight = '297mm';
+    container.style.backgroundColor = '#ffffff';
+    container.style.zIndex = '-99999';
+    container.style.opacity = '1';
+    container.style.pointerEvents = 'none';
+
+    // Inject styles directly into the container
+    if (styleText) {
+      const styleEl = document.createElement('style');
+      styleEl.textContent = styleText;
+      container.appendChild(styleEl);
+    }
+
+    // Append the cloned invoice markup
+    container.appendChild(invoiceWrapper.cloneNode(true));
     document.body.appendChild(container);
 
     try {
+      // Allow browser to calculate layout and apply CSS rules
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
       const opt = {
         margin: [0, 0, 0, 0],
         filename: filename,
@@ -59,6 +90,9 @@ export async function downloadBillPdf({
           useCORS: true,
           logging: false,
           backgroundColor: '#ffffff',
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 794,
         },
         jsPDF: {
           unit: 'mm',
