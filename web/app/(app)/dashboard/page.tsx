@@ -170,10 +170,20 @@ export default function DashboardPage() {
         const data = sumRes.data.data;
         setSummary(data);
 
-        if (data.vehicleAlerts && Array.isArray(data.vehicleAlerts)) {
+        if (data.vehicleAlerts && Array.isArray(data.vehicleAlerts) && data.vehicleAlerts.length > 0) {
           setVehicleAlerts(data.vehicleAlerts);
         } else {
-          setVehicleAlerts([]);
+          // Client-side fallback to direct vehicle alerts endpoint
+          try {
+            const alertsRes = await axios.get('/api/vehicles/alerts');
+            if (alertsRes.data && alertsRes.data.success && Array.isArray(alertsRes.data.data)) {
+              setVehicleAlerts(alertsRes.data.data);
+            } else {
+              setVehicleAlerts([]);
+            }
+          } catch {
+            setVehicleAlerts([]);
+          }
         }
       } else {
         message.error(sumRes.data?.message || 'Failed to load dashboard summary');

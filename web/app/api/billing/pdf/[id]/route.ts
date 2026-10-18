@@ -44,14 +44,11 @@ export async function GET(
           },
         });
       } catch (pdfErr) {
-        console.warn('[BillPDFRoute] Server-side PDF binary streaming unavailable, falling back to auto-print HTML:', pdfErr);
-        const autoPrintHtml = html.replace('</body>', '<script>window.addEventListener("load", () => window.print());</script></body>');
-        return new NextResponse(autoPrintHtml, {
-          status: 200,
-          headers: {
-            'Content-Type': 'text/html; charset=utf-8',
-          },
-        });
+        console.error('[BillPDFRoute] Error generating PDF binary stream:', pdfErr);
+        return NextResponse.json(
+          { success: false, message: 'Server-side PDF generation failed. Please try again.' },
+          { status: 500 }
+        );
       }
     }
 

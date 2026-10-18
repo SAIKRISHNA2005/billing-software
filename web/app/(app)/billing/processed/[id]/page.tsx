@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Table, Tag, Button, Typography, Space, Descriptions, Modal, Form, Input, InputNumber, Select, DatePicker, Spin, message } from 'antd';
-import { FileTextOutlined, ArrowLeftOutlined, EditOutlined, DownloadOutlined, DollarOutlined, PrinterOutlined } from '@ant-design/icons';
+import { FileTextOutlined, ArrowLeftOutlined, EditOutlined, DownloadOutlined, DollarOutlined, PrinterOutlined, EyeOutlined } from '@ant-design/icons';
 import { useRouter, useParams } from 'next/navigation';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -25,6 +25,7 @@ export default function ProcessedBillDetailPage() {
   // PDF Modal State
   const [pdfModalVisible, setPdfModalVisible] = useState(false);
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [pdfData, setPdfData] = useState<{ pdfUrl?: string; pdfBase64?: string; html?: string } | null>(null);
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
 
@@ -53,6 +54,88 @@ export default function ProcessedBillDetailPage() {
     if (id) fetchBillDetail();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Direct PDF Download with exact Invoice ID filename
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    const invoiceNum = bill?.billNumber ? String(bill.billNumber).replace(/[\/\\]/g, '-') : id;
+    const filename = `Invoice_${invoiceNum}.pdf`;
+    const hideLoading = message.loading(`Preparing PDF invoice for ${bill?.billNumber || id}...`, 0);
+    try {
+      if (pdfData?.pdfBase64) {
+        const byteCharacters = atob(pdfData.pdfBase64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+
+        message.success(`Invoice ${bill?.billNumber || id} downloaded successfully!`);
+        return;
+      }
+
+      // Stream PDF directly from server
+      const pdfRes = await axios.get(`/api/billing/pdf/${id}?format=pdf`, { responseType: 'blob' });
+      if (pdfRes.data) {
+        const blob = new Blob([pdfRes.data], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+
+        message.success(`Invoice ${bill?.billNumber || id} downloaded successfully!`);
+      } else {
+        message.error('Failed to download invoice PDF');
+      }
+    } catch (err: any) {
+      // Fallback to base64 endpoint if binary format failed
+      try {
+        const res = await axios.get(`/api/billing/pdf/${id}`);
+        if (res.data?.success && res.data.data?.pdfBase64) {
+          const byteCharacters = atob(res.data.data.pdfBase64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: 'application/pdf' });
+          const blobUrl = URL.createObjectURL(blob);
+
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+
+          message.success(`Invoice ${bill?.billNumber || id} downloaded successfully!`);
+        } else {
+          message.error(res.data?.message || 'Error generating PDF invoice');
+        }
+      } catch (fallbackErr: any) {
+        message.error(fallbackErr.response?.data?.message || fallbackErr.message || 'Error downloading PDF');
+      }
+    } finally {
+      hideLoading();
+      setDownloadingPdf(false);
+    }
+  };
 
   const handleGeneratePdf = async () => {
     setPdfGenerating(true);
@@ -161,11 +244,20 @@ export default function ProcessedBillDetailPage() {
         </Space>
         <Space wrap>
           <Button
+            type="primary"
             icon={<DownloadOutlined />}
+            loading={downloadingPdf}
+            style={{ backgroundColor: isDark ? '#2563EB' : '#1D4ED8', borderColor: isDark ? '#2563EB' : '#1D4ED8' }}
+            onClick={handleDownloadPdf}
+          >
+            Download PDF
+          </Button>
+          <Button
+            icon={<EyeOutlined />}
             loading={pdfGenerating}
             onClick={() => handleGeneratePdf()}
           >
-            Download PDF
+            Preview Bill
           </Button>
           <Button
             type="primary"
@@ -283,59 +375,19 @@ export default function ProcessedBillDetailPage() {
           <Button key="close" onClick={() => setPdfModalVisible(false)}>
             Close
           </Button>,
-          pdfData?.pdfBase64 && (
-            <Button
-              key="download-pdf"
-              type="primary"
-              icon={<DownloadOutlined />}
-              style={{ backgroundColor: isDark ? '#2563EB' : '#1D4ED8', borderColor: isDark ? '#2563EB' : '#1D4ED8' }}
-              onClick={() => {
-                if (!pdfData?.pdfBase64) return;
-                const filename = `Invoice_${bill?.billNumber ? String(bill.billNumber).replace(/[\/\\]/g, '-') : id}.pdf`;
-                const byteCharacters = atob(pdfData.pdfBase64);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                  byteNumbers[i] = byteCharacters.charCodeAt(i);
-                }
-                const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: 'application/pdf' });
-                const blobUrl = URL.createObjectURL(blob);
-
-                const link = document.createElement('a');
-                link.href = blobUrl;
-                link.download = filename;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-
-                message.success('Invoice PDF downloaded successfully!');
-              }}
-            >
-              Download PDF
-            </Button>
-          ),
-          pdfData?.html && !pdfData?.pdfBase64 && (
-            <Button
-              key="print-save-pdf"
-              type="primary"
-              icon={<PrinterOutlined />}
-              onClick={() => {
-                const printWindow = window.open('', '_blank');
-                if (printWindow) {
-                  printWindow.document.write(pdfData.html!);
-                  printWindow.document.close();
-                  printWindow.focus();
-                  setTimeout(() => printWindow.print(), 350);
-                }
-              }}
-            >
-              Print / Save as PDF
-            </Button>
-          ),
+          <Button
+            key="download-pdf"
+            type="primary"
+            icon={<DownloadOutlined />}
+            loading={downloadingPdf}
+            style={{ backgroundColor: isDark ? '#2563EB' : '#1D4ED8', borderColor: isDark ? '#2563EB' : '#1D4ED8' }}
+            onClick={handleDownloadPdf}
+          >
+            Download PDF
+          </Button>,
           pdfData?.pdfUrl && (
             <Button
-              key="download"
+              key="download-drive"
               icon={<DownloadOutlined />}
               onClick={() => window.open(pdfData.pdfUrl, '_blank')}
             >

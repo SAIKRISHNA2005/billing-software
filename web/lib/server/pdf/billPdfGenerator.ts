@@ -14,6 +14,11 @@ export function getBrowserExecutablePath(): string {
     process.env.PUPPETEER_EXECUTABLE_PATH,
     process.env.CHROME_PATH,
     process.env.CHROME_BIN,
+    // Direct Windows paths fallback
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
     // Standard 64-bit & 32-bit Program Files (Chrome, Chromium, Edge, Brave)
     path.join(programFiles, 'Google', 'Chrome', 'Application', 'chrome.exe'),
     path.join(programFilesX86, 'Google', 'Chrome', 'Application', 'chrome.exe'),

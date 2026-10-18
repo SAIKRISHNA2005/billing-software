@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['antd', '@ant-design/icons', '@ant-design/cssinjs', 'rc-pagination', 'rc-picker', 'rc-util'],
+  experimental: {
+    serverComponentsExternalPackages: ['puppeteer-core'],
+  },
 };
 
 export default nextConfig;

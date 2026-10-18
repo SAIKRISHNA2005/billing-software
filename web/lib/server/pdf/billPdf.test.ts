@@ -419,4 +419,273 @@ describe('Bill PDF System Tests', () => {
     const pageCount = (buffer.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length;
     expect(pageCount).toBe(1);
   }, 30000);
+
+  // =========================================================================
+  // DYNAMIC COLUMN UPDATION TEST CASES (Requested by User)
+  // =========================================================================
+
+  // Test Case 1: Only normal charges present (Freight, Halting, Other, Advance) without ANY custom charges
+  it('Dynamic Columns Test 1: Only normal charges present without custom charges', () => {
+    const normalOnlyBill: BillData = {
+      ...TEST_BILL_FIXTURE,
+      charges: [
+        {
+          sNo: 1,
+          description: 'Standard Freight Transportation\nContainer: TEMU6210099',
+          freightCharges: 25000,
+          freightFormula: '1 X 25,000.00',
+          haltingCharges: 1500,
+          haltingFormula: '1 Day X 1,500.00',
+          otherCharges: 2000,
+          otherFormula: '2,000.00',
+          advance: 5000,
+          customCharges: [],
+          rate: null,
+          amount: 23500, // 25000 + 1500 + 2000 - 5000
+        },
+      ],
+      totals: {
+        freightTotal: 25000,
+        haltingTotal: 1500,
+        otherChargesTotal: 2000,
+        advanceTotal: 5000,
+        grandTotal: 23500,
+      },
+      totalInWords: 'Twenty Three Thousand Five Hundred Only',
+    };
+
+    const html = generateBillHtml(normalOnlyBill);
+
+    // Standard columns MUST exist
+    expect(html).toContain('Freight Charges<br>(INR)');
+    expect(html).toContain('Halting Charges<br>(INR)');
+    expect(html).toContain('Other Charges<br>(INR)');
+    expect(html).toContain('Advance Paid<br>(Deduction)');
+    expect(html).toContain('Amount<br>(INR)');
+
+    // Row values must match
+    expect(html).toContain('25,000.00');
+    expect(html).toContain('1,500.00');
+    expect(html).toContain('2,000.00');
+    expect(html).toContain('- 5,000.00');
+    expect(html).toContain('23,500.00');
+
+    // No custom columns or placeholder headers should exist
+    expect(html).not.toContain('custom_');
+    expect(html).not.toContain('Custom Charge');
+  });
+
+  // Test Case 2: Normal charges present + 2 custom charges (Toll Charges and Weighment Charges)
+  it('Dynamic Columns Test 2: Normal charges + 2 custom charges (Toll and Weighment)', () => {
+    const normalPlusCustomBill: BillData = {
+      ...TEST_BILL_FIXTURE,
+      charges: [
+        {
+          sNo: 1,
+          description: 'Container Movement ZIRCON to GODREJ',
+          freightCharges: 30000,
+          freightFormula: '1 X 30,000.00',
+          haltingCharges: 2000,
+          haltingFormula: null,
+          otherCharges: null,
+          advance: 3000,
+          customCharges: [
+            { name: 'Toll Charges', amount: 1200 },
+            { name: 'Weighment Charges', amount: 450 },
+          ],
+          rate: null,
+          amount: 30650, // 30000 + 2000 + 1200 + 450 - 3000
+        },
+      ],
+      totals: {
+        freightTotal: 30000,
+        haltingTotal: 2000,
+        otherChargesTotal: 0,
+        advanceTotal: 3000,
+        grandTotal: 30650,
+      },
+      totalInWords: 'Thirty Thousand Six Hundred Fifty Only',
+    };
+
+    const html = generateBillHtml(normalPlusCustomBill);
+
+    // Dynamic columns for standard charges
+    expect(html).toContain('Freight Charges<br>(INR)');
+    expect(html).toContain('Halting Charges<br>(INR)');
+    expect(html).toContain('Advance Paid<br>(Deduction)');
+
+    // 2 newly discovered custom columns MUST exist in table headers
+    expect(html).toContain('Toll Charges<br>(INR)');
+    expect(html).toContain('Weighment Charges<br>(INR)');
+
+    // Row cell values
+    expect(html).toContain('1,200.00');
+    expect(html).toContain('450.00');
+    expect(html).toContain('30,650.00');
+
+    // Footer totals must contain the custom column sums
+    expect(html).toContain('1,200.00');
+    expect(html).toContain('450.00');
+    expect(html).toContain('30,650.00');
+  });
+
+  // Test Case 3: Only custom charges present (0 Freight, 0 Halting, 0 Other, 0 Advance)
+  it('Dynamic Columns Test 3: Only custom charges present without any standard charges', () => {
+    const customOnlyBill: BillData = {
+      ...TEST_BILL_FIXTURE,
+      charges: [
+        {
+          sNo: 1,
+          description: 'Special Site Services\nContainer: MSKU1673779',
+          freightCharges: 0,
+          freightFormula: undefined,
+          haltingCharges: 0,
+          haltingFormula: undefined,
+          otherCharges: 0,
+          otherFormula: undefined,
+          advance: 0,
+          customCharges: [
+            { name: 'Escort Charges', amount: 4500 },
+            { name: 'Loading Extra Charges', amount: 2500 },
+          ],
+          rate: null,
+          amount: 7000, // 4500 + 2500
+        },
+      ],
+      totals: {
+        freightTotal: 0,
+        haltingTotal: 0,
+        otherChargesTotal: 0,
+        advanceTotal: 0,
+        grandTotal: 7000,
+      },
+      totalInWords: 'Seven Thousand Only',
+    };
+
+    const html = generateBillHtml(customOnlyBill);
+
+    // Standard columns with 0 values MUST NOT be included when custom charges exist
+    expect(html).not.toContain('Freight Charges<br>(INR)');
+    expect(html).not.toContain('Halting Charges<br>(INR)');
+    expect(html).not.toContain('Other Charges<br>(INR)');
+    expect(html).not.toContain('Advance Paid<br>(Deduction)');
+
+    // ONLY the custom columns and Amount (INR) must be created
+    expect(html).toContain('Escort Charges<br>(INR)');
+    expect(html).toContain('Loading Extra Charges<br>(INR)');
+    expect(html).toContain('Amount<br>(INR)');
+
+    // Values in row and footer
+    expect(html).toContain('4,500.00');
+    expect(html).toContain('2,500.00');
+    expect(html).toContain('7,000.00');
+  });
+
+  // Test Case 4: Multiple rows with mixed custom charges across rows
+  it('Dynamic Columns Test 4: Multiple rows with sparse/mixed custom charges across rows', () => {
+    const multiRowMixedBill: BillData = {
+      ...TEST_BILL_FIXTURE,
+      charges: [
+        {
+          sNo: 1,
+          description: 'Trip 1: Enq #101',
+          freightCharges: 15000,
+          freightFormula: '1 X 15,000.00',
+          customCharges: [
+            { name: 'Toll Charges', amount: 800 },
+          ],
+          rate: null,
+          amount: 15800,
+        },
+        {
+          sNo: 2,
+          description: 'Trip 2: Enq #102',
+          freightCharges: 18000,
+          freightFormula: '1 X 18,000.00',
+          customCharges: [
+            { name: 'Escort Charges', amount: 2000 },
+          ],
+          rate: null,
+          amount: 20000,
+        },
+        {
+          sNo: 3,
+          description: 'Trip 3: Enq #103',
+          freightCharges: 12000,
+          freightFormula: '1 X 12,000.00',
+          customCharges: [
+            { name: 'Toll Charges', amount: 800 },
+            { name: 'Escort Charges', amount: 2000 },
+          ],
+          rate: null,
+          amount: 14800,
+        },
+      ],
+      totals: {
+        freightTotal: 45000,
+        haltingTotal: 0,
+        otherChargesTotal: 0,
+        advanceTotal: 0,
+        grandTotal: 50600, // 45000 + 1600 (Toll) + 4000 (Escort)
+      },
+      totalInWords: 'Fifty Thousand Six Hundred Only',
+    };
+
+    const html = generateBillHtml(multiRowMixedBill);
+
+    // Verify both unique custom charges are discovered as columns
+    expect(html).toContain('Toll Charges<br>(INR)');
+    expect(html).toContain('Escort Charges<br>(INR)');
+
+    // Verify row description strictly formats TRUCK NUMBER and CONTAINER NUMBER table
+    expect(html).toContain('TRUCK NUMBER');
+    expect(html).toContain('CONTAINER NUMBER');
+    expect(html).toContain('TN20BZ4732');
+    expect(html).toContain('TEMU6210099');
+
+    // Column totals in footer: Toll total = 1,600, Escort total = 4,000, Grand Total = 50,600
+    expect(html).toContain('1,600.00');
+    expect(html).toContain('4,000.00');
+    expect(html).toContain('50,600.00');
+  });
+
+  // Test Case 5: End-to-end PDF generation for only custom charges bill
+  it('Dynamic Columns Test 5: End-to-end PDF generation for custom-charges-only bill', async () => {
+    const customOnlyBill: BillData = {
+      ...TEST_BILL_FIXTURE,
+      charges: [
+        {
+          sNo: 1,
+          description: 'Special Escort & Offload Operation',
+          freightCharges: 0,
+          customCharges: [
+            { name: 'Custom Clearance Escort', amount: 5000 },
+            { name: 'Crane Offload Assistance', amount: 3500 },
+          ],
+          rate: null,
+          amount: 8500,
+        },
+      ],
+      totals: {
+        freightTotal: 0,
+        haltingTotal: 0,
+        otherChargesTotal: 0,
+        advanceTotal: 0,
+        grandTotal: 8500,
+      },
+      totalInWords: 'Eight Thousand Five Hundred Only',
+    };
+
+    const html = generateBillHtml(customOnlyBill);
+    const buffer = await generateBillPdfBuffer(html);
+
+    expect(buffer).toBeDefined();
+    expect(buffer.length).toBeGreaterThan(1000);
+    const magicHeader = buffer.slice(0, 5).toString();
+    expect(magicHeader).toBe('%PDF-');
+
+    const pageCount = (buffer.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length;
+    expect(pageCount).toBe(1);
+  }, 30000);
 });
+

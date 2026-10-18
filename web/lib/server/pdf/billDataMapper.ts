@@ -458,7 +458,8 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
       if (amt > 0) {
         charges.push({
           sNo: currentSNo++,
-          description: it.description || 'Additional Charges',
+          description: plainDescription,
+          descriptionHtml,
           freightCharges: null,
           otherCharges: amt,
           haltingCharges: null,
@@ -472,6 +473,43 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
     });
   } else if (rawItems.length > 0) {
     // Non-enquiry items (e.g. manual items or test fixtures)
+    const pairs: { truck: string; container: string }[] = [];
+    const maxLen = Math.max(truckNumbers.length, containerNumbers.length);
+    if (maxLen > 0) {
+      for (let i = 0; i < maxLen; i++) {
+        pairs.push({
+          truck: truckNumbers[i] || truckNumbers[0] || '-',
+          container: containerNumbers[i] || containerNumbers[0] || '-',
+        });
+      }
+    } else {
+      pairs.push({ truck: '-', container: '-' });
+    }
+
+    const itemDescHtml = `
+      <table style="width: 100%; border: none; border-collapse: collapse; margin: 0; padding: 0;">
+        <thead>
+          <tr>
+            <th style="border: none; text-align: left; padding: 0 14px 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">TRUCK NUMBER</th>
+            <th style="border: none; text-align: left; padding: 0 0 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">CONTAINER NUMBER</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${pairs.map((p) => `
+            <tr>
+              <td style="border: none; text-align: left; padding: 2px 14px 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">${p.truck}</td>
+              <td style="border: none; text-align: left; padding: 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">${p.container}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `.trim();
+
+    const itemPlainDesc = [
+      'TRUCK NUMBER\tCONTAINER NUMBER',
+      ...pairs.map((p) => `${p.truck}\t${p.container}`),
+    ].join('\n');
+
     rawItems.forEach((it) => {
       const amt = Number(it.amount) || 0;
       const desc = it.description || 'Freight Charges';
@@ -490,7 +528,8 @@ export async function mapBillData(billIdentifier: string, sessionToken?: string 
 
       charges.push({
         sNo: currentSNo++,
-        description: desc,
+        description: itemPlainDesc,
+        descriptionHtml: itemDescHtml,
         freightCharges: itemFreight,
         otherCharges: itemOther,
         haltingCharges: itemHalting,

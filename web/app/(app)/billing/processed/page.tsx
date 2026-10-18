@@ -151,21 +151,37 @@ export default function ProcessedBillsPage() {
   // Handle Download PDF
   const handleDownloadPdf = async (record: any) => {
     setDownloadingId(record.id);
-    const hideLoading = message.loading(`Generating PDF invoice for ${record.billNumber || record.id}...`, 0);
+    const invoiceNum = record.billNumber ? String(record.billNumber).replace(/[\/\\]/g, '-') : record.id;
+    const filename = `Invoice_${invoiceNum}.pdf`;
+    const hideLoading = message.loading(`Preparing PDF invoice for ${record.billNumber || record.id}...`, 0);
     try {
       const res = await axios.get(`/api/billing/pdf/${record.id}`);
       hideLoading();
-      if (res.data && res.data.success) {
-        const filename = `Invoice_${record.billNumber ? String(record.billNumber).replace(/[\/\\]/g, '-') : record.id}.pdf`;
-        if (res.data.data?.pdfBase64) {
-          // Convert base64 to Blob object URL to bypass browser data-URI size/security restrictions
-          const byteCharacters = atob(res.data.data.pdfBase64);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: 'application/pdf' });
+      if (res.data && res.data.success && res.data.data?.pdfBase64) {
+        // Convert base64 to Blob object URL to download directly
+        const byteCharacters = atob(res.data.data.pdfBase64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+
+        message.success(`Invoice ${record.billNumber || record.id} downloaded successfully!`);
+      } else {
+        // Direct binary PDF stream fallback
+        const pdfBlobRes = await axios.get(`/api/billing/pdf/${record.id}?format=pdf`, { responseType: 'blob' });
+        if (pdfBlobRes.data) {
+          const blob = new Blob([pdfBlobRes.data], { type: 'application/pdf' });
           const blobUrl = URL.createObjectURL(blob);
 
           const link = document.createElement('a');
@@ -176,24 +192,10 @@ export default function ProcessedBillsPage() {
           document.body.removeChild(link);
           setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
 
-          message.success('Invoice PDF downloaded successfully!');
-        } else if (res.data.data?.pdfUrl) {
-          window.open(res.data.data.pdfUrl, '_blank');
-        } else if (res.data.data?.html) {
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(res.data.data.html);
-            printWindow.document.close();
-            printWindow.focus();
-            setTimeout(() => printWindow.print(), 350);
-          }
-          message.success('Opening print dialog to Save as PDF...');
+          message.success(`Invoice ${record.billNumber || record.id} downloaded successfully!`);
         } else {
-          // Fallback to direct stream endpoint
-          window.open(`/api/billing/pdf/${record.id}?format=pdf`, '_blank');
+          message.error('Failed to generate PDF for download');
         }
-      } else {
-        message.error(res.data?.message || 'Failed to generate PDF for download');
       }
     } catch (err: any) {
       hideLoading();

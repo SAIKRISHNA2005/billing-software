@@ -39,9 +39,10 @@ export function generateBillHtml(data: BillData): string {
   rawCharges.forEach(r => {
     if (Array.isArray(r.customCharges)) {
       r.customCharges.forEach(cc => {
-        if (cc.name && String(cc.name).trim() && Number(cc.amount) > 0) {
-          const trimmed = cc.name.trim();
-          if (!customChargeNames.includes(trimmed)) {
+        if (cc && cc.name && String(cc.name).trim() && Number(cc.amount) > 0) {
+          const trimmed = String(cc.name).trim();
+          const exists = customChargeNames.some(existing => existing.toLowerCase() === trimmed.toLowerCase());
+          if (!exists) {
             customChargeNames.push(trimmed);
           }
         }
@@ -97,16 +98,17 @@ export function generateBillHtml(data: BillData): string {
 
   // 4. Dynamic Custom Charge columns
   customChargeNames.forEach(colName => {
+    const cleanHeader = colName.replace(/\s*\(inr\)$/i, '').trim();
     dynamicCols.push({
-      key: `custom_${colName}`,
-      label: `${colName}<br>(INR)`,
+      key: `custom_${cleanHeader.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+      label: `${cleanHeader}<br>(INR)`,
       getValue: (r) => {
-        const match = r.customCharges?.find((c: any) => c.name?.trim() === colName);
-        return match ? formatAmount(match.amount) : '-';
+        const match = r.customCharges?.find((c: any) => c && c.name && String(c.name).trim().toLowerCase() === colName.toLowerCase());
+        return match && Number(match.amount) > 0 ? formatAmount(match.amount) : '-';
       },
       getTotal: () => {
         return rawCharges.reduce((sum, r) => {
-          const match = r.customCharges?.find((c: any) => c.name?.trim() === colName);
+          const match = r.customCharges?.find((c: any) => c && c.name && String(c.name).trim().toLowerCase() === colName.toLowerCase());
           return sum + (match ? (Number(match.amount) || 0) : 0);
         }, 0);
       },
@@ -197,11 +199,89 @@ export function generateBillHtml(data: BillData): string {
     const isLast = idx === rawCharges.length - 1;
     const rowBottomBorder = isLast ? 'border-bottom: none !important;' : 'border-bottom: 1px solid #000;';
 
+    // Strictly ensure the description column ONLY contains the mapped TRUCK NUMBER and CONTAINER NUMBER table
+    let renderedDesc = row.descriptionHtml;
+    if (!renderedDesc || !renderedDesc.includes('CONTAINER NUMBER')) {
+      const tNums = data.truckNumbers || [];
+      const cNums = data.containerNumbers || [];
+      const maxLen = Math.max(tNums.length, cNums.length);
+      if (maxLen > 0) {
+        const pairs: { truck: string; container: string }[] = [];
+        for (let i = 0; i < maxLen; i++) {
+          pairs.push({
+            truck: tNums[i] || tNums[0] || '-',
+            container: cNums[i] || cNums[0] || '-',
+          });
+        }
+        renderedDesc = `
+          <table style="width: 100%; border: none; border-collapse: collapse; margin: 0; padding: 0;">
+            <thead>
+              <tr>
+                <th style="border: none; text-align: left; padding: 0 14px 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">TRUCK NUMBER</th>
+                <th style="border: none; text-align: left; padding: 0 0 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">CONTAINER NUMBER</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${pairs.map((p) => `
+                <tr>
+                  <td style="border: none; text-align: left; padding: 2px 14px 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">${p.truck}</td>
+                  <td style="border: none; text-align: left; padding: 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">${p.container}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `.trim();
+      } else {
+        const lines = (row.description || '').split('\n').map(l => l.trim()).filter(Boolean);
+        if (lines.length > 0 && lines[0].includes('TRUCK NUMBER')) {
+          const dataRows = lines.slice(1);
+          renderedDesc = `
+            <table style="width: 100%; border: none; border-collapse: collapse; margin: 0; padding: 0;">
+              <thead>
+                <tr>
+                  <th style="border: none; text-align: left; padding: 0 14px 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">TRUCK NUMBER</th>
+                  <th style="border: none; text-align: left; padding: 0 0 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">CONTAINER NUMBER</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${dataRows.map(dr => {
+                  const parts = dr.split(/\t|\s{2,}/);
+                  return `
+                    <tr>
+                      <td style="border: none; text-align: left; padding: 2px 14px 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">${parts[0] || '-'}</td>
+                      <td style="border: none; text-align: left; padding: 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">${parts[1] || '-'}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          `.trim();
+        } else {
+          renderedDesc = `
+            <table style="width: 100%; border: none; border-collapse: collapse; margin: 0; padding: 0;">
+              <thead>
+                <tr>
+                  <th style="border: none; text-align: left; padding: 0 14px 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">TRUCK NUMBER</th>
+                  <th style="border: none; text-align: left; padding: 0 0 4px 0; font-weight: 800; font-size: 11px; color: #000; letter-spacing: 0.3px; white-space: nowrap;">CONTAINER NUMBER</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="border: none; text-align: left; padding: 2px 14px 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">-</td>
+                  <td style="border: none; text-align: left; padding: 2px 0; font-size: 11px; font-weight: 600; color: #111; white-space: nowrap;">-</td>
+                </tr>
+              </tbody>
+            </table>
+          `.trim();
+        }
+      }
+    }
+
     return `
       <tr>
         <td style="text-align: center; font-weight: bold; width: ${sNoWidth}; vertical-align: top; padding-top: 5px; ${rowBottomBorder}">${isSpecialText ? '' : sNo}</td>
         <td style="vertical-align: top; width: ${descWidth}; padding: ${descPadding}; word-break: break-word; ${rowBottomBorder}">
-          ${row.descriptionHtml ? row.descriptionHtml : `<div style="font-weight: 600; font-size: ${tdFontSize}; white-space: pre-line;">${row.description || '-'}</div>`}
+          ${renderedDesc}
         </td>
         ${dynamicCols.map(col => `
           <td style="text-align: right; width: ${col.width}; vertical-align: top; padding-top: 5px; font-size: ${tdFontSize}; white-space: ${cellWhiteSpace}; ${rowBottomBorder}">
@@ -215,16 +295,15 @@ export function generateBillHtml(data: BillData): string {
 
   // Dynamically calibrate spacer height based on actual rendered charge line counts, address height, and header
   const estimatedChargesHeight = rawCharges.reduce((acc, row) => {
+    let numPairs = 1;
     if (row.descriptionHtml) {
       const tbodyMatch = row.descriptionHtml.match(/<tbody>([\s\S]*?)<\/tbody>/i);
       const trMatches = (tbodyMatch ? tbodyMatch[1] : row.descriptionHtml).match(/<tr\b/gi);
-      const numPairs = trMatches ? trMatches.length : 1;
-      return acc + (22 + (numPairs * 18) + 8);
+      numPairs = trMatches ? trMatches.length : 1;
+    } else {
+      numPairs = Math.max(1, (data.truckNumbers || []).length, (data.containerNumbers || []).length);
     }
-    const plain = (row.description || '').trim();
-    const lineCount = Math.max(1, plain.split(/<br\s*\/?>|\n/i).filter((l: string) => l.trim().length > 0).length);
-    const rowHeight = 26 + ((lineCount - 1) * 14);
-    return acc + rowHeight;
+    return acc + (24 + (numPairs * 19) + 8);
   }, 0);
 
   const clientAddrLines = (data.client?.address || '').split(/[\r\n]+/).filter(Boolean).length;
@@ -234,7 +313,7 @@ export function generateBillHtml(data: BillData): string {
 
   // A4 printable height with 1mm top and 3px bottom margin is ~1115px; non-table elements take ~350px + headerHeight
   // Target available spacer height keeps bill strictly inside 1 page with minimal space (~3mm) from bottom border to end of page
-  const availableSpacer = 730 - headerHeight - extraAddrHeight - estimatedChargesHeight - headerWrapOffset;
+  const availableSpacer = 675 - headerHeight - extraAddrHeight - estimatedChargesHeight - headerWrapOffset;
   const spacerHeight = Math.max(0, Math.round(availableSpacer));
 
   // Checkbox generation helper
